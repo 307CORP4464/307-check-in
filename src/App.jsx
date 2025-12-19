@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 
-// Build dock list
+/* ---------------- DOCK LIST ---------------- */
 const docks = [
   ...Array.from({ length: 7 }, (_, i) => i + 1),
   ...Array.from({ length: 21 }, (_, i) => i + 15),
@@ -10,6 +10,7 @@ const docks = [
 ];
 
 export default function App() {
+  /* ---------------- STATE ---------------- */
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +20,7 @@ export default function App() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  // CSR dock status
+  // dock state
   const [dockStatus, setDockStatus] = useState({});
 
   // admin create csr
@@ -30,20 +31,20 @@ export default function App() {
   console.log("SESSION:", session);
   console.log("ROLE:", role);
 
-  // INITIAL LOAD + AUTH STATE
+  /* ---------------- AUTH + ROLE LOAD ---------------- */
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
 
       if (data.session) {
-        const { data: profile } = await supabase
+        const { data: profile, error } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", data.session.user.id)
           .single();
 
-        setRole(profile?.role ?? null);
+        if (!error) setRole(profile?.role ?? null);
       }
 
       setLoading(false);
@@ -71,9 +72,9 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // LOAD DOCKS ONCE CSR ROLE IS CONFIRMED
+  /* ---------------- LOAD DOCKS FOR ADMIN + CSR ---------------- */
   useEffect(() => {
-    if (role !== "csr") return;
+    if (!role) return;
 
     const loadDocks = async () => {
       const { data, error } = await supabase
@@ -92,6 +93,7 @@ export default function App() {
     loadDocks();
   }, [role]);
 
+  /* ---------------- AUTH ACTIONS ---------------- */
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -110,6 +112,7 @@ export default function App() {
     setRole(null);
   };
 
+  /* ---------------- ADMIN CREATE CSR ---------------- */
   const handleCreateCSR = async (e) => {
     e.preventDefault();
     setCreateMsg("");
@@ -145,12 +148,13 @@ export default function App() {
     }
   };
 
+  /* ---------------- DOCK STATUS UPDATE ---------------- */
   const cycleStatus = async (dock) => {
     const order = ["available", "assigned", "loading"];
     const current = dockStatus[dock] || "available";
     const next = order[(order.indexOf(current) + 1) % order.length];
 
-    setDockStatus((prev) => ({ ...prev, [dock]: next }));
+    setDockStatus({ ...dockStatus, [dock]: next });
 
     await supabase.from("docks").upsert({
       dock_number: dock,
@@ -164,9 +168,41 @@ export default function App() {
     return "#ef4444";
   };
 
+  /* ---------------- SHARED DOCK GRID ---------------- */
+  const renderDockGrid = (clickable) => (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
+        gap: 12,
+        marginTop: 20,
+      }}
+    >
+      {docks.map((dock) => (
+        <div
+          key={dock}
+          onClick={clickable ? () => cycleStatus(dock) : undefined}
+          style={{
+            padding: 16,
+            borderRadius: 8,
+            textAlign: "center",
+            cursor: clickable ? "pointer" : "default",
+            background: colorFor(dockStatus[dock]),
+            color: "white",
+            fontWeight: "bold",
+            opacity: clickable ? 1 : 0.85,
+          }}
+        >
+          Dock {dock}
+          <div style={{ fontSize: 12 }}>{dockStatus[dock]}</div>
+        </div>
+      ))}
+    </div>
+  );
+
+  /* ---------------- UI ---------------- */
   if (loading) return <p style={{ padding: 40 }}>Loading…</p>;
 
-  // LOGIN
   if (!session) {
     return (
       <div style={{ padding: 40, maxWidth: 400, margin: "0 auto" }}>
@@ -200,14 +236,20 @@ export default function App() {
     );
   }
 
-  // ADMIN
+  /* ---------------- ADMIN ---------------- */
   if (role === "admin") {
     return (
       <div style={{ padding: 40 }}>
-        <h1>Admin Dashboard</h1>
+        <h1>CSR Dashboard (Admin)</h1>
         <button onClick={handleLogout}>Log out</button>
 
-        <h2 style={{ marginTop: 20 }}>Create CSR User</h2>
+        <p style={{ marginTop: 10, color: "#555" }}>
+          Read-only dock status view
+        </p>
+
+        {renderDockGrid(false)}
+
+        <h2 style={{ marginTop: 30 }}>Create CSR User</h2>
 
         <form onSubmit={handleCreateCSR}>
           <input
@@ -232,43 +274,17 @@ export default function App() {
     );
   }
 
-  // CSR
+  /* ---------------- CSR ---------------- */
   if (role === "csr") {
     return (
       <div style={{ padding: 40 }}>
         <h1>CSR Dock Dashboard</h1>
         <button onClick={handleLogout}>Log out</button>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
-            gap: 12,
-            marginTop: 20,
-          }}
-        >
-          {docks.map((dock) => (
-            <div
-              key={dock}
-              onClick={() => cycleStatus(dock)}
-              style={{
-                padding: 16,
-                borderRadius: 8,
-                textAlign: "center",
-                cursor: "pointer",
-                background: colorFor(dockStatus[dock]),
-                color: "white",
-                fontWeight: "bold",
-              }}
-            >
-              Dock {dock}
-              <div style={{ fontSize: 12 }}>{dockStatus[dock]}</div>
-            </div>
-          ))}
-        </div>
+        {renderDockGrid(true)}
 
         <p style={{ marginTop: 20 }}>
-          Click a dock to cycle: Available → Assigned → Loading
+          Click a dock to cycle status: Available → Assigned → Loading
         </p>
       </div>
     );
