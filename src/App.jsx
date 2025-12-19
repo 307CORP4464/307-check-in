@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 
-// Build dock list
+/* ---------------- DOCK LIST ---------------- */
 const docks = [
   ...Array.from({ length: 7 }, (_, i) => i + 1),
   ...Array.from({ length: 21 }, (_, i) => i + 15),
@@ -10,26 +10,30 @@ const docks = [
 ];
 
 export default function App() {
+  /* ---------------- AUTH / ROLE ---------------- */
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Login
+  /* ---------------- LOGIN ---------------- */
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  // Dock status
+  /* ---------------- DOCK STATE ---------------- */
+  // dockStatus[dockNumber] = { status, claimed_by }
   const [dockStatus, setDockStatus] = useState({});
 
-  // ADMIN: create CSR
+  /* ---------------- ADMIN CREATE CSR ---------------- */
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [createMsg, setCreateMsg] = useState("");
 
-  /* -------------------- AUTH + ROLE -------------------- */
+  /* =================================================
+     INITIAL LOAD + AUTH STATE
+  ================================================= */
   useEffect(() => {
-    const init = async () => {
+    const load = async () => {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
 
@@ -46,7 +50,7 @@ export default function App() {
       setLoading(false);
     };
 
-    init();
+    load();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -68,40 +72,50 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  /* -------------------- LOAD DOCKS + REALTIME -------------------- */
+  /* =================================================
+     LOAD DOCKS WHEN CSR LOGS IN
+  ================================================= */
   useEffect(() => {
     if (role !== "csr") return;
 
-    // Initial load
     const loadDocks = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("docks")
-        .select("dock_number, status");
+        .select("dock_number, status, claimed_by");
 
-      if (data) {
+      if (!error && data) {
         const mapped = {};
         data.forEach((d) => {
-          mapped[d.dock_number] = d.status;
+          mapped[d.dock_number] = {
+            status: d.status,
+            claimed_by: d.claimed_by,
+          };
         });
         setDockStatus(mapped);
       }
     };
 
     loadDocks();
+  }, [role]);
 
-    // Realtime subscription
+  /* =================================================
+     REALTIME SUBSCRIPTION (DOCKS)
+  ================================================= */
+  useEffect(() => {
+    if (role !== "csr") return;
+
     const channel = supabase
-      .channel("docks-realtime")
+      .channel("realtime-docks")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "docks" },
         (payload) => {
-          const dock = payload.new.dock_number;
-          const status = payload.new.status;
-
           setDockStatus((prev) => ({
             ...prev,
-            [dock]: status,
+            [payload.new.dock_number]: {
+              status: payload.new.status,
+              claimed_by: payload.new.claimed_by,
+            },
           }));
         }
       )
@@ -112,7 +126,9 @@ export default function App() {
     };
   }, [role]);
 
-  /* -------------------- ACTIONS -------------------- */
+  /* =================================================
+     AUTH ACTIONS
+  ================================================= */
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -131,6 +147,9 @@ export default function App() {
     setRole(null);
   };
 
+  /* =================================================
+     ADMIN: CREATE CSR
+  ================================================= */
   const handleCreateCSR = async (e) => {
     e.preventDefault();
     setCreateMsg("");
@@ -166,31 +185,60 @@ export default function App() {
     }
   };
 
+  /* =================================================
+     CSR: CYCLE DOCK STATUS (WITH LOCKING)
+  ================================================= */
   const cycleStatus = async (dock) => {
+    if (!session) return;
+
     const order = ["available", "assigned", "loading"];
-    const current = dockStatus[dock] || "available";
+    const current = dockStatus[dock]?.status || "available";
     const next = order[(order.indexOf(current) + 1) % order.length];
 
-    // Optimistic UI
-    setDockStatus((prev) => ({ ...prev, [dock]: next }));
+    // 🚫 Block if owned by another CSR
+    if (
+      dockStatus[dock]?.claimed_by &&
+      dockStatus[dock].claimed_by !== session.user.id
+    ) {
+      alert("🚫 Dock is currently claimed by another CSR");
+      return;
+    }
 
-    // Persist
-    await supabase.from("docks").upsert({
-      dock_number: dock,
-      status: next,
-    });
+    const claimed_by = next === "available" ? null : session.user.id;
+    const claimed_at = next === "available" ? null : new Date().toISOString();
+
+    // Optimistic UI
+    setDockStatus((prev) => ({
+      ...prev,
+      [dock]: { status: next, claimed_by },
+    }));
+
+    const { error } = await supabase
+      .from("docks")
+      .update({ status: next, claimed_by, claimed_at })
+      .eq("dock_number", dock);
+
+    if (error) {
+      console.error(error);
+      alert("❌ Unable to update dock");
+    }
   };
 
+  /* =================================================
+     HELPERS
+  ================================================= */
   const colorFor = (status) => {
     if (status === "available") return "#22c55e";
     if (status === "assigned") return "#eab308";
     return "#ef4444";
   };
 
-  /* -------------------- UI -------------------- */
+  /* =================================================
+     RENDER
+  ================================================= */
   if (loading) return <p style={{ padding: 40 }}>Loading...</p>;
 
-  // LOGIN
+  /* ---------- LOGIN ---------- */
   if (!session) {
     return (
       <div style={{ padding: 40, maxWidth: 400, margin: "0 auto" }}>
@@ -224,11 +272,11 @@ export default function App() {
     );
   }
 
-  // ADMIN
+  /* ---------- ADMIN ---------- */
   if (role === "admin") {
     return (
       <div style={{ padding: 40 }}>
-        <h1>Admin Dashboard</h1>
+        <h1>CSR Dashboard (Admin)</h1>
         <button onClick={handleLogout}>Log out</button>
 
         <h2 style={{ marginTop: 20 }}>Create CSR User</h2>
@@ -256,7 +304,7 @@ export default function App() {
     );
   }
 
-  // CSR
+  /* ---------- CSR ---------- */
   if (role === "csr") {
     return (
       <div style={{ padding: 40 }}>
@@ -280,13 +328,15 @@ export default function App() {
                 borderRadius: 8,
                 textAlign: "center",
                 cursor: "pointer",
-                background: colorFor(dockStatus[dock]),
+                background: colorFor(dockStatus[dock]?.status),
                 color: "white",
                 fontWeight: "bold",
               }}
             >
               Dock {dock}
-              <div style={{ fontSize: 12 }}>{dockStatus[dock]}</div>
+              <div style={{ fontSize: 12 }}>
+                {dockStatus[dock]?.status || "available"}
+              </div>
             </div>
           ))}
         </div>
