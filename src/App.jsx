@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 
-/* ---------- DOCK LIST ---------- */
 const docks = [
   ...Array.from({ length: 7 }, (_, i) => i + 1),
   ...Array.from({ length: 21 }, (_, i) => i + 15),
@@ -13,19 +12,17 @@ export default function App() {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  /* ---------- LOGIN ---------- */
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [waitingDrivers, setWaitingDrivers] = useState([]);
+  const [appointmentTimes, setAppointmentTimes] = useState({});
+  const [driverData, setDriverData] = useState([]);
   const [error, setError] = useState("");
 
-  /* ---------- DOCKS ---------- */
-  const [dockStatus, setDockStatus] = useState({});
+  // Appointment time options
+  const appointmentOptions = [
+    "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", 
+    "13:00", "14:00", "15:00", "16:00", "17:00"
+  ];
 
-  /* ---------- CSR QUEUE ---------- */
-  const [queue, setQueue] = useState([]);
-
-  /* ---------- AUTH LOAD ---------- */
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.auth.getSession();
@@ -66,47 +63,23 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  /* ---------- LOAD DOCKS (CSR) ---------- */
   useEffect(() => {
-    if (role !== "csr" && role !== "admin") return;
+    if (role === "csr") {
+      const loadDrivers = async () => {
+        const { data, error } = await supabase
+          .from("driver_checkins")
+          .select("*")
+          .eq("status", "waiting");
 
-    const loadDocks = async () => {
-      const { data } = await supabase
-        .from("docks")
-        .select("dock_number, status");
+        if (!error && data) {
+          setWaitingDrivers(data);
+        }
+      };
 
-      const mapped = {};
-      data?.forEach((d) => {
-        mapped[d.dock_number] = d.status;
-      });
-
-      setDockStatus(mapped);
-    };
-
-    loadDocks();
+      loadDrivers();
+    }
   }, [role]);
 
-  /* ---------- LOAD CSR QUEUE ---------- */
-  useEffect(() => {
-    if (role !== "csr" && role !== "admin") return;
-
-    const loadQueue = async () => {
-      const { data } = await supabase
-        .from("driver_checkins")
-        .select("*")
-        .eq("status", "waiting")
-        .order("created_at", { ascending: true });
-
-      setQueue(data || []);
-    };
-
-    loadQueue();
-
-    const interval = setInterval(loadQueue, 5000); // refresh every 5s
-    return () => clearInterval(interval);
-  }, [role]);
-
-  /* ---------- AUTH ---------- */
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -125,22 +98,57 @@ export default function App() {
     setRole(null);
   };
 
-  /* ---------- UI ---------- */
-  if (loading) return <p style={{ padding: 40 }}>Loading…</p>;
+  const assignDriver = async (driver, dock) => {
+    const appt = appointmentTimes[driver.id];
+    if (!appt) {
+      alert("Select appointment time first");
+      return;
+    }
 
-  /* ---------- LOGIN SCREEN ---------- */
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    // 1️⃣ Update driver_checkins status
+    await supabase
+      .from("driver_checkins")
+      .update({
+        status: "assigned",
+        assigned_dock: dock,
+        appointment_time: appt,
+      })
+      .eq("id", driver.id);
+
+    // 2️⃣ Insert history log (APPEND ONLY)
+    await supabase.from("dock_history").insert({
+      dock_number: dock,
+      pickup_number: driver.pickup_number,
+      csr_id: session.user.id,
+      appointment_time: appt,
+    });
+
+    // 3️⃣ Remove from waiting queue
+    setWaitingDrivers(waitingDrivers.filter((d) => d.id !== driver.id));
+  };
+
+  if (loading) return <p style={{ padding: 40 }}>Loading...</p>;
+
   if (!session) {
     return (
       <div style={{ padding: 40, maxWidth: 400, margin: "0 auto" }}>
         <h1>307 Check-In</h1>
+        <h2>Login</h2>
+
         <form onSubmit={handleLogin}>
           <input
+            type="email"
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
             style={{ width: "100%", padding: 8, marginBottom: 10 }}
           />
+
           <input
             type="password"
             placeholder="Password"
@@ -149,45 +157,106 @@ export default function App() {
             required
             style={{ width: "100%", padding: 8, marginBottom: 10 }}
           />
+
           {error && <p style={{ color: "red" }}>{error}</p>}
+
           <button style={{ width: "100%", padding: 10 }}>Login</button>
         </form>
       </div>
     );
   }
 
-  /* ---------- CSR / ADMIN DASHBOARD ---------- */
-  if (role === "csr" || role === "admin") {
+  if (role === "admin") {
     return (
-      <div style={{ padding: 30 }}>
+      <div style={{ padding: 40 }}>
+        <h1>Admin Dashboard</h1>
+        <button onClick={handleLogout}>Log out</button>
+
+        <h2 style={{ marginTop: 20 }}>Create CSR User</h2>
+
+        <form onSubmit={handleCreateCSR}>
+          <input
+            placeholder="Email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            required
+            style={{ padding: 8, marginBottom: 10 }}
+          />
+          <input
+            placeholder="Temp Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+            style={{ padding: 8, marginBottom: 10 }}
+          />
+          <button>Create CSR</button>
+        </form>
+
+        {createMsg && <p>{createMsg}</p>}
+      </div>
+    );
+  }
+
+  if (role === "csr") {
+    return (
+      <div style={{ padding: 40 }}>
         <h1>CSR Dashboard</h1>
         <button onClick={handleLogout}>Log out</button>
 
-        {/* QUEUE */}
-        <h2 style={{ marginTop: 30 }}>Waiting Drivers</h2>
-
-        {queue.length === 0 && <p>No drivers waiting</p>}
-
-        <div style={{ display: "grid", gap: 12 }}>
-          {queue.map((d) => (
-            <div
-              key={d.id}
-              style={{
-                padding: 12,
-                border: "1px solid #ddd",
-                borderRadius: 8,
-              }}
-            >
-              <strong>Pickup:</strong> {d.pickup_number} <br />
-              <strong>Carrier:</strong> {d.carrier_name} <br />
-              <strong>Trailer:</strong> {d.trailer_number} ({d.trailer_length}'){" "}
-              <br />
-              <strong>Delivery:</strong> {d.delivery_city},{" "}
-              {d.delivery_state} <br />
-              <strong>Driver:</strong> {d.driver_name} — {d.driver_phone}
-            </div>
-          ))}
-        </div>
+        <h2 style={{ marginTop: 20 }}>Driver Check-Ins</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Pickup Number</th>
+              <th>Carrier Name</th>
+              <th>Trailer Number</th>
+              <th>Trailer Length</th>
+              <th>City/State</th>
+              <th>Driver Name</th>
+              <th>Driver Phone</th>
+              <th>Appt Time</th>
+              <th>Assign Dock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {waitingDrivers.map((driver) => (
+              <tr key={driver.id}>
+                <td>{driver.pickup_number}</td>
+                <td>{driver.carrier_name}</td>
+                <td>{driver.trailer_number}</td>
+                <td>{driver.trailer_length}</td>
+                <td>{driver.city}, {driver.state}</td>
+                <td>{driver.driver_name}</td>
+                <td>{driver.driver_phone}</td>
+                <td>
+                  <select
+                    value={appointmentTimes[driver.id] || ""}
+                    onChange={(e) =>
+                      setAppointmentTimes({
+                        ...appointmentTimes,
+                        [driver.id]: e.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Time</option>
+                    {appointmentOptions.map((time) => (
+                      <option key={time} value={time}>
+                        {time}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <button
+                    onClick={() => assignDriver(driver, docks[0])} // Example dock, replace with proper dock
+                  >
+                    Assign Dock
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   }
