@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 
-// Build dock list
+/* ---------------- DOCK LIST ---------------- */
 const docks = [
   ...Array.from({ length: 7 }, (_, i) => i + 1),
   ...Array.from({ length: 21 }, (_, i) => i + 15),
@@ -10,20 +10,21 @@ const docks = [
 ];
 
 export default function App() {
+  /* ---------------- AUTH ---------------- */
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // login
+  /* ---------------- LOGIN ---------------- */
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  // docks
+  /* ---------------- CSR DATA ---------------- */
   const [dockStatus, setDockStatus] = useState({});
-  const [claimedBy, setClaimedBy] = useState({});
+  const [queue, setQueue] = useState([]);
 
-  // INITIAL LOAD
+  /* ---------------- INIT AUTH ---------------- */
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getSession();
@@ -38,7 +39,6 @@ export default function App() {
 
         setRole(profile?.role ?? null);
       }
-
       setLoading(false);
     };
 
@@ -64,31 +64,63 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // LOAD DOCKS FOR CSR
+  /* ---------------- LOAD DOCKS (REALTIME) ---------------- */
   useEffect(() => {
     if (role !== "csr") return;
 
     const loadDocks = async () => {
       const { data } = await supabase
         .from("docks")
-        .select("dock_number, status, claimed_by");
+        .select("dock_number, status");
 
-      const statusMap = {};
-      const claimMap = {};
-
-      data?.forEach((d) => {
-        statusMap[d.dock_number] = d.status;
-        claimMap[d.dock_number] = d.claimed_by;
-      });
-
-      setDockStatus(statusMap);
-      setClaimedBy(claimMap);
+      const mapped = {};
+      data?.forEach((d) => (mapped[d.dock_number] = d.status));
+      setDockStatus(mapped);
     };
 
     loadDocks();
+
+    const channel = supabase
+      .channel("dock-updates")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "docks" },
+        loadDocks
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, [role]);
 
-  // LOGIN
+  /* ---------------- LOAD DRIVER QUEUE (REALTIME) ---------------- */
+  useEffect(() => {
+    if (role !== "csr") return;
+
+    const loadQueue = async () => {
+      const { data } = await supabase
+        .from("driver_checkins")
+        .select("*")
+        .eq("status", "waiting")
+        .order("created_at", { ascending: true });
+
+      setQueue(data || []);
+    };
+
+    loadQueue();
+
+    const channel = supabase
+      .channel("driver-queue")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "driver_checkins" },
+        loadQueue
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [role]);
+
+  /* ---------------- LOGIN ---------------- */
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -107,54 +139,18 @@ export default function App() {
     setRole(null);
   };
 
-  // CYCLE DOCK STATUS + HISTORY
+  /* ---------------- DOCK STATUS ---------------- */
   const cycleStatus = async (dock) => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) return;
-
-    // lock enforcement
-    if (claimedBy[dock] && claimedBy[dock] !== session.user.id) {
-      alert("Dock already claimed by another CSR");
-      return;
-    }
-
     const order = ["available", "assigned", "loading"];
     const current = dockStatus[dock] || "available";
     const next = order[(order.indexOf(current) + 1) % order.length];
 
-    // optimistic UI
     setDockStatus((prev) => ({ ...prev, [dock]: next }));
-    setClaimedBy((prev) => ({ ...prev, [dock]: session.user.id }));
 
-    // update docks table
-    const { error: dockError } = await supabase
-      .from("docks")
-      .upsert({
-        dock_number: dock,
-        status: next,
-        claimed_by: session.user.id,
-      });
-
-    if (dockError) {
-      console.error(dockError);
-      return;
-    }
-
-    // insert history
-    const { error: historyError } = await supabase
-      .from("dock_history")
-      .insert({
-        dock_number: dock,
-        status: next,
-        csr_id: session.user.id,
-      });
-
-    if (historyError) {
-      console.error(historyError);
-    }
+    await supabase.from("docks").upsert({
+      dock_number: dock,
+      status: next,
+    });
   };
 
   const colorFor = (status) => {
@@ -163,15 +159,15 @@ export default function App() {
     return "#ef4444";
   };
 
-  // LOADING
+  /* ---------------- UI ---------------- */
   if (loading) return <p style={{ padding: 40 }}>Loading…</p>;
 
-  // LOGIN SCREEN
+  /* ---------------- LOGIN PAGE ---------------- */
   if (!session) {
     return (
       <div style={{ padding: 40, maxWidth: 400, margin: "0 auto" }}>
         <h1>307 Check-In</h1>
-        <h2>Login</h2>
+        <h2>CSR Login</h2>
 
         <form onSubmit={handleLogin}>
           <input
@@ -193,37 +189,52 @@ export default function App() {
           />
 
           {error && <p style={{ color: "red" }}>{error}</p>}
-
           <button style={{ width: "100%", padding: 10 }}>Login</button>
         </form>
       </div>
     );
   }
 
-  // ADMIN
-  if (role === "admin") {
-    return (
-      <div style={{ padding: 40 }}>
-        <h1>Admin Dashboard</h1>
-        <button onClick={handleLogout}>Log out</button>
-        <p>Admins view reports & history in Supabase</p>
-      </div>
-    );
-  }
-
-  // CSR DASHBOARD
+  /* ---------------- CSR DASHBOARD ---------------- */
   if (role === "csr") {
     return (
       <div style={{ padding: 40 }}>
-        <h1>CSR Dock Dashboard</h1>
+        <h1>CSR Dashboard</h1>
         <button onClick={handleLogout}>Log out</button>
 
+        {/* DRIVER QUEUE */}
+        <h2 style={{ marginTop: 20 }}>Waiting Drivers</h2>
+        {queue.length === 0 && <p>No drivers waiting</p>}
+
+        {queue.map((d) => (
+          <div
+            key={d.id}
+            style={{
+              border: "1px solid #ddd",
+              borderRadius: 8,
+              padding: 12,
+              marginBottom: 10,
+            }}
+          >
+            <strong>{d.driver_name}</strong> — {d.phone}
+            <div>
+              {d.customer} | Pickup #{d.pickup_number}
+            </div>
+            <div>
+              Trailer {d.trailer_length} → {d.delivery_city},{" "}
+              {d.delivery_state}
+            </div>
+          </div>
+        ))}
+
+        {/* DOCK BOARD */}
+        <h2 style={{ marginTop: 30 }}>Dock Board</h2>
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))",
             gap: 12,
-            marginTop: 20,
+            marginTop: 10,
           }}
         >
           {docks.map((dock) => (
@@ -241,9 +252,7 @@ export default function App() {
               }}
             >
               Dock {dock}
-              <div style={{ fontSize: 12 }}>
-                {dockStatus[dock] || "available"}
-              </div>
+              <div style={{ fontSize: 12 }}>{dockStatus[dock] || "available"}</div>
             </div>
           ))}
         </div>
@@ -251,5 +260,5 @@ export default function App() {
     );
   }
 
-  return <p>Checking permissions…</p>;
+  return <p>Access denied</p>;
 }
