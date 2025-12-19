@@ -1,34 +1,33 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 
-/* ---------------- DOCK LIST ---------------- */
+// Build dock list
 const docks = [
-  ...Array.from({ length: 7 }, (_, i) => i + 1),   // 1–7
-  ...Array.from({ length: 21 }, (_, i) => i + 15), // 15–35
-  ...Array.from({ length: 11 }, (_, i) => i + 49), // 49–59
-  ...Array.from({ length: 7 }, (_, i) => i + 64),  // 64–70
+  ...Array.from({ length: 7 }, (_, i) => i + 1),
+  ...Array.from({ length: 21 }, (_, i) => i + 15),
+  ...Array.from({ length: 11 }, (_, i) => i + 49),
+  ...Array.from({ length: 7 }, (_, i) => i + 64),
 ];
 
 export default function App() {
-  /* ---------------- STATE ---------------- */
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Login
+  // login
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  // Dock status
+  // dock status (CSR)
   const [dockStatus, setDockStatus] = useState({});
 
-  // Admin create CSR
+  // admin create csr
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [createMsg, setCreateMsg] = useState("");
 
-  /* ---------------- LOAD SESSION ---------------- */
+  // INITIAL LOAD + AUTH STATE
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.auth.getSession();
@@ -42,19 +41,6 @@ export default function App() {
           .single();
 
         setRole(profile?.role ?? null);
-
-        if (profile?.role === "csr") {
-          const { data: docksData } = await supabase
-            .from("docks")
-            .select("dock_number, status");
-
-          const mapped = {};
-          docksData?.forEach((d) => {
-            mapped[d.dock_number] = d.status;
-          });
-
-          setDockStatus(mapped);
-        }
       }
 
       setLoading(false);
@@ -82,7 +68,27 @@ export default function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  /* ---------------- AUTH ---------------- */
+  // 🔴 IMPORTANT FIX: LOAD DOCKS WHEN CSR ROLE IS SET
+  useEffect(() => {
+    if (role !== "csr") return;
+
+    const loadDocks = async () => {
+      const { data, error } = await supabase
+        .from("docks")
+        .select("dock_number, status");
+
+      if (!error && data) {
+        const mapped = {};
+        data.forEach((d) => {
+          mapped[d.dock_number] = d.status;
+        });
+        setDockStatus(mapped);
+      }
+    };
+
+    loadDocks();
+  }, [role]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -101,7 +107,6 @@ export default function App() {
     setRole(null);
   };
 
-  /* ---------------- ADMIN: CREATE CSR ---------------- */
   const handleCreateCSR = async (e) => {
     e.preventDefault();
     setCreateMsg("");
@@ -137,14 +142,13 @@ export default function App() {
     }
   };
 
-  /* ---------------- DOCK STATUS ---------------- */
   const cycleStatus = async (dock) => {
     const order = ["available", "assigned", "loading"];
     const current = dockStatus[dock] || "available";
     const next = order[(order.indexOf(current) + 1) % order.length];
 
     // update UI immediately
-    setDockStatus((prev) => ({ ...prev, [dock]: next }));
+    setDockStatus({ ...dockStatus, [dock]: next });
 
     // persist to Supabase
     await supabase.from("docks").upsert({
@@ -159,8 +163,7 @@ export default function App() {
     return "#ef4444";
   };
 
-  /* ---------------- UI ---------------- */
-  if (loading) return <p style={{ padding: 40 }}>Loading…</p>;
+  if (loading) return <p style={{ padding: 40 }}>Loading...</p>;
 
   // LOGIN
   if (!session) {
@@ -196,7 +199,7 @@ export default function App() {
     );
   }
 
-  // ADMIN DASHBOARD
+  // ADMIN
   if (role === "admin") {
     return (
       <div style={{ padding: 40 }}>
@@ -264,7 +267,7 @@ export default function App() {
         </div>
 
         <p style={{ marginTop: 20 }}>
-          Click a dock to cycle: Available → Assigned → Loading
+          Click a dock to cycle status: Available → Assigned → Loading
         </p>
       </div>
     );
