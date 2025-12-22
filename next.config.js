@@ -1,17 +1,4 @@
-/* src/app/globals.css */
+/** @type {import('next').NextConfig} */
+const nextConfig = {}
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
+module.exports = nextConfig
