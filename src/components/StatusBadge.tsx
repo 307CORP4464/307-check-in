@@ -1,5 +1,3 @@
-// src/components/StatusBadge.tsx
-
 import { CheckInStatus } from '@/types';
 
 interface StatusBadgeProps {
