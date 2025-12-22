@@ -1,50 +1,38 @@
 import { useEffect, useState } from "react";
-import { Outlet, Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 
 export default function App() {
-  const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
-  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
-      const { data } = await supabase.auth.getSession();
+    supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-
-      if (data.session) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", data.session.user.id)
-          .single();
-
-        setRole(profile?.role || null);
-      }
-
       setLoading(false);
-    };
-
-    init();
-
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) setRole(null);
     });
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+      }
+    );
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
-  if (loading) return <p style={{ padding: 40 }}>Loading…</p>;
+  if (loading) {
+    return (
+      <div style={{ padding: 40 }}>
+        <h2>Loading app...</h2>
+      </div>
+    );
+  }
 
-  // Not logged in → redirect to login page (root)
   if (!session) {
     return <Navigate to="/login" replace />;
   }
 
-  // Logged in but no role
-  if (!role) {
-    return <p style={{ padding: 40 }}>Access denied</p>;
-  }
-
-  // Auth OK → render nested routes
+  // 🔑 THIS IS WHAT WAS MISSING
   return <Outlet />;
 }
