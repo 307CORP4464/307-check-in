@@ -24,6 +24,11 @@ export default function DriverCheckInForm() {
     setErrorMessage('');
 
     try {
+      // Check if Supabase is configured
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        throw new Error('System not configured. Please contact support.');
+      }
+
       const response = await fetch('/api/check-in', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,7 +44,6 @@ export default function DriverCheckInForm() {
       setSubmitStatus('success');
       reset();
       
-      // Reset success message after 5 seconds
       setTimeout(() => setSubmitStatus('idle'), 5000);
     } catch (error) {
       setSubmitStatus('error');
@@ -129,7 +133,7 @@ export default function DriverCheckInForm() {
               )}
             </div>
 
-            {/* Destination City & State */}
+            {/* Destination */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
