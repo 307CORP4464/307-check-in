@@ -1,5 +1,3 @@
-// src/lib/validations.ts
-
 import { z } from 'zod';
 
 // Pickup number format: Must be alphanumeric, 6-20 characters
