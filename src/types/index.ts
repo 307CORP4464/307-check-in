@@ -32,11 +32,3 @@ export interface CheckInFormData {
   driver_name: string;
   driver_phone: string;
 }
-
-export interface ScheduledAppointment {
-  id: string;
-  pickup_number: string;
-  scheduled_time: string;
-  carrier_name?: string;
-  notes?: string;
-}
