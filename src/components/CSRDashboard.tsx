@@ -1,49 +1,61 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { CheckIn, CheckInStatus } from '@/types';
 import { format } from 'date-fns';
-import { RefreshCw, Clock, Truck, Package } from 'lucide-react';
+import { RefreshCw, Clock, Truck, Package, CheckCircle } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 
 export default function CSRDashboard() {
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
   const [dockNumber, setDockNumber] = useState('');
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    useEffect(() => {
+    // Check if Supabase is configured
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
       setError('Supabase not configured');
       setLoading(false);
       return;
     }
-    fetchCheckIns();
-  }, []);
     
+    fetchCheckIns();
     
     // Subscribe to real-time updates
-    const subscription = supabase
-      .channel('check_ins_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'check_ins' },
-        () => {
-          fetchCheckIns();
-        }
-      )
-      .subscribe();
+    const setupSubscription = async () => {
+      try {
+        const { getSupabase } = await import('@/lib/supabase');
+        const supabase = getSupabase();
+        
+        const subscription = supabase
+          .channel('check_ins_changes')
+          .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'check_ins' },
+            () => {
+              fetchCheckIns();
+            }
+          )
+          .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (err) {
+        console.error('Subscription error:', err);
+      }
     };
+
+    setupSubscription();
   }, []);
 
   const fetchCheckIns = async () => {
     try {
+      const { getSupabase } = await import('@/lib/supabase');
+      const supabase = getSupabase();
+      
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -57,6 +69,7 @@ export default function CSRDashboard() {
       setCheckIns(data || []);
     } catch (error) {
       console.error('Error fetching check-ins:', error);
+      setError('Failed to load check-ins');
     } finally {
       setLoading(false);
     }
@@ -64,6 +77,9 @@ export default function CSRDashboard() {
 
   const updateStatus = async (id: string, status: CheckInStatus) => {
     try {
+      const { getSupabase } = await import('@/lib/supabase');
+      const supabase = getSupabase();
+      
       const { error } = await supabase
         .from('check_ins')
         .update({ status })
@@ -81,6 +97,9 @@ export default function CSRDashboard() {
     if (!selectedCheckIn || !dockNumber) return;
 
     try {
+      const { getSupabase } = await import('@/lib/supabase');
+      const supabase = getSupabase();
+      
       const { error } = await supabase
         .from('check_ins')
         .update({ 
@@ -108,6 +127,17 @@ export default function CSRDashboard() {
     loading: checkIns.filter(c => c.status === 'loading').length,
     completed: checkIns.filter(c => c.status === 'completed').length,
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-2">Configuration Error</h2>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
