@@ -15,19 +15,28 @@ export default function CSRDashboard() {
   const [appointmentTime, setAppointmentTime] = useState('');
   const [notes, setNotes] = useState('');
 
-  // Generate appointment time options (6 AM to 6 PM in 30-minute intervals)
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 8; hour <= 1530; hour++) {
-      for (let minute of [0, 30]) {
-        if (hour === 15 && minute === 30) break; // Stop at 15:30 PM
+ // Generate appointment time options (8 AM to 3:30 PM in 30-minute intervals)
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let hour = 8; hour <= 15; hour++) {
+    for (let minute of [0, 30]) {
+      // Stop after 3:30 PM (15:30)
+      if (hour === 15 && minute === 30) {
         const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         const display = format(new Date(`2000-01-01T${time}`), 'h:mm a');
         slots.push({ value: time, display });
+        break;
       }
+      if (hour > 15) break;
+      
+      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      const display = format(new Date(`2000-01-01T${time}`), 'h:mm a');
+      slots.push({ value: time, display });
     }
-    return slots;
-  };
+  }
+  return slots;
+};
+
 
   const timeSlots = generateTimeSlots();
 
