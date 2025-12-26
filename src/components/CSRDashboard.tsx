@@ -16,7 +16,7 @@ interface CheckIn {
   carrier_name?: string;
   trailer_number?: string;
   purpose?: string;
-  pu_number?: string;
+  pickup_number?: string;
   dock_number?: string;
   appointment_time?: string | null;
   start_time?: string | null;
