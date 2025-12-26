@@ -60,7 +60,7 @@ export default function CSRDashboard() {
     return;
   }
   
-  fetchCheckIns();
+  [fetchCheckIns]();
   
   let subscription: any;
 
