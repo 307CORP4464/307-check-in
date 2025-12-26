@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
@@ -16,13 +18,12 @@ interface CheckIn {
   carrier_name?: string;
   trailer_number?: string;
   purpose?: string;
-  pickup_number?: string;
+  pu_number?: string;
   dock_number?: string;
   appointment_time?: string | null;
   start_time?: string | null;
   end_time?: string | null;
 }
-
 
 export default function CSRDashboard() {
   const router = useRouter();
@@ -35,8 +36,6 @@ export default function CSRDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
-  const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
-  const [isCheckOutModalOpen, setIsCheckOutModalOpen] = useState(false);
   const [selectedForDock, setSelectedForDock] = useState<CheckIn | null>(null);
   const [isDockModalOpen, setIsDockModalOpen] = useState(false);
 
@@ -75,6 +74,7 @@ export default function CSRDashboard() {
       const { data, error } = await supabase
         .from('check_ins')
         .select('*')
+        .eq('status', 'pending')
         .order('check_in_time', { ascending: false });
 
       if (error) throw error;
@@ -96,34 +96,6 @@ export default function CSRDashboard() {
     }
   };
 
-  const handleCheckOut = async (checkIn: CheckIn) => {
-    setSelectedCheckIn(checkIn);
-    setIsCheckOutModalOpen(true);
-  };
-
-  const confirmCheckOut = async () => {
-    if (!selectedCheckIn) return;
-
-    try {
-      const { error } = await supabase
-        .from('check_ins')
-        .update({
-          check_out_time: new Date().toISOString(),
-          status: 'checked_out'
-        })
-        .eq('id', selectedCheckIn.id);
-
-      if (error) throw error;
-
-      setIsCheckOutModalOpen(false);
-      setSelectedCheckIn(null);
-      fetchCheckIns();
-    } catch (err) {
-      console.error('Error checking out:', err);
-      alert('Failed to check out');
-    }
-  };
-
   const handleAssignDock = (checkIn: CheckIn) => {
     setSelectedForDock(checkIn);
     setIsDockModalOpen(true);
@@ -133,10 +105,10 @@ export default function CSRDashboard() {
     fetchCheckIns();
   };
 
-  const calculateDwellTime = (checkIn: CheckIn): string => {
+  const calculateWaitTime = (checkIn: CheckIn): string => {
     const start = parseISO(checkIn.check_in_time);
-    const end = checkIn.check_out_time ? parseISO(checkIn.check_out_time) : new Date();
-    const minutes = differenceInMinutes(end, start);
+    const now = new Date();
+    const minutes = differenceInMinutes(now, start);
     
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -147,28 +119,14 @@ export default function CSRDashboard() {
     return `${mins}m`;
   };
 
-  const getDwellTimeColor = (checkIn: CheckIn): string => {
+  const getWaitTimeColor = (checkIn: CheckIn): string => {
     const start = parseISO(checkIn.check_in_time);
-    const end = checkIn.check_out_time ? parseISO(checkIn.check_out_time) : new Date();
-    const minutes = differenceInMinutes(end, start);
+    const now = new Date();
+    const minutes = differenceInMinutes(now, start);
     
-    if (minutes < 30) return 'text-green-600';
-    if (minutes < 60) return 'text-yellow-600';
+    if (minutes < 15) return 'text-green-600';
+    if (minutes < 30) return 'text-yellow-600';
     return 'text-red-600';
-  };
-
-  const StatusBadge = ({ status }: { status: string }) => {
-    const colors = {
-      checked_in: 'bg-green-100 text-green-800',
-      checked_out: 'bg-gray-100 text-gray-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-    };
-
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800'}`}>
-        {status.replace('_', ' ').toUpperCase()}
-      </span>
-    );
   };
 
   if (loading) {
@@ -185,7 +143,7 @@ export default function CSRDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard</h1>
+              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard - Pending Check-ins</h1>
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
@@ -209,21 +167,15 @@ export default function CSRDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-600 text-sm font-medium">Total Check-ins</h3>
-            <p className="text-3xl font-bold mt-2">{checkIns.length}</p>
+            <h3 className="text-gray-600 text-sm font-medium">Pending Check-ins</h3>
+            <p className="text-3xl font-bold mt-2 text-orange-600">{checkIns.length}</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-600 text-sm font-medium">Currently Checked In</h3>
-            <p className="text-3xl font-bold mt-2 text-green-600">
-              {checkIns.filter(ci => ci.status === 'checked_in').length}
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-600 text-sm font-medium">Checked Out</h3>
-            <p className="text-3xl font-bold mt-2 text-gray-600">
-              {checkIns.filter(ci => ci.status === 'checked_out').length}
+            <h3 className="text-gray-600 text-sm font-medium">Awaiting Assignment</h3>
+            <p className="text-3xl font-bold mt-2 text-blue-600">
+              {checkIns.filter(ci => !ci.dock_number).length}
             </p>
           </div>
         </div>
@@ -236,123 +188,98 @@ export default function CSRDashboard() {
 
         <div className="bg-white rounded-lg shadow">
           <div className="p-4 border-b">
-            <h2 className="text-xl font-bold">Recent Check-ins</h2>
+            <h2 className="text-xl font-bold">Pending Assignments</h2>
           </div>
           
           {checkIns.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              No check-ins found
+              <div className="text-6xl mb-4">✓</div>
+              <p className="text-xl">No pending check-ins</p>
+              <p className="text-sm mt-2">All check-ins have been processed</p>
             </div>
           ) : (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-              {checkIns.map((ci) => {
-                const dwell = calculateDwellTime(ci);
-                const dwellColor = getDwellTimeColor(ci);
-                return (
-                  <div key={ci.id} className="bg-white border rounded-lg p-4 shadow-sm flex flex-col">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-lg font-semibold">Check-in #{ci.id.slice(0, 8)}</div>
-                        <div className="text-sm text-gray-600">
-                          Check-in: {format(parseISO(ci.check_in_time), 'yyyy-MM-dd HH:mm')}
-                        </div>
-                        {ci.check_out_time && (
-                          <div className="text-sm text-gray-600">
-                            Check-out: {format(parseISO(ci.check_out_time), 'yyyy-MM-dd HH:mm')}
-                          </div>
-                        )}
-                      </div>
-                      <StatusBadge status={ci.status} />
-                    </div>
-
-                    {ci.driver_name && (
-                      <div className="mt-3 text-sm">
-                        <span className="font-medium">Driver:</span> {ci.driver_name}
-                      </div>
-                    )}
-                    {ci.company && (
-                      <div className="text-sm">
-                        <span className="font-medium">Company:</span> {ci.company}
-                      </div>
-                    )}
-                    {ci.purpose && (
-                      <div className="text-sm">
-                        <span className="font-medium">Purpose:</span> {ci.purpose}
-                      </div>
-                    )}
-
-                    {ci.dock_number && (
-                      <div className="mt-3 pt-3 border-t">
-                        <div className="text-sm">
-                          <span className="font-medium">Dock:</span> {ci.dock_number}
-                        </div>
-                        {ci.appointment_time && (
-                          <div className="text-sm">
-                            <span className="font-medium">Appointment:</span>{' '}
-                            {format(parseISO(ci.appointment_time), 'MMM dd, HH:mm')}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="mt-3 pt-3 border-t">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Dwell Time:</span>
-                        <span className={`text-sm font-bold ${dwellColor}`}>{dwell}</span>
-                      </div>
-                    </div>
-
-                    {ci.status === 'checked_in' && (
-                      <div className="mt-4 space-y-2">
-                        <button
-                          onClick={() => handleAssignDock(ci)}
-                          className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors"
-                        >
-                          {ci.dock_number ? 'Update Dock' : 'Assign Dock'}
-                        </button>
-                        <button
-                          onClick={() => handleCheckOut(ci)}
-                          className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                          Check Out
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Check-in Time
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      PU#
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Driver Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Driver Phone
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Carrier
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Trailer #
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Wait Time
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Dock
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {checkIns.map((ci) => {
+                    const waitTime = calculateWaitTime(ci);
+                    const waitTimeColor = getWaitTimeColor(ci);
+                    return (
+                      <tr key={ci.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {format(parseISO(ci.check_in_time), 'HH:mm')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                          {ci.pu_number || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ci.driver_name || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ci.driver_phone || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ci.carrier_name || ci.company || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ci.trailer_number || '-'}
+                        </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${waitTimeColor}`}>
+                          {waitTime}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ci.dock_number || (
+                            <span className="text-orange-600 font-medium">Not Assigned</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <button
+                            onClick={() => handleAssignDock(ci)}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                          >
+                            {ci.dock_number ? 'Update' : 'Assign'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
       </div>
-
-      {isCheckOutModalOpen && selectedCheckIn && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">Confirm Check Out</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to check out Check-in #{selectedCheckIn.id.slice(0, 8)}?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={confirmCheckOut}
-                className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => {
-                  setIsCheckOutModalOpen(false);
-                  setSelectedCheckIn(null);
-                }}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {isDockModalOpen && selectedForDock && (
         <AssignDockModal
