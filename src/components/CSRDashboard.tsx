@@ -114,10 +114,7 @@ export default function CSRDashboard() {
         subscription.unsubscribe();
       }
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // DELETE LINES 119-163 - These are duplicates!
-  // Keep only the functions below:
+  }, []); 
 
   const updateStatus = async (id: string, status: CheckInStatus) => {
     try {
@@ -176,9 +173,6 @@ export default function CSRDashboard() {
     }
   };
 
-  // ... rest of your code continues
-
-  
   const handleLogout = () => {
     sessionStorage.removeItem('csr_auth');
     router.push('/dashboard/login');
