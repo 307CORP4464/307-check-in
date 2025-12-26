@@ -58,7 +58,7 @@ export default function DriverCheckInForm() {
             driver_phone: formData.driverPhone,
             carrier_name: formData.carrierName,
             trailer_number: formData.trailerNumber,
-            pickup_number: formData.puNumber,
+            pickup_number: formData.pickupNumber,
             company: formData.company,
             purpose: formData.purpose,
             check_in_time: new Date().toISOString(),
