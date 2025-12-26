@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
+import AssignDockModal from '.AssignDockModal';
 
 interface CheckIn {
   id: string;
