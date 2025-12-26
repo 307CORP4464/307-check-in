@@ -5,6 +5,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import AssignDockModal from './AssignDockModal';
+import Link from 'next/link';
 
 interface CheckIn {
   id: string;
@@ -188,6 +189,13 @@ export default function CSRDashboard() {
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
             </div>
+            <div className="flex gap-3">
+  <Link
+    href="/logs"
+    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+  >
+    View Logs
+  </Link>
             <button
               onClick={handleLogout}
               className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
