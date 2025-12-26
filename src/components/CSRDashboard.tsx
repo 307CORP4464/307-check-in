@@ -53,40 +53,44 @@ export default function CSRDashboard() {
 
   const timeSlots = generateTimeSlots();
 
-  useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      setError('Supabase not configured');
-      setLoading(false);
-      return;
+ useEffect(() => {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    setError('Supabase not configured');
+    setLoading(false);
+    return;
+  }
+  
+  fetchCheckIns();
+  
+  let subscription: any;
+
+  const setupSubscription = async () => {
+    try {
+      const { getSupabase } = await import('@/lib/supabase');
+      const supabase = getSupabase();
+      
+      subscription = supabase
+        .channel('check_ins_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'check_ins' },
+          () => {
+            fetchCheckIns();
+          }
+        )
+        .subscribe();
+    } catch (err) {
+      console.error('Subscription error:', err);
     }
-    
-    fetchCheckIns();
-    
-    const setupSubscription = async () => {
-      try {
-        const { getSupabase } = await import('@/lib/supabase');
-        const supabase = getSupabase();
-        
-        const subscription = supabase
-          .channel('check_ins_changes')
-          .on('postgres_changes', 
-            { event: '*', schema: 'public', table: 'check_ins' },
-            () => {
-              fetchCheckIns();
-            }
-          )
-          .subscribe();
+  };
 
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (err) {
-        console.error('Subscription error:', err);
-      }
-    };
+  setupSubscription();
 
-    setupSubscription();
-  }, []);
+  return () => {
+    if (subscription) {
+      subscription.unsubscribe();
+    }
+  };
+}, []);
 
   const fetchCheckIns = async () => {
     try {
