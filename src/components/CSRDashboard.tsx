@@ -1,11 +1,9 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
-import AssignDockModal from './AssignDockModal';
 import Link from 'next/link';
+import AssignDockModal from './AssignDockModal';
 
 interface CheckIn {
   id: string;
@@ -35,7 +33,6 @@ export default function CSRDashboard() {
   const [selectedForDock, setSelectedForDock] = useState<CheckIn | null>(null);
   const [isDockModalOpen, setIsDockModalOpen] = useState(false);
 
-  // Fetch user info
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -46,11 +43,9 @@ export default function CSRDashboard() {
     getUser();
   }, [supabase]);
 
-  // Fetch check-ins
   useEffect(() => {
     fetchCheckIns();
     
-    // Set up real-time subscription
     const channel = supabase
       .channel('check_ins_changes')
       .on(
@@ -128,7 +123,7 @@ export default function CSRDashboard() {
   };
 
   const handleDockAssignSuccess = () => {
-    fetchCheckIns(); // Refresh the list
+    fetchCheckIns();
   };
 
   const calculateDwellTime = (checkIn: CheckIn): string => {
@@ -179,7 +174,6 @@ export default function CSRDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header with Logout */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -190,25 +184,24 @@ export default function CSRDashboard() {
               )}
             </div>
             <div className="flex gap-3">
-  <Link
-    href="/logs"
-    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium"
-  >
-    View Logs
-  </Link>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
-            >
-              Logout
-            </button>
+              <Link
+                href="/logs"
+                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium"
+              >
+                View Logs
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4">
-        {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-gray-600 text-sm font-medium">Total Check-ins</h3>
@@ -228,14 +221,12 @@ export default function CSRDashboard() {
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
 
-        {/* Check-ins List */}
         <div className="bg-white rounded-lg shadow">
           <div className="p-4 border-b">
             <h2 className="text-xl font-bold">Recent Check-ins</h2>
@@ -267,7 +258,6 @@ export default function CSRDashboard() {
                       <StatusBadge status={ci.status} />
                     </div>
 
-                    {/* Additional Info */}
                     {ci.driver_name && (
                       <div className="mt-3 text-sm">
                         <span className="font-medium">Driver:</span> {ci.driver_name}
@@ -284,7 +274,6 @@ export default function CSRDashboard() {
                       </div>
                     )}
 
-                    {/* Dock Assignment Info */}
                     {ci.dock_number && (
                       <div className="mt-3 pt-3 border-t">
                         <div className="text-sm">
@@ -299,7 +288,6 @@ export default function CSRDashboard() {
                       </div>
                     )}
 
-                    {/* Dwell Time */}
                     <div className="mt-3 pt-3 border-t">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium">Dwell Time:</span>
@@ -307,7 +295,6 @@ export default function CSRDashboard() {
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
                     {ci.status === 'checked_in' && (
                       <div className="mt-4 space-y-2">
                         <button
@@ -332,7 +319,6 @@ export default function CSRDashboard() {
         </div>
       </div>
 
-      {/* Check Out Confirmation Modal */}
       {isCheckOutModalOpen && selectedCheckIn && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -361,7 +347,6 @@ export default function CSRDashboard() {
         </div>
       )}
 
-      {/* Assign Dock Modal */}
       {isDockModalOpen && selectedForDock && (
         <AssignDockModal
           checkIn={selectedForDock}
@@ -375,3 +360,4 @@ export default function CSRDashboard() {
     </div>
   );
 }
+EOF
