@@ -1,4 +1,4 @@
-'use client';
+''use client';
 
 import { useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
@@ -10,6 +10,8 @@ interface AssignDockModalProps {
     company?: string;
     dock_number?: string;
     appointment_time?: string | null;
+    carrier_name?: string;
+    pickup_number?: string;
   };
   onClose: () => void;
   onSuccess: () => void;
@@ -30,7 +32,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Generate dock options: 1-70 and "Ramp"
   const dockOptions = [
     'Ramp',
     ...Array.from({ length: 70 }, (_, i) => (i + 1).toString())
@@ -42,7 +43,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     setError(null);
 
     try {
-      // Convert appointmentTime to ISO format if provided
       const appointmentTimeISO = appointmentTime 
         ? new Date(appointmentTime).toISOString() 
         : null;
@@ -52,8 +52,8 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
         .update({
           dock_number: dockNumber,
           appointment_time: appointmentTimeISO,
-          status: 'checked_in', // Change status from pending to checked_in
-          start_time: new Date().toISOString(), // Set start time when assigned
+          status: 'checked_in',
+          start_time: new Date().toISOString(),
         })
         .eq('id', checkIn.id);
 
@@ -93,16 +93,22 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
         <div className="mb-4 p-3 bg-gray-50 rounded">
           <p className="text-sm text-gray-600">Check-in ID:</p>
           <p className="font-semibold">#{checkIn.id.slice(0, 8)}</p>
+          {checkIn.pickup_number && (
+            <>
+              <p className="text-sm text-gray-600 mt-2">Pickup Number:</p>
+              <p className="font-semibold">{checkIn.pickup_number}</p>
+            </>
+          )}
           {checkIn.driver_name && (
             <>
               <p className="text-sm text-gray-600 mt-2">Driver:</p>
               <p className="font-semibold">{checkIn.driver_name}</p>
             </>
           )}
-          {checkIn.company && (
+          {checkIn.carrier_name && (
             <>
-              <p className="text-sm text-gray-600 mt-2">Company:</p>
-              <p className="font-semibold">{checkIn.company}</p>
+              <p className="text-sm text-gray-600 mt-2">Carrier:</p>
+              <p className="font-semibold">{checkIn.carrier_name}</p>
             </>
           )}
         </div>
