@@ -297,10 +297,90 @@ export default function CSRDashboard() {
           </div>
         </div>
 
-        {/* Add the rest of your JSX here - table, modals, etc. */}
-        <div className="bg-white rounded-lg p-4">
-          <p className="text-gray-500">Table content goes here...</p>
-        </div>
+       <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Dock Number <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={dockNumber}
+                    onChange={(e) => setDockNumber(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select a dock...</option>
+                    <option value="A-1">Dock A-1</option>
+                    <option value="A-2">Dock A-2</option>
+                    <option value="A-3">Dock A-3</option>
+                    <option value="A-4">Dock A-4</option>
+                    <option value="B-1">Dock B-1</option>
+                    <option value="B-2">Dock B-2</option>
+                    <option value="B-3">Dock B-3</option>
+                    <option value="B-4">Dock B-4</option>
+                    <option value="C-1">Dock C-1</option>
+                    <option value="C-2">Dock C-2</option>
+                    <option value="C-3">Dock C-3</option>
+                    <option value="C-4">Dock C-4</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Appointment Time (Optional)
+                  </label>
+                  <select
+                    value={appointmentTime}
+                    onChange={(e) => setAppointmentTime(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">No appointment time</option>
+                    {timeSlots.map((slot) => (
+                      <option key={slot.value} value={slot.value}>
+                        {slot.display}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Set if driver had a scheduled appointment
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={3}
+                    placeholder="Add any special instructions or notes..."
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={assignDock}
+                    disabled={!dockNumber}
+                    className="flex-1 bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {selectedCheckIn.dock_number ? 'Update' : 'Assign Dock'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedCheckIn(null);
+                      setDockNumber('');
+                      setAppointmentTime('');
+                      setNotes('');
+                    }}
+                    className="flex-1 bg-gray-200 text-gray-800 py-2.5 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
