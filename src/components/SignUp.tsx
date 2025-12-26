@@ -2,14 +2,15 @@
 
 import { useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,9 +21,9 @@ export default function SignUp() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setMessage(null);
 
-    const { error } = await supabase.auth.signUp({
+    // Sign up the user
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -30,12 +31,26 @@ export default function SignUp() {
       },
     });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setMessage('Check your email for confirmation link!');
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    // Try to sign in immediately (works if email confirmation is disabled)
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      // If auto sign-in fails, redirect to login page
+      router.push('/login');
+    } else {
+      // If auto sign-in succeeds, go to dashboard
+      router.push('/dashboard');
+      router.refresh();
+    }
   };
 
   return (
@@ -46,12 +61,6 @@ export default function SignUp() {
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
-          </div>
-        )}
-
-        {message && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-            {message}
           </div>
         )}
 
@@ -88,7 +97,7 @@ export default function SignUp() {
             disabled={loading}
             className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
           >
-            {loading ? 'Loading...' : 'Sign Up'}
+            {loading ? 'Creating account...' : 'Sign Up'}
           </button>
         </form>
 
