@@ -8,14 +8,20 @@ interface AssignDockModalProps {
     id: string;
     driver_name?: string;
     company?: string;
+    dock_number?: string;
+    appointment_time?: string | null;
   };
   onClose: () => void;
   onSuccess: () => void;
 }
 
 export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignDockModalProps) {
-  const [dockNumber, setDockNumber] = useState('');
-  const [appointmentTime, setAppointmentTime] = useState('');
+  const [dockNumber, setDockNumber] = useState(checkIn.dock_number || '');
+  const [appointmentTime, setAppointmentTime] = useState(
+    checkIn.appointment_time 
+      ? new Date(checkIn.appointment_time).toISOString().slice(0, 16) 
+      : ''
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
