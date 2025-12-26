@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { CheckIn, CheckInStatus } from '@/types';
 import { format, parseISO, isBefore, differenceInMinutes } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -15,11 +15,13 @@ export default function CSRDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCheckIn, setSelectedCheckIn] = useState<CheckIn | null>(null);
-  const [dockNumber, setDockNumber] = useState('');
-  const [appointmentTime, setAppointmentTime] = useState('');
-  const [notes, setNotes] = useState('');
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [dockNumber, setDockNumber] = useState<string>('');
+  const [appointmentTime, setAppointmentTime] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const router = useRouter();
+
+  // Assign modal visibility is driven by selectedCheckIn truthiness
 
   // Update current time every minute for live dwell time
   useEffect(() => {
@@ -31,33 +33,28 @@ export default function CSRDashboard() {
   }, []);
 
   // Generate appointment time options (8 AM to 3:30 PM in 30-minute intervals)
-  const generateTimeSlots = () => {
-    const slots = [];
+  const generateTimeSlots = useCallback(() => {
+    const slots: { value: string; display: string }[] = [];
     for (let hour = 8; hour <= 15; hour++) {
       for (let minute of [0, 30]) {
-        if (hour === 15 && minute === 30) {
-          const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          const display = format(new Date(`2000-01-01T${time}`), 'h:mm a');
-          slots.push({ value: time, display });
-          break;
-        }
-        if (hour > 15) break;
-        
-        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        if (hour === 15 && minute > 30) continue;
+        const time = `${hour.toString().padStart(2, '0')}:${minute
+          .toString()
+          .padStart(2, '0')}`;
         const display = format(new Date(`2000-01-01T${time}`), 'h:mm a');
         slots.push({ value: time, display });
       }
     }
     return slots;
-  };
+  }, []);
 
-  const timeSlots = generateTimeSlots();
+  const timeSlots = useMemo(() => generateTimeSlots(), [generateTimeSlots]);
 
   const fetchCheckIns = async () => {
     try {
       const { getSupabase } = await import('@/lib/supabase');
       const supabase = getSupabase();
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
@@ -69,30 +66,31 @@ export default function CSRDashboard() {
 
       if (error) throw error;
       setCheckIns(data || []);
-    } catch (error) {
-      console.error('Error fetching check-ins:', error);
+    } catch (err) {
+      console.error('Error fetching check-ins:', err);
       setError('Failed to load check-ins');
     } finally {
       setLoading(false);
     }
   };
 
+  // Initialize: config and subscription
   useEffect(() => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
       setError('Supabase not configured');
       setLoading(false);
       return;
     }
-    
+
     fetchCheckIns();
-    
+
     let subscription: any;
 
     const setupSubscription = async () => {
       try {
         const { getSupabase } = await import('@/lib/supabase');
         const supabase = getSupabase();
-        
+
         subscription = supabase
           .channel('check_ins_changes')
           .on('postgres_changes', 
@@ -116,11 +114,12 @@ export default function CSRDashboard() {
     };
   }, []);
 
+  // Update status
   const updateStatus = async (id: string, status: CheckInStatus) => {
     try {
       const { getSupabase } = await import('@/lib/supabase');
       const supabase = getSupabase();
-      
+
       const { error } = await supabase
         .from('check_ins')
         .update({ status })
@@ -134,6 +133,7 @@ export default function CSRDashboard() {
     }
   };
 
+  // Assign or update dock
   const assignDock = async () => {
     if (!selectedCheckIn || !dockNumber) {
       alert('Please select a dock number');
@@ -144,12 +144,12 @@ export default function CSRDashboard() {
       const { getSupabase } = await import('@/lib/supabase');
       const supabase = getSupabase();
 
-      let appointmentDateTime = null;
+      let appointmentDateTime: string | null = null;
       if (appointmentTime) {
         const today = formatInTimeZone(new Date(), TIMEZONE, 'yyyy-MM-dd');
         appointmentDateTime = `${today}T${appointmentTime}:00`;
       }
-      
+
       const { error } = await supabase
         .from('check_ins')
         .update({ 
@@ -161,7 +161,7 @@ export default function CSRDashboard() {
         .eq('id', selectedCheckIn.id);
 
       if (error) throw error;
-      
+
       setSelectedCheckIn(null);
       setDockNumber('');
       setAppointmentTime('');
@@ -173,12 +173,14 @@ export default function CSRDashboard() {
     }
   };
 
+  // Logout
   const handleLogout = async () => {
     const { signOut } = await import('@/lib/auth');
     await signOut();
     router.push('/dashboard/login');
   };
 
+  // Helpers
   const isEarlyArrival = (checkIn: CheckIn) => {
     if (!checkIn.appointment_time) return false;
     const checkInTime = parseISO(checkIn.check_in_time);
@@ -195,29 +197,56 @@ export default function CSRDashboard() {
   const formatDwellTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    
-    if (hours === 0) {
-      return `${mins}m`;
-    }
+    if (hours === 0) return `${mins}m`;
     return `${hours}h ${mins}m`;
   };
 
   const getDwellTimeColor = (checkIn: CheckIn) => {
     const checkInTime = parseISO(checkIn.check_in_time);
     const dwellMinutes = differenceInMinutes(currentTime, checkInTime);
-    
+
     if (dwellMinutes < 60) return 'text-green-600 font-semibold';
     if (dwellMinutes < 120) return 'text-yellow-600 font-semibold';
     return 'text-red-600 font-semibold';
   };
 
-  const stats = {
+  // Derived stats
+  const stats = useMemo(() => ({
     pending: checkIns.filter(c => c.status === 'pending').length,
     assigned: checkIns.filter(c => c.status === 'assigned').length,
     loading: checkIns.filter(c => c.status === 'loading').length,
     completed: checkIns.filter(c => c.status === 'completed').length,
-  };
+  }), [checkIns]);
 
+  // Close modal on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedCheckIn) {
+        setSelectedCheckIn(null);
+        setDockNumber('');
+        setAppointmentTime('');
+        setNotes('');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedCheckIn]);
+
+  // Optional: prevent body scroll when modal open
+  useEffect(() => {
+    if (selectedCheckIn) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedCheckIn]);
+
+  // focus management note: you may want to set focus to a modal element when opened
+
+  // Early return on error
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -240,6 +269,7 @@ export default function CSRDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Quick header panel with date/time and actions */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -265,7 +295,7 @@ export default function CSRDashboard() {
               </button>
             </div>
           </div>
-          
+
           <div className="flex gap-6">
             <div className="flex items-center gap-2">
               <Clock className="text-yellow-600" size={20} />
@@ -298,193 +328,203 @@ export default function CSRDashboard() {
           </div>
         </div>
 
- {/* Assign Dock Modal */}
+        {/* Assign Dock Modal (inline, shown when editing/assigning) */}
         {selectedCheckIn && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-              <h3 className="text-xl font-bold mb-4 text-gray-900">
-                {selectedCheckIn.dock_number ? 'Edit Assignment' : 'Assign Dock'}
-              </h3>
-              <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Pickup Number</p>
-                      <p className="font-semibold text-gray-900">{selectedCheckIn.pickup_number}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Trailer</p>
-                      <p className="font-semibold text-gray-900">{selectedCheckIn.trailer_number}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Carrier</p>
-                      <p className="font-medium text-gray-900">{selectedCheckIn.carrier_name}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Driver</p>
-                      <p className="font-medium text-gray-900">{selectedCheckIn.driver_name}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Checked In</p>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-gray-900">
-                          {format(new Date(selectedCheckIn.check_in_time), 'h:mm a')}
-                        </p>
-                        {isEarlyArrival(selectedCheckIn) && (
-                          <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                            <CheckCircle size={14} />
-                            Early Arrival
-                          </span>
-                        )}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            aria-modal="true"
+            role="dialog"
+            aria-label="Assign Dock"
+          >
+            <div className="bg-white rounded-lg w-full max-w-3xl shadow-xl relative" style={{ maxHeight: '90vh', overflow: 'auto' }}>
+              <div className="absolute top-2 right-2 text-gray-500 cursor-pointer" onClick={() => {
+                setSelectedCheckIn(null);
+                setDockNumber('');
+                setAppointmentTime('');
+                setNotes('');
+              }} aria-label="Close">
+                ✕
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-4 text-gray-900" id="modal-title">
+                  {selectedCheckIn.dock_number ? 'Edit Assignment' : 'Assign Dock'}
+                </h3>
+
+                <div className="space-y-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Pickup Number</p>
+                        <p className="font-semibold text-gray-900">{selectedCheckIn.pickup_number}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Trailer</p>
+                        <p className="font-semibold text-gray-900">{selectedCheckIn.trailer_number}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Carrier</p>
+                        <p className="font-medium text-gray-900">{selectedCheckIn.carrier_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Driver</p>
+                        <p className="font-medium text-gray-900">{selectedCheckIn.driver_name}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Checked In</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900">
+                            {format(new Date(selectedCheckIn.check_in_time), 'h:mm a')}
+                          </p>
+                          {isEarlyArrival(selectedCheckIn) && (
+                            <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                              <CheckCircle size={14} />
+                              Early Arrival
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Dock Number <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={dockNumber}
-                    onChange={(e) => setDockNumber(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="">Select a dock...</option>
-                   <option value="1">Dock 1</option>
-	<option value="2">Dock 2</option>
-	<option value="3">Dock 3</option>
-	<option value="4">Dock 4</option>
-	<option value="5">Dock 5</option>
-	<option value="6">Dock 6</option>
-	<option value="7">Dock 7</option>
-	<option value="8">Dock 8</option>
-	<option value="9">Dock 9</option>
-	<option value="10">Dock 10</option>
-	<option value="11">Dock 11</option>
-	<option value="12">Dock 12</option>
-	<option value="13">Dock 13</option>
-	<option value="14">Dock 14</option>
-	<option value="15">Dock 15</option>
-	<option value="16">Dock 16</option>
-	<option value="17">Dock 17</option>
-	<option value="18">Dock 18</option>
-	<option value="19">Dock 19</option>
-	<option value="20">Dock 20</option>
-	<option value="21">Dock 21</option>
-	<option value="22">Dock 22</option>
-	<option value="23">Dock 23</option>
-	<option value="24">Dock 24</option>
-	<option value="25">Dock 25</option>
-	<option value="26">Dock 26</option>
-	<option value="27">Dock 27</option>
-	<option value="28">Dock 28</option>
-	<option value="29">Dock 29</option>
-	<option value="30">Dock 30</option>
-	<option value="31">Dock 31</option>
-	<option value="32">Dock 32</option>
-	<option value="33">Dock 33</option>
-	<option value="34">Dock 34</option>
-	<option value="35">Dock 35</option>
-	<option value="36">Dock 36</option>
-	<option value="37">Dock 37</option>
-	<option value="38">Dock 38</option>
-	<option value="39">Dock 39</option>
-	<option value="40">Dock 40</option>
-	<option value="41">Dock 41</option>
-	<option value="42">Dock 42</option>
-	<option value="43">Dock 43</option>
-	<option value="44">Dock 44</option>
-	<option value="45">Dock 45</option>
-	<option value="46">Dock 46</option>
-	<option value="47">Dock 47</option>
-	<option value="48">Dock 48</option>
-	<option value="49">Dock 49</option>
-	<option value="50">Dock 50</option>
-	<option value="51">Dock 51</option>
-	<option value="52">Dock 52</option>
-	<option value="53">Dock 53</option>
-	<option value="54">Dock 54</option>
-	<option value="55">Dock 55</option>
-	<option value="56">Dock 56</option>
-	<option value="57">Dock 57</option>
-	<option value="58">Dock 58</option>
-	<option value="59">Dock 59</option>
-	<option value="60">Dock 60</option>
-	<option value="61">Dock 61</option>
-	<option value="62">Dock 62</option>
-	<option value="63">Dock 63</option>
-	<option value="64">Dock 64</option>
-	<option value="65">Dock 65</option>
-	<option value="66">Dock 66</option>
-	<option value="67">Dock 67</option>
-	<option value="68">Dock 68</option>
-	<option value="69">Dock 69</option>
-	<option value="70">Dock 70</option>
-                  </select>
-                </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Dock Number <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={dockNumber}
+                        onChange={(e) => setDockNumber(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required
+                      >
+                        <option value="">Select a dock...</option>
+                        {Array.from({ length: 70 }, (_, i) => i + 1).map((d) => (
+                          <option key={d} value={String(d)}>
+                            Dock {d}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Appointment Time (Optional)
-                  </label>
-                  <select
-                    value={appointmentTime}
-                    onChange={(e) => setAppointmentTime(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">No appointment time</option>
-                    {timeSlots.map((slot) => (
-                      <option key={slot.value} value={slot.value}>
-                        {slot.display}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Set if driver had a scheduled appointment
-                  </p>
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Appointment Time (Optional)
+                      </label>
+                      <select
+                        value={appointmentTime}
+                        onChange={(e) => setAppointmentTime(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="">No appointment time</option>
+                        {timeSlots.map((slot) => (
+                          <option key={slot.value} value={slot.value}>
+                            {slot.display}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Set if driver had a scheduled appointment
+                      </p>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Notes (Optional)
-                  </label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    rows={3}
-                    placeholder="Add any special instructions or notes..."
-                  />
-                </div>
+                    <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Notes (Optional)
+                      </label>
+                      <textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        rows={3}
+                        placeholder="Add any special instructions or notes..."
+                      />
+                    </div>
+                  </div>
 
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={assignDock}
-                    disabled={!dockNumber}
-                    className="flex-1 bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {selectedCheckIn.dock_number ? 'Update' : 'Assign Dock'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedCheckIn(null);
-                      setDockNumber('');
-                      setAppointmentTime('');
-                      setNotes('');
-                    }}
-                    className="flex-1 bg-gray-200 text-gray-800 py-2.5 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-                  >
-                    Cancel
-                  </button>
+                  <div className="flex gap-3 pt-2 flex-wrap">
+                    <button
+                      onClick={assignDock}
+                      disabled={!dockNumber}
+                      className="flex-1 min-w-[120px] bg-blue-600 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {selectedCheckIn.dock_number ? 'Update' : 'Assign Dock'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedCheckIn(null);
+                        setDockNumber('');
+                        setAppointmentTime('');
+                        setNotes('');
+                      }}
+                      className="flex-1 min-w-[120px] bg-gray-200 text-gray-800 py-2.5 px-4 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
+
+        {/* Section: List of check-ins */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {checkIns.map((ci) => {
+            const dwell = calculateDwellTime(ci);
+            const dwellColor = getDwellTimeColor(ci);
+            return (
+              <div key={ci.id} className="bg-white border rounded-lg p-4 shadow-sm flex flex-col">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-lg font-semibold">{ci.vehicle_number || 'Unknown Vehicle'}</div>
+                    <div className="text-sm text-gray-600">
+                      Check-in: {format(parseISO(ci.check_in_time), 'yyyy-MM-dd HH:mm')}
+                    </div>
+                  </div>
+                  <StatusBadge status={ci.status} />
+                </div>
+
+                <div className="mt-2 text-sm text-gray-700">
+                  Dock: {ci.dock_number ?? 'Unassigned'}
+                </div>
+
+                <div className="mt-2 flex items-center gap-2">
+                  <span className={`font-semibold ${dwellColor}`}>{dwell}</span>
+                  <span className="text-xs text-gray-500">Dwell time</span>
+                </div>
+
+                <div className="mt-3 flex gap-2">
+                  <button
+                    className="flex-1 px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    onClick={() => updateStatus(ci.id, 'completed')}
+                  >
+                    Complete
+                  </button>
+                  <button
+                    className="flex-1 px-3 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                    onClick={() => {
+                      setSelectedCheckIn(ci);
+                      setDockNumber(ci.dock_number ?? '');
+                      setAppointmentTime(
+                        ci.appointment_time
+                          ? formatInTimeZone(parseISO(ci.appointment_time), TIMEZONE, 'HH:mm')
+                          : ''
+                      );
+                      setNotes(ci.notes ?? '');
+                    }}
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {checkIns.length === 0 && (
+          <div className="text-center py-12 text-gray-500">No check-ins found for today</div>
+        )}
       </div>
     </div>
   );
 }
-
