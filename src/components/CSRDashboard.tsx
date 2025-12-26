@@ -467,22 +467,23 @@ export default function CSRDashboard() {
           </div>
         )}
 
-        {/* Section: List of check-ins */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {checkIns.map((ci) => {
-            const dwell = calculateDwellTime(ci);
-            const dwellColor = getDwellTimeColor(ci);
-            return (
-              <div key={ci.id} className="bg-white border rounded-lg p-4 shadow-sm flex flex-col">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="text-lg font-semibold"> Check-in #{ci.ci.id.slice(0,8)}
-                    <div className="text-sm text-gray-600">
-                      Check-in: {format(parseISO(ci.check_in_time), 'yyyy-MM-dd HH:mm')}
-                    </div>
-                  </div>
-                  <StatusBadge status={ci.status} />
-                </div>
+       {/* Section: List of check-ins */}
+<div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  {checkIns.map((ci) => {
+    const dwell = calculateDwellTime(ci);
+    const dwellColor = getDwellTimeColor(ci);
+    return (
+      <div key={ci.id} className="bg-white border rounded-lg p-4 shadow-sm flex flex-col">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="text-lg font-semibold">Check-in #{ci.id.slice(0, 8)}</div>
+            <div className="text-sm text-gray-600">
+              Check-in: {format(parseISO(ci.check_in_time), 'yyyy-MM-dd HH:mm')}
+            </div>
+          </div>
+          <StatusBadge status={ci.status} />
+        </div>
+
 
                 <div className="mt-2 text-sm text-gray-700">
                   Dock: {ci.dock_number ?? 'Unassigned'}
