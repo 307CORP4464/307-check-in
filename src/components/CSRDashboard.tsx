@@ -13,6 +13,8 @@ interface CheckIn {
   driver_name?: string;
   company?: string;
   purpose?: string;
+  dock_number?: string;
+  appointment_time?: string | null;
 }
 
 export default function CSRDashboard() {
@@ -299,6 +301,40 @@ const handleDockAssignSuccess = () => {
         </div>
       </div>
 
+      {/* Add this button after the Check Out button */}
+{ci.status === 'checked_in' && (
+  <>
+    <button
+      onClick={() => handleCheckOut(ci)}
+      className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
+    >
+      Check Out
+    </button>
+    <button
+      onClick={() => handleAssignDock(ci)}
+      className="mt-2 w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors"
+    >
+      {ci.dock_number ? 'Update Dock' : 'Assign Dock'}
+    </button>
+  </>
+)}
+
+{/* Show dock info if assigned */}
+{ci.dock_number && (
+  <div className="mt-3 pt-3 border-t">
+    <div className="text-sm">
+      <span className="font-medium">Dock:</span> {ci.dock_number}
+    </div>
+    {ci.appointment_time && (
+      <div className="text-sm">
+        <span className="font-medium">Appointment:</span>{' '}
+        {format(parseISO(ci.appointment_time), 'MMM dd, HH:mm')}
+      </div>
+    )}
+  </div>
+)}
+
+
       {/* Check Out Confirmation Modal */}
       {isCheckOutModalOpen && selectedCheckIn && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -327,6 +363,18 @@ const handleDockAssignSuccess = () => {
           </div>
         </div>
       )}
+      {/* Add this before the closing </div> of your component */}
+{isDockModalOpen && selectedForDock && (
+  <AssignDockModal
+    checkIn={selectedForDock}
+    onClose={() => {
+      setIsDockModalOpen(false);
+      setSelectedForDock(null);
+    }}
+    onSuccess={handleDockAssignSuccess}
+  />
+)}
+
     </div>
   );
 }
