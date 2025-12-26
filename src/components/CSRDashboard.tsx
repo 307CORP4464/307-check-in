@@ -173,11 +173,11 @@ export default function CSRDashboard() {
     }
   };
 
- const handleLogout = async () => {
-  const { signOut } = await import('@/lib/auth');
-  await signOut();
-  router.push('/dashboard/login');
-};
+  const handleLogout = async () => {
+    const { signOut } = await import('@/lib/auth');
+    await signOut();
+    router.push('/dashboard/login');
+  };
 
   const isEarlyArrival = (checkIn: CheckIn) => {
     if (!checkIn.appointment_time) return false;
@@ -298,7 +298,50 @@ export default function CSRDashboard() {
           </div>
         </div>
 
-       <div>
+ {/* Assign Dock Modal */}
+        {selectedCheckIn && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+              <h3 className="text-xl font-bold mb-4 text-gray-900">
+                {selectedCheckIn.dock_number ? 'Edit Assignment' : 'Assign Dock'}
+              </h3>
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Pickup Number</p>
+                      <p className="font-semibold text-gray-900">{selectedCheckIn.pickup_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Trailer</p>
+                      <p className="font-semibold text-gray-900">{selectedCheckIn.trailer_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Carrier</p>
+                      <p className="font-medium text-gray-900">{selectedCheckIn.carrier_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Driver</p>
+                      <p className="font-medium text-gray-900">{selectedCheckIn.driver_name}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Checked In</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900">
+                          {format(new Date(selectedCheckIn.check_in_time), 'h:mm a')}
+                        </p>
+                        {isEarlyArrival(selectedCheckIn) && (
+                          <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                            <CheckCircle size={14} />
+                            Early Arrival
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dock Number <span className="text-red-500">*</span>
                   </label>
@@ -382,6 +425,14 @@ export default function CSRDashboard() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Check-ins</h2>
+          <p className="text-gray-500">Table content will go here...</p>
+        </div>
       </div>
     </div>
   );
