@@ -25,7 +25,7 @@ export default function CSRDashboard() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Update every minute
+    }, 60000);
 
     return () => clearInterval(timer);
   }, []);
@@ -53,44 +53,74 @@ export default function CSRDashboard() {
 
   const timeSlots = generateTimeSlots();
 
- useEffect(() => {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    setError('Supabase not configured');
-    setLoading(false);
-    return;
-  }
-  
-  [fetchCheckIns]();
-  
-  let subscription: any;
-
-  const setupSubscription = async () => {
+  // MOVE fetchCheckIns HERE - BEFORE the useEffect that calls it
+  const fetchCheckIns = async () => {
     try {
       const { getSupabase } = await import('@/lib/supabase');
       const supabase = getSupabase();
       
-      subscription = supabase
-        .channel('check_ins_changes')
-        .on('postgres_changes', 
-          { event: '*', schema: 'public', table: 'check_ins' },
-          () => {
-            fetchCheckIns();
-          }
-        )
-        .subscribe();
-    } catch (err) {
-      console.error('Subscription error:', err);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const { data, error } = await supabase
+        .from('check_ins')
+        .select('*')
+        .gte('check_in_time', today.toISOString())
+        .order('check_in_time', { ascending: false });
+
+      if (error) throw error;
+      setCheckIns(data || []);
+    } catch (error) {
+      console.error('Error fetching check-ins:', error);
+      setError('Failed to load check-ins');
+    } finally {
+      setLoading(false);
     }
   };
 
-  setupSubscription();
-
-  return () => {
-    if (subscription) {
-      subscription.unsubscribe();
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      setError('Supabase not configured');
+      setLoading(false);
+      return;
     }
+    
+    fetchCheckIns();
+    
+    let subscription: any;
+
+    const setupSubscription = async () => {
+      try {
+        const { getSupabase } = await import('@/lib/supabase');
+        const supabase = getSupabase();
+        
+        subscription = supabase
+          .channel('check_ins_changes')
+          .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'check_ins' },
+            () => {
+              fetchCheckIns();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.error('Subscription error:', err);
+      }
+    };
+
+    setupSubscription();
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Rest of your code stays the same...
+  const updateStatus = async (id: string, status: CheckInStatus) => {
+    // ... existing code
   };
-}, []);
 
   const fetchCheckIns = async () => {
     try {
