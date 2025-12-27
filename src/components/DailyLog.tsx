@@ -5,6 +5,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import Link from 'next/link';
+import StatusChangeModal from './StatusChangeModal';
 
 interface CheckIn {
   id: string;
@@ -31,6 +32,8 @@ export default function DailyLog() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  const [selectedForStatusChange, setSelectedForStatusChange] = useState<CheckIn | null>(null);
+  const [isStatusChangeModalOpen, setIsStatusChangeModalOpen] = useState(false);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +89,16 @@ export default function DailyLog() {
       console.error('Error logging out:', error);
     }
   };
+
+  const handleStatusChange = (checkIn: CheckIn) => {
+  setSelectedForStatusChange(checkIn);
+  setIsStatusChangeModalOpen(true);
+};
+
+const handleStatusChangeSuccess = () => {
+  fetchCheckInsForDate();
+};
+
 
   const exportToCSV = () => {
     const headers = [
@@ -264,6 +277,9 @@ export default function DailyLog() {
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
+                   </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -316,6 +332,16 @@ export default function DailyLog() {
                           {ci.status === 'checked_in' ? 'CHECKED IN' : ci.status === 'checked_out' ? 'CHECKED OUT' : 'PENDING'}
                         </span>
                       </td>
+<td className="px-4 py-4 whitespace-nowrap text-sm">
+  {ci.status === 'checked_in' && (
+    <button
+      onClick={() => handleStatusChange(ci)}
+      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs"
+    >
+      Change Status
+    </button>
+  )}
+</td>  
                     </tr>
                   ))}
                 </tbody>
@@ -324,6 +350,18 @@ export default function DailyLog() {
           </div>
         </div>
       </div>
+{isStatusChangeModalOpen && selectedForStatusChange && (
+  <StatusChangeModal
+    checkIn={selectedForStatusChange}
+    onClose={() => {
+      setIsStatusChangeModalOpen(false);
+      setSelectedForStatusChange(null);
+    }}
+    onSuccess={handleStatusChangeSuccess}
+  />
+)}
+
+      
     </div>
   );
 }
