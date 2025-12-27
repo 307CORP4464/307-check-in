@@ -1,6 +1,6 @@
 # 307 Warehouse Check-In System
 
-Driver check-in system for 307 warehouse.
+Driver check-in system for 307 warehouse. Inbound and Outbound. 
 
 ## Features
 - Driver check-in form
