@@ -10,34 +10,30 @@ import AssignDockModal from './AssignDockModal';
 const TIMEZONE = 'America/New_York';
 
 const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
-  try {
-    const date = new Date(isoString);
-    
-    // Get the UTC timestamp in milliseconds
-    const utcMs = date.getTime();
-    
-    // EST offset is -5 hours = -5 * 60 * 60 * 1000 milliseconds
-    const estOffsetMs = -5 * 60 * 60 * 1000;
-    
-    // Create EST date
-    const estDate = new Date(utcMs + estOffsetMs);
-    
-    // Extract components from EST date
-    const hours = String(estDate.getUTCHours()).padStart(2, '0');
-    const minutes = String(estDate.getUTCMinutes()).padStart(2, '0');
-    
-    if (includeDate) {
-      const month = String(estDate.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(estDate.getUTCDate()).padStart(2, '0');
-      return `${month}/${day} ${hours}:${minutes}`;
-    }
-    
-    return `${hours}:${minutes}`;
-  } catch (e) {
-    console.error('Time conversion error:', e, isoString);
-    return isoString;
+  const date = new Date(isoString);
+  
+  const estTime = date.toLocaleString('en-US', {
+    timeZone: 'America/New_York',
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit',
+    ...(includeDate && {
+      month: '2-digit',
+      day: '2-digit',
+    })
+  });
+  
+  // toLocaleString returns format like "12/27, 15:46" or "15:46"
+  // We need to parse and reformat
+  if (includeDate) {
+    // Returns: "12/27, 15:46" - we want "12/27 15:46"
+    return estTime.replace(',', '');
   }
+  
+  // Returns: "15:46" - perfect!
+  return estTime;
 };
+
 
 interface CheckIn {
   id: string;
