@@ -300,8 +300,11 @@ return (
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatTimeInIndianapolis(ci.check_in_time)}
-                        </td>
+  <div>DB: {ci.check_in_time}</div>
+  <div>FN: {formatTimeInIndianapolis(ci.check_in_time)}</div>
+  <div>MANUAL: {new Date(ci.check_in_time).getUTCHours() - 5}:{String(new Date(ci.check_in_time).getUTCMinutes()).padStart(2, '0')}</div>
+</td>
+
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                           {ci.pickup_number || '-'}
                         </td>
