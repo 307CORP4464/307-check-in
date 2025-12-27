@@ -4,11 +4,18 @@ import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
-import { formatInTimeZone } from 'date-fns-tz';
+import { utcToZonedTime, format as formatTz } from 'date-fns-tz';
 import Link from 'next/link';
 import StatusChangeModal from './StatusChangeModal';
 
 const TIMEZONE = 'America/Indiana/Indianapolis';
+
+// Helper function to format times in Indianapolis timezone
+const formatTimeInIndianapolis = (isoString: string, formatString: string = 'HH:mm'): string => {
+  const utcDate = parseISO(isoString);
+  const zonedDate = utcToZonedTime(utcDate, TIMEZONE);
+  return format(zonedDate, formatString);
+};
 
 interface CheckIn {
   id: string;
@@ -123,17 +130,17 @@ export default function DailyLog() {
 
     const rows = checkIns.map(ci => [
       ci.load_type === 'inbound' ? 'I' : 'O',
-      ci.appointment_time ? formatInTimeZone(parseISO(ci.appointment_time), TIMEZONE, 'yyyy-MM-dd HH:mm') : '',
-      formatInTimeZone(parseISO(ci.check_in_time), TIMEZONE, 'yyyy-MM-dd HH:mm'),
+      ci.appointment_time ? formatTimeInIndianapolis(ci.appointment_time, 'yyyy-MM-dd HH:mm') : '',
+      formatTimeInIndianapolis(ci.check_in_time, 'yyyy-MM-dd HH:mm'),
       ci.pickup_number || '',
       ci.carrier_name || '',
       ci.trailer_number || '',
-      ci.trailer_length ? `${ci.trailer_length} ft` : '',
+      ci.trailer_length || '',
       ci.driver_name || '',
       ci.driver_phone || '',
       ci.dock_number || '',
-      ci.start_time ? formatInTimeZone(parseISO(ci.start_time), TIMEZONE, 'yyyy-MM-dd HH:mm') : '',
-      ci.end_time ? formatInTimeZone(parseISO(ci.end_time), TIMEZONE, 'yyyy-MM-dd HH:mm') : ci.check_out_time ? formatInTimeZone(parseISO(ci.check_out_time), TIMEZONE, 'yyyy-MM-dd HH:mm') : '',
+      ci.start_time ? formatTimeInIndianapolis(ci.start_time, 'yyyy-MM-dd HH:mm') : '',
+      ci.end_time ? formatTimeInIndianapolis(ci.end_time, 'yyyy-MM-dd HH:mm') : ci.check_out_time ? formatTimeInIndianapolis(ci.check_out_time, 'yyyy-MM-dd HH:mm') : '',
       ci.status,
       ci.notes || ''
     ]);
@@ -166,7 +173,7 @@ export default function DailyLog() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Daily Check-in Log (Indianapolis Time)</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Daily Check-in Log (EST/EDT)</h1>
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
@@ -311,10 +318,10 @@ export default function DailyLog() {
                         </span>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.appointment_time ? formatInTimeZone(parseISO(ci.appointment_time), TIMEZONE, 'MM/dd HH:mm') : '-'}
+                        {ci.appointment_time ? formatTimeInIndianapolis(ci.appointment_time, 'MM/dd HH:mm') : '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatInTimeZone(parseISO(ci.check_in_time), TIMEZONE, 'HH:mm')}
+                        {formatTimeInIndianapolis(ci.check_in_time)}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                         {ci.pickup_number || '-'}
@@ -326,7 +333,7 @@ export default function DailyLog() {
                         {ci.trailer_number || '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.trailer_length ? `${ci.trailer_length}` : '-'}
+                        {ci.trailer_length || '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                         {ci.driver_name || '-'}
@@ -338,13 +345,13 @@ export default function DailyLog() {
                         {ci.dock_number || '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.start_time ? formatInTimeZone(parseISO(ci.start_time), TIMEZONE, 'HH:mm') : '-'}
+                        {ci.start_time ? formatTimeInIndianapolis(ci.start_time) : '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                         {ci.end_time 
-                          ? formatInTimeZone(parseISO(ci.end_time), TIMEZONE, 'HH:mm')
+                          ? formatTimeInIndianapolis(ci.end_time)
                           : ci.check_out_time 
-                            ? formatInTimeZone(parseISO(ci.check_out_time), TIMEZONE, 'HH:mm')
+                            ? formatTimeInIndianapolis(ci.check_out_time)
                             : '-'
                         }
                       </td>
