@@ -10,30 +10,34 @@ import AssignDockModal from './AssignDockModal';
 const TIMEZONE = 'America/New_York';
 
 const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
-  const date = new Date(isoString);
-  
-  const estTime = date.toLocaleString('en-US', {
-    timeZone: 'America/New_York',
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    ...(includeDate && {
-      month: '2-digit',
-      day: '2-digit',
-    })
-  });
-  
-  // toLocaleString returns format like "12/27, 15:46" or "15:46"
-  // We need to parse and reformat
-  if (includeDate) {
-    // Returns: "12/27, 15:46" - we want "12/27 15:46"
-    return estTime.replace(',', '');
+  try {
+    const date = new Date(isoString);
+    
+    // Get the UTC timestamp in milliseconds
+    const utcMs = date.getTime();
+    
+    // EST offset is -5 hours = -5 * 60 * 60 * 1000 milliseconds
+    const estOffsetMs = -5 * 60 * 60 * 1000;
+    
+    // Create EST date
+    const estDate = new Date(utcMs + estOffsetMs);
+    
+    // Extract components from EST date
+    const hours = String(estDate.getUTCHours()).padStart(2, '0');
+    const minutes = String(estDate.getUTCMinutes()).padStart(2, '0');
+    
+    if (includeDate) {
+      const month = String(estDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(estDate.getUTCDate()).padStart(2, '0');
+      return `${month}/${day} ${hours}:${minutes}`;
+    }
+    
+    return `${hours}:${minutes}`;
+  } catch (e) {
+    console.error('Time conversion error:', e, isoString);
+    return isoString;
   }
-  
-  // Returns: "15:46" - perfect!
-  return estTime;
 };
-
 
 interface CheckIn {
   id: string;
@@ -166,13 +170,14 @@ export default function CSRDashboard() {
       </div>
     );
   }
-return (
-  <div className="min-h-screen bg-gray-50">
-    <div className="bg-white border-b shadow-sm">
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard - Pending Check-ins (EST/EDT)</h1>
+              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard - Pending Check-ins (EST)</h1>
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
@@ -286,16 +291,8 @@ return (
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-  {(() => {
-    const d = new Date(ci.check_in_time);
-    const utcHrs = d.getUTCHours();
-    const estHrs = utcHrs - 5;
-    const mins = d.getUTCMinutes();
-    return `UTC:${utcHrs}:${mins} EST:${estHrs}:${mins}`;
-  })()}
-</td>
-
-
+                          {formatTimeInIndianapolis(ci.check_in_time)}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                           {ci.pickup_number || '-'}
                         </td>
