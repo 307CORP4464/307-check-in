@@ -8,6 +8,9 @@ import { zonedTimeToUtc } from 'date-fns-tz';
 import Link from 'next/link';
 import StatusChangeModal from './StatusChangeModal';
 
+const TIMEZONE = 'America/New_York';
+
+// Manual timezone conversion
 const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
   const date = new Date(isoString);
   
@@ -18,12 +21,11 @@ const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = fals
   const utcDay = date.getUTCDate();
   
   // Determine if we're in EST (UTC-5) or EDT (UTC-4)
-  // DST in US: Second Sunday in March to First Sunday in November
   const year = date.getUTCFullYear();
   const month = date.getUTCMonth();
   
   // Simple DST check: March-October likely EDT, Nov-Feb likely EST
-  const isDST = month >= 2 && month <= 9; // March (2) through October (9)
+  const isDST = month >= 2 && month <= 9;
   const offset = isDST ? -4 : -5;
   
   // Calculate EST/EDT time
@@ -52,8 +54,6 @@ const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = fals
   
   return `${hours}:${minutes}`;
 };
-
-
 
 interface CheckIn {
   id: string;
@@ -91,16 +91,10 @@ export default function DailyLog() {
   // Get current date in Indianapolis timezone
   const getCurrentDateInIndianapolis = () => {
     const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: TIMEZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    const parts = formatter.formatToParts(now);
-    const year = parts.find(p => p.type === 'year')?.value;
-    const month = parts.find(p => p.type === 'month')?.value;
-    const day = parts.find(p => p.type === 'day')?.value;
+    const estDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) - (5 * 3600000));
+    const year = estDate.getFullYear();
+    const month = String(estDate.getMonth() + 1).padStart(2, '0');
+    const day = String(estDate.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
 
@@ -321,126 +315,51 @@ export default function DailyLog() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Appointment Time
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Check-in Time (EST)
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Pickup Number
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Carrier Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trailer Number
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trailer Length
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Driver Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Driver Phone
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Destination
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Dock Number
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Start Time
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      End Time
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Appointment Time</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time (EST)</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup Number</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Carrier Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trailer Number</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trailer Length</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver Phone</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dock Number</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Time</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Time</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {checkIns.map((ci) => (
                     <tr key={ci.id} className="hover:bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded ${
-                          ci.load_type === 'inbound' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-green-100 text-green-800'
-                        }`}>
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded ${ci.load_type === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
                           {ci.load_type === 'inbound' ? 'I' : 'O'}
                         </span>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.appointment_time ? formatTimeInIndianapolis(ci.appointment_time, true) : '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatTimeInIndianapolis(ci.check_in_time, true)}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                        {ci.pickup_number || '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.carrier_name || '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.trailer_number || '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.trailer_length || '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.driver_name || '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.driver_phone || '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.destination_city && ci.destination_state 
-                          ? `${ci.destination_city}, ${ci.destination_state}`
-                          : '-'
-                        }
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.dock_number || '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.start_time ? formatTimeInIndianapolis(ci.start_time) : '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ci.end_time 
-                          ? formatTimeInIndianapolis(ci.end_time)
-                          : ci.check_out_time 
-                            ? formatTimeInIndianapolis(ci.check_out_time)
-                            : '-'
-                        }
-                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.appointment_time ? formatTimeInIndianapolis(ci.appointment_time, true) : '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{formatTimeInIndianapolis(ci.check_in_time, true)}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{ci.pickup_number || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.carrier_name || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.trailer_number || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.trailer_length || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.driver_name || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.driver_phone || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.destination_city && ci.destination_state ? `${ci.destination_city}, ${ci.destination_state}` : '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.dock_number || '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.start_time ? formatTimeInIndianapolis(ci.start_time) : '-'}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{ci.end_time ? formatTimeInIndianapolis(ci.end_time) : ci.check_out_time ? formatTimeInIndianapolis(ci.check_out_time) : '-'}</td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          ci.status === 'checked_in' 
-                            ? 'bg-green-100 text-green-800' 
-                            : ci.status === 'checked_out'
-                              ? 'bg-gray-100 text-gray-800'
-                              : 'bg-orange-100 text-orange-800'
-                        }`}>
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${ci.status === 'checked_in' ? 'bg-green-100 text-green-800' : ci.status === 'checked_out' ? 'bg-gray-100 text-gray-800' : 'bg-orange-100 text-orange-800'}`}>
                           {ci.status === 'checked_in' ? 'CHECKED IN' : ci.status === 'checked_out' ? 'CHECKED OUT' : 'PENDING'}
                         </span>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm">
                         {ci.status === 'checked_in' && (
-                          <button
-                            onClick={() => handleStatusChange(ci)}
-                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs"
-                          >
+                          <button onClick={() => handleStatusChange(ci)} className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs">
                             Change Status
                           </button>
                         )}
