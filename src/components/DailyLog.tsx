@@ -14,15 +14,16 @@ interface CheckIn {
   status: string;
   driver_name?: string;
   driver_phone?: string;
-  company?: string;
   carrier_name?: string;
   trailer_number?: string;
-  purpose?: string;
+  trailer_length?: string;
+  load_type?: 'inbound' | 'outbound';
   pickup_number?: string;
   dock_number?: string;
   appointment_time?: string | null;
   start_time?: string | null;
   end_time?: string | null;
+  notes?: string;
 }
 
 export default function DailyLog() {
