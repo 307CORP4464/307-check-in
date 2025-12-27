@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
-import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 import Link from 'next/link';
 import StatusChangeModal from './StatusChangeModal';
 
