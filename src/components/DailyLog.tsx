@@ -12,28 +12,23 @@ const TIMEZONE = 'America/New_York';
 
 // Convert UTC time to EST/EDT
 const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
-  try {
-    const utcDate = new Date(isoString);
-    
-    // Convert to local Indianapolis time string
-    const options: Intl.DateTimeFormatOptions = {
-      timeZone: TIMEZONE,
-      hour12: false,
-      ...(includeDate && {
-        month: '2-digit',
-        day: '2-digit',
-      }),
-      hour: '2-digit',
-      minute: '2-digit',
-    };
-    
-    const formatter = new Intl.DateTimeFormat('en-US', options);
-    return formatter.format(utcDate);
-  } catch (e) {
-    console.error('Time formatting error:', e);
-    return '-';
+  const date = new Date(isoString);
+  
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'America/New_York',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  };
+  
+  if (includeDate) {
+    options.month = '2-digit';
+    options.day = '2-digit';
   }
+  
+  return new Intl.DateTimeFormat('en-US', options).format(date);
 };
+
 
 interface CheckIn {
   id: string;
