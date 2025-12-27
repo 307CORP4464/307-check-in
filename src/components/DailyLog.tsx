@@ -8,26 +8,51 @@ import { zonedTimeToUtc } from 'date-fns-tz';
 import Link from 'next/link';
 import StatusChangeModal from './StatusChangeModal';
 
-const TIMEZONE = 'America/New_York';
-
-// Convert UTC time to EST/EDT
 const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
   const date = new Date(isoString);
   
-  const options: Intl.DateTimeFormatOptions = {
-    timeZone: 'America/New_York',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  };
+  // Get UTC components
+  const utcHours = date.getUTCHours();
+  const utcMinutes = date.getUTCMinutes();
+  const utcMonth = date.getUTCMonth() + 1;
+  const utcDay = date.getUTCDate();
   
-  if (includeDate) {
-    options.month = '2-digit';
-    options.day = '2-digit';
+  // Determine if we're in EST (UTC-5) or EDT (UTC-4)
+  // DST in US: Second Sunday in March to First Sunday in November
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  
+  // Simple DST check: March-October likely EDT, Nov-Feb likely EST
+  const isDST = month >= 2 && month <= 9; // March (2) through October (9)
+  const offset = isDST ? -4 : -5;
+  
+  // Calculate EST/EDT time
+  let estHours = utcHours + offset;
+  let estDay = utcDay;
+  let estMonth = utcMonth;
+  
+  // Handle day rollover
+  if (estHours < 0) {
+    estHours += 24;
+    estDay -= 1;
+  } else if (estHours >= 24) {
+    estHours -= 24;
+    estDay += 1;
   }
   
-  return new Intl.DateTimeFormat('en-US', options).format(date);
+  // Format time
+  const hours = String(estHours).padStart(2, '0');
+  const minutes = String(utcMinutes).padStart(2, '0');
+  
+  if (includeDate) {
+    const formattedMonth = String(estMonth).padStart(2, '0');
+    const formattedDay = String(estDay).padStart(2, '0');
+    return `${formattedMonth}/${formattedDay} ${hours}:${minutes}`;
+  }
+  
+  return `${hours}:${minutes}`;
 };
+
 
 
 interface CheckIn {
