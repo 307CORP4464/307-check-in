@@ -10,7 +10,6 @@ import StatusChangeModal from './StatusChangeModal';
 
 const TIMEZONE = 'America/New_York';
 
-// Manual timezone conversion
 const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
   const date = new Date(isoString);
   
@@ -20,15 +19,10 @@ const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = fals
   const utcMonth = date.getUTCMonth() + 1;
   const utcDay = date.getUTCDate();
   
-  // Determine if we're in EST (UTC-5) or EDT (UTC-4)
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth();
+  // EST is UTC-5 (we're in January, so EST not EDT)
+  const offset = -5;
   
-  // Simple DST check: March-October likely EDT, Nov-Feb likely EST
-  const isDST = month >= 2 && month <= 9;
-  const offset = isDST ? -4 : -5;
-  
-  // Calculate EST/EDT time
+  // Calculate EST time
   let estHours = utcHours + offset;
   let estDay = utcDay;
   let estMonth = utcMonth;
@@ -54,6 +48,7 @@ const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = fals
   
   return `${hours}:${minutes}`;
 };
+
 
 interface CheckIn {
   id: string;
