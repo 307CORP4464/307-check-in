@@ -9,9 +9,9 @@ interface FormData {
   driverPhone: string;
   carrierName: string;
   trailerNumber: string;
+  trailerLength: string;
   pickupNumber: string;
-  company: string;
-  purpose: string;
+  loadType: 'inbound' | 'outbound';
 }
 
 export default function DriverCheckInForm() {
@@ -26,16 +26,16 @@ export default function DriverCheckInForm() {
     driverPhone: '',
     carrierName: '',
     trailerNumber: '',
+    trailerLength: '',
     pickupNumber: '',
-    company: '',
-    purpose: '',
+    loadType: 'inbound',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -58,9 +58,9 @@ export default function DriverCheckInForm() {
             driver_phone: formData.driverPhone,
             carrier_name: formData.carrierName,
             trailer_number: formData.trailerNumber,
+            trailer_length: formData.trailerLength,
             pickup_number: formData.pickupNumber,
-            company: formData.company,
-            purpose: formData.purpose,
+            load_type: formData.loadType,
             check_in_time: new Date().toISOString(),
             status: 'pending',
           }
@@ -75,12 +75,11 @@ export default function DriverCheckInForm() {
         driverPhone: '',
         carrierName: '',
         trailerNumber: '',
+        trailerLength: '',
         pickupNumber: '',
-        company: '',
-        purpose: '',
+        loadType: 'inbound',
       });
 
-      // Redirect to success page or show success message
       setTimeout(() => {
         setSuccess(false);
       }, 5000);
@@ -116,6 +115,24 @@ export default function DriverCheckInForm() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Load Type */}
+          <div>
+            <label htmlFor="loadType" className="block text-sm font-medium text-gray-700 mb-2">
+              Load Type <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="loadType"
+              name="loadType"
+              value={formData.loadType}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="inbound">Inbound Delivery</option>
+              <option value="outbound">Outbound Pickup</option>
+            </select>
+          </div>
+
           {/* Driver Name */}
           <div>
             <label htmlFor="driverName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -184,10 +201,30 @@ export default function DriverCheckInForm() {
             />
           </div>
 
-          {/* Pickup Number */}
+          {/* Trailer Length */}
           <div>
-            <label htmlFor="puNumber" className="block text-sm font-medium text-gray-700 mb-2">
-              Pickup Number (Pickup Number) <span className="text-red-500">*</span>
+            <label htmlFor="trailerLength" className="block text-sm font-medium text-gray-700 mb-2">
+              Trailer Length <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="trailerLength"
+              name="trailerLength"
+              value={formData.trailerLength}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Select trailer length</option>
+              <option value="28">28 ft</option>
+              <option value="48">48 ft</option>
+              <option value="53">53 ft</option>
+            </select>
+          </div>
+
+          {/* PU Number */}
+          <div>
+            <label htmlFor="pickupNumber" className="block text-sm font-medium text-gray-700 mb-2">
+              Pickup Number <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -197,39 +234,7 @@ export default function DriverCheckInForm() {
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter Pickup number"
-            />
-          </div>
-
-          {/* Company */}
-          <div>
-            <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-              Company (Optional)
-            </label>
-            <input
-              type="text"
-              id="company"
-              name="company"
-              value={formData.company}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter company name"
-            />
-          </div>
-
-          {/* Purpose */}
-          <div>
-            <label htmlFor="purpose" className="block text-sm font-medium text-gray-700 mb-2">
-              Purpose of Visit (Optional)
-            </label>
-            <textarea
-              id="purpose"
-              name="purpose"
-              value={formData.purpose}
-              onChange={handleInputChange}
-              rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter purpose of visit"
+              placeholder="Enter pickup number"
             />
           </div>
 
