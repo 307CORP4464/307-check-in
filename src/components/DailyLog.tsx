@@ -33,8 +33,6 @@ export default function DailyLog() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [selectedForStatusChange, setSelectedForStatusChange] = useState<CheckIn | null>(null);
-  const [isStatusChangeModalOpen, setIsStatusChangeModalOpen] = useState(false);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +40,8 @@ export default function DailyLog() {
   const [selectedDate, setSelectedDate] = useState<string>(
     format(new Date(), 'yyyy-MM-dd')
   );
+  const [selectedForStatusChange, setSelectedForStatusChange] = useState<CheckIn | null>(null);
+  const [isStatusChangeModalOpen, setIsStatusChangeModalOpen] = useState(false);
 
   useEffect(() => {
     const getUser = async () => {
@@ -92,42 +92,47 @@ export default function DailyLog() {
   };
 
   const handleStatusChange = (checkIn: CheckIn) => {
-  setSelectedForStatusChange(checkIn);
-  setIsStatusChangeModalOpen(true);
-};
+    setSelectedForStatusChange(checkIn);
+    setIsStatusChangeModalOpen(true);
+  };
 
-const handleStatusChangeSuccess = () => {
-  fetchCheckInsForDate();
-};
-
+  const handleStatusChangeSuccess = () => {
+    fetchCheckInsForDate();
+  };
 
   const exportToCSV = () => {
     const headers = [
+      'Type',
       'Appointment Time',
       'Check-in Time',
       'Pickup Number',
       'Carrier Name',
       'Trailer Number',
+      'Trailer Length',
       'Driver Name',
       'Driver Phone',
       'Dock Number',
       'Start Time',
       'End Time',
-      'Status'
+      'Status',
+      'Notes'
     ];
 
     const rows = checkIns.map(ci => [
+      ci.load_type === 'inbound' ? 'I' : 'O',
       ci.appointment_time ? format(parseISO(ci.appointment_time), 'yyyy-MM-dd HH:mm') : '',
       format(parseISO(ci.check_in_time), 'yyyy-MM-dd HH:mm'),
       ci.pickup_number || '',
       ci.carrier_name || '',
       ci.trailer_number || '',
+      ci.trailer_length ? `${ci.trailer_length} ft` : '',
       ci.driver_name || '',
       ci.driver_phone || '',
       ci.dock_number || '',
       ci.start_time ? format(parseISO(ci.start_time), 'yyyy-MM-dd HH:mm') : '',
       ci.end_time ? format(parseISO(ci.end_time), 'yyyy-MM-dd HH:mm') : ci.check_out_time ? format(parseISO(ci.check_out_time), 'yyyy-MM-dd HH:mm') : '',
-      ci.status
+      ci.status,
+      ci.notes || ''
     ]);
 
     const csvContent = [
@@ -247,6 +252,9 @@ const handleStatusChangeSuccess = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Appointment Time
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -260,6 +268,9 @@ const handleStatusChangeSuccess = () => {
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Trailer Number
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Trailer Length
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Driver Name
@@ -278,7 +289,7 @@ const handleStatusChangeSuccess = () => {
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
-                   </th>
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
@@ -287,6 +298,15 @@ const handleStatusChangeSuccess = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {checkIns.map((ci) => (
                     <tr key={ci.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded ${
+                          ci.load_type === 'inbound' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {ci.load_type === 'inbound' ? 'I' : 'O'}
+                        </span>
+                      </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                         {ci.appointment_time ? format(parseISO(ci.appointment_time), 'MM/dd HH:mm') : '-'}
                       </td>
@@ -301,6 +321,9 @@ const handleStatusChangeSuccess = () => {
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                         {ci.trailer_number || '-'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {ci.trailer_length ? `${ci.trailer_length} ft` : '-'}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                         {ci.driver_name || '-'}
@@ -333,16 +356,16 @@ const handleStatusChangeSuccess = () => {
                           {ci.status === 'checked_in' ? 'CHECKED IN' : ci.status === 'checked_out' ? 'CHECKED OUT' : 'PENDING'}
                         </span>
                       </td>
-<td className="px-4 py-4 whitespace-nowrap text-sm">
-  {ci.status === 'checked_in' && (
-    <button
-      onClick={() => handleStatusChange(ci)}
-      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs"
-    >
-      Change Status
-    </button>
-  )}
-</td>  
+                      <td className="px-4 py-4 whitespace-nowrap text-sm">
+                        {ci.status === 'checked_in' && (
+                          <button
+                            onClick={() => handleStatusChange(ci)}
+                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs"
+                          >
+                            Change Status
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -351,18 +374,17 @@ const handleStatusChangeSuccess = () => {
           </div>
         </div>
       </div>
-{isStatusChangeModalOpen && selectedForStatusChange && (
-  <StatusChangeModal
-    checkIn={selectedForStatusChange}
-    onClose={() => {
-      setIsStatusChangeModalOpen(false);
-      setSelectedForStatusChange(null);
-    }}
-    onSuccess={handleStatusChangeSuccess}
-  />
-)}
 
-      
+      {isStatusChangeModalOpen && selectedForStatusChange && (
+        <StatusChangeModal
+          checkIn={selectedForStatusChange}
+          onClose={() => {
+            setIsStatusChangeModalOpen(false);
+            setSelectedForStatusChange(null);
+          }}
+          onSuccess={handleStatusChangeSuccess}
+        />
+      )}
     </div>
   );
 }
