@@ -15,6 +15,8 @@ interface StatusChangeModalProps {
   onSuccess: () => void;
 }
 
+type StatusAction = 'complete' | 'rejected' | 'turned_away';
+
 export default function StatusChangeModal({ checkIn, onClose, onSuccess }: StatusChangeModalProps) {
   const [startTime, setStartTime] = useState(
     checkIn.start_time 
@@ -26,7 +28,7 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
       ? new Date(checkIn.end_time).toISOString().slice(0, 16) 
       : ''
   );
-  const [statusAction, setStatusAction] = useState<'complete' | 'rejected' | 'turned_away'>('complete');
+  const [statusAction, setStatusAction] = useState<StatusAction>('complete');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +76,8 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
       setLoading(false);
     }
   };
+
+  const isNotesRequired = statusAction === 'rejected' || statusAction === 'turned_away';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -144,7 +148,7 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
                   type="radio"
                   value="complete"
                   checked={statusAction === 'complete'}
-                  onChange={(e) => setStatusAction(e.target.value as any)}
+                  onChange={(e) => setStatusAction(e.target.value as StatusAction)}
                   className="mr-2"
                 />
                 <span>Complete Loading</span>
@@ -154,7 +158,7 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
                   type="radio"
                   value="rejected"
                   checked={statusAction === 'rejected'}
-                  onChange={(e) => setStatusAction(e.target.value as any)}
+                  onChange={(e) => setStatusAction(e.target.value as StatusAction)}
                   className="mr-2"
                 />
                 <span>Rejected</span>
@@ -164,7 +168,7 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
                   type="radio"
                   value="turned_away"
                   checked={statusAction === 'turned_away'}
-                  onChange={(e) => setStatusAction(e.target.value as any)}
+                  onChange={(e) => setStatusAction(e.target.value as StatusAction)}
                   className="mr-2"
                 />
                 <span>Turned Away</span>
@@ -172,36 +176,23 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
             </div>
           </div>
 
-          {(statusAction === 'rejected' || statusAction === 'turned_away') && (
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Notes {statusAction !== 'complete' && '*'}
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={4}
-                placeholder="Enter reason for rejection or turning away..."
-                required={statusAction !== 'complete'}
-              />
-            </div>
-          )}
-
-          {statusAction === 'complete' && (
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Notes (Optional)
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={3}
-                placeholder="Additional notes..."
-              />
-            </div>
-          )}
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Notes {isNotesRequired && <span className="text-red-500">*</span>}
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              rows={4}
+              placeholder={
+                isNotesRequired
+                  ? "Enter reason for rejection or turning away..."
+                  : "Additional notes (optional)..."
+              }
+              required={isNotesRequired}
+            />
+          </div>
 
           <div className="flex gap-3">
             <button
