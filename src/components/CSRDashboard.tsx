@@ -4,8 +4,11 @@ import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import Link from 'next/link';
 import AssignDockModal from './AssignDockModal';
+
+const TIMEZONE = 'America/Indiana/Indianapolis';
 
 interface CheckIn {
   id: string;
@@ -14,10 +17,10 @@ interface CheckIn {
   status: string;
   driver_name?: string;
   driver_phone?: string;
-  company?: string;
   carrier_name?: string;
   trailer_number?: string;
-  purpose?: string;
+  trailer_length?: string;
+  load_type?: 'inbound' | 'outbound';
   pickup_number?: string;
   dock_number?: string;
   appointment_time?: string | null;
@@ -143,7 +146,7 @@ export default function CSRDashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard - Pending Check-ins</h1>
+              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard - Pending Check-ins (Indianapolis Time)</h1>
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
@@ -203,6 +206,9 @@ export default function CSRDashboard() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Check-in Time
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -221,6 +227,9 @@ export default function CSRDashboard() {
                       Trailer #
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Trailer Length
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Wait Time
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -237,8 +246,17 @@ export default function CSRDashboard() {
                     const waitTimeColor = getWaitTimeColor(ci);
                     return (
                       <tr key={ci.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded ${
+                            ci.load_type === 'inbound' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {ci.load_type === 'inbound' ? 'I' : 'O'}
+                          </span>
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {format(parseISO(ci.check_in_time), 'HH:mm')}
+                          {formatInTimeZone(parseISO(ci.check_in_time), TIMEZONE, 'HH:mm')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                           {ci.pickup_number || '-'}
@@ -250,10 +268,13 @@ export default function CSRDashboard() {
                           {ci.driver_phone || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {ci.carrier_name || ci.company || '-'}
+                          {ci.carrier_name || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {ci.trailer_number || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {ci.trailer_length || '-'}
                         </td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${waitTimeColor}`}>
                           {waitTime}
