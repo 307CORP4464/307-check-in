@@ -54,18 +54,35 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
         status = 'turned_away';
       }
 
+      // Build update object dynamically to only update existing columns
+      const updateData: any = {
+        status: status,
+        check_out_time: new Date().toISOString(),
+      };
+
+      if (startTimeISO) {
+        updateData.start_time = startTimeISO;
+      }
+
+      if (endTimeISO) {
+        updateData.end_time = endTimeISO;
+      }
+
+      if (notes) {
+        updateData.notes = notes;
+      }
+
+      console.log('Updating with data:', updateData);
+
       const { error: updateError } = await supabase
         .from('check_ins')
-        .update({
-          start_time: startTimeISO,
-          end_time: endTimeISO,
-          check_out_time: new Date().toISOString(),
-          status: status,
-          notes: notes || null,
-        })
+        .update(updateData)
         .eq('id', checkIn.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
 
       onSuccess();
       onClose();
@@ -80,8 +97,8 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
   const isNotesRequired = statusAction === 'rejected' || statusAction === 'turned_away';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6 my-8">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Change Status</h2>
           <button
@@ -100,98 +117,104 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
           </div>
         )}
 
-        <div className="mb-4 p-3 bg-gray-50 rounded">
-          <p className="text-sm text-gray-600">Pickup Number:</p>
-          <p className="font-semibold">{checkIn.pickup_number || 'N/A'}</p>
+        <div className="mb-4 p-3 bg-gray-50 rounded flex gap-6">
+          <div>
+            <p className="text-sm text-gray-600">Pickup Number:</p>
+            <p className="font-semibold">{checkIn.pickup_number || 'N/A'}</p>
+          </div>
           {checkIn.driver_name && (
-            <>
-              <p className="text-sm text-gray-600 mt-2">Driver:</p>
+            <div>
+              <p className="text-sm text-gray-600">Driver:</p>
               <p className="font-semibold">{checkIn.driver_name}</p>
-            </>
+            </div>
           )}
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Load Start Time *
-            </label>
-            <input
-              type="datetime-local"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Load Start Time *
+              </label>
+              <input
+                type="datetime-local"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Load End Time *
-            </label>
-            <input
-              type="datetime-local"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Status Action *
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="complete"
-                  checked={statusAction === 'complete'}
-                  onChange={(e) => setStatusAction(e.target.value as StatusAction)}
-                  className="mr-2"
-                />
-                <span>Complete Loading</span>
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Load End Time *
               </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="rejected"
-                  checked={statusAction === 'rejected'}
-                  onChange={(e) => setStatusAction(e.target.value as StatusAction)}
-                  className="mr-2"
-                />
-                <span>Rejected</span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="turned_away"
-                  checked={statusAction === 'turned_away'}
-                  onChange={(e) => setStatusAction(e.target.value as StatusAction)}
-                  className="mr-2"
-                />
-                <span>Turned Away</span>
-              </label>
+              <input
+                type="datetime-local"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Notes {isNotesRequired && <span className="text-red-500">*</span>}
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              placeholder={
-                isNotesRequired
-                  ? "Enter reason for rejection or turning away..."
-                  : "Additional notes (optional)..."
-              }
-              required={isNotesRequired}
-            />
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Status Action *
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="complete"
+                    checked={statusAction === 'complete'}
+                    onChange={(e) => setStatusAction(e.target.value as StatusAction)}
+                    className="mr-2"
+                  />
+                  <span>Complete Loading</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="rejected"
+                    checked={statusAction === 'rejected'}
+                    onChange={(e) => setStatusAction(e.target.value as StatusAction)}
+                    className="mr-2"
+                  />
+                  <span>Rejected</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="turned_away"
+                    checked={statusAction === 'turned_away'}
+                    onChange={(e) => setStatusAction(e.target.value as StatusAction)}
+                    className="mr-2"
+                  />
+                  <span>Turned Away</span>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Notes {isNotesRequired && <span className="text-red-500">*</span>}
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={5}
+                placeholder={
+                  isNotesRequired
+                    ? "Enter reason for rejection or turning away..."
+                    : "Additional notes (optional)..."
+                }
+                required={isNotesRequired}
+              />
+            </div>
           </div>
 
           <div className="flex gap-3">
