@@ -12,6 +12,7 @@ interface FormData {
   trailerLength: string;
   pickupNumber: string;
   loadType: 'inbound' | 'outbound';
+  destinationCity: string;
 }
 
 export default function DriverCheckInForm() {
@@ -29,6 +30,7 @@ export default function DriverCheckInForm() {
     trailerLength: '',
     pickupNumber: '',
     loadType: 'inbound',
+    destinationCity: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -61,6 +63,7 @@ export default function DriverCheckInForm() {
             trailer_length: formData.trailerLength,
             pickup_number: formData.pickupNumber,
             load_type: formData.loadType,
+            destination_city: formData.destinationCity,
             check_in_time: new Date().toISOString(),
             status: 'pending',
           }
@@ -78,6 +81,7 @@ export default function DriverCheckInForm() {
         trailerLength: '',
         pickupNumber: '',
         loadType: 'inbound',
+        destinationCity: '',
       });
 
       setTimeout(() => {
@@ -215,7 +219,9 @@ export default function DriverCheckInForm() {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Select trailer length</option>
-              <option value="28">28 ft</option>
+              <option value="Box">Box Truck</option>
+              <option value="20">20 ft</option>
+              <option value="40">40 ft</option>
               <option value="48">48 ft</option>
               <option value="53">53 ft</option>
             </select>
@@ -234,7 +240,25 @@ export default function DriverCheckInForm() {
               onChange={handleInputChange}
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter pickup number"
+              placeholder="e.g., PU12345 or 123456"
+            />
+            <p className="mt-1 text-sm text-gray-500">Format: PU12345 or 123456</p>
+          </div>
+
+          {/* Destination City */}
+          <div>
+            <label htmlFor="destinationCity" className="block text-sm font-medium text-gray-700 mb-2">
+              Destination City <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="destinationCity"
+              name="destinationCity"
+              value={formData.destinationCity}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter destination city"
             />
           </div>
 
