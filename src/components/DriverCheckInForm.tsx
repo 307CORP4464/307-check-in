@@ -36,6 +36,31 @@ export default function DriverCheckInForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [pickupError, setPickupError] = useState<string | null>(null);
+
+  const validatePickupNumber = (value: string): boolean => {
+    // Remove spaces and convert to uppercase
+    const cleaned = value.replace(/\s/g, '').toUpperCase();
+    
+    // Patterns:
+    // 2xxxxxx (7 digits starting with 2)
+    // 4xxxxxx (7 digits starting with 4)
+    // 44xxxxxxxx (10 digits starting with 44)
+    // 8xxxxxxx (8 digits starting with 8)
+    // TLNA-SO-00xxxx (TLNA-SO-00 followed by 4 digits)
+    // xxxxxx (any 6 digits)
+    
+    const patterns = [
+      /^2\d{6}$/,           // 2xxxxxx
+      /^4\d{6}$/,           // 4xxxxxx
+      /^44\d{8}$/,          // 44xxxxxxxx
+      /^8\d{7}$/,           // 8xxxxxxx
+      /^TLNA-SO-00\d{4}$/,  // TLNA-SO-00xxxx
+      /^\d{6}$/             // xxxxxx
+    ];
+    
+    return patterns.some(pattern => pattern.test(cleaned));
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -43,6 +68,15 @@ export default function DriverCheckInForm() {
       ...prev,
       [name]: value
     }));
+
+    // Validate pickup number on change
+    if (name === 'pickupNumber') {
+      if (value && !validatePickupNumber(value)) {
+        setPickupError('Invalid format. Must match: 2xxxxxx, 4xxxxxx, 44xxxxxxxx, 8xxxxxxx, TLNA-SO-00xxxx, or xxxxxx');
+      } else {
+        setPickupError(null);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +84,13 @@ export default function DriverCheckInForm() {
     setLoading(true);
     setError(null);
     setSuccess(false);
+
+    // Validate pickup number before submitting
+    if (!validatePickupNumber(formData.pickupNumber)) {
+      setError('Invalid pickup number format');
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data, error: insertError } = await supabase
@@ -83,6 +124,7 @@ export default function DriverCheckInForm() {
         loadType: 'inbound',
         destinationCity: '',
       });
+      setPickupError(null);
 
       setTimeout(() => {
         setSuccess(false);
@@ -227,7 +269,7 @@ export default function DriverCheckInForm() {
             </select>
           </div>
 
-          {/* Pickup Number */}
+          {/* PU Number */}
           <div>
             <label htmlFor="pickupNumber" className="block text-sm font-medium text-gray-700 mb-2">
               Pickup Number <span className="text-red-500">*</span>
@@ -239,10 +281,17 @@ export default function DriverCheckInForm() {
               value={formData.pickupNumber}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="e.g., 2xxxxxx, 4xxxxxx, 8xxxxxxx, TLNA-SO-00XXXX or XXXXXX"
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                pickupError ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="e.g., 2123456, 44123456789, TLNA-SO-001234"
             />
-            <p className="mt-1 text-sm text-gray-500">Format: PU12345 or 123456</p>
+            <p className="mt-1 text-sm text-gray-500">
+              Valid formats: 2xxxxxx, 4xxxxxx, 44xxxxxxxx, 8xxxxxxx, TLNA-SO-00xxxx, or xxxxxx
+            </p>
+            {pickupError && (
+              <p className="mt-1 text-sm text-red-600">{pickupError}</p>
+            )}
           </div>
 
           {/* Destination City */}
@@ -266,7 +315,7 @@ export default function DriverCheckInForm() {
           <div className="pt-4">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !!pickupError}
               className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
