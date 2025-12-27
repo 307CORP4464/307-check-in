@@ -12,9 +12,39 @@ const TIMEZONE = 'America/Indiana/Indianapolis';
 
 // Helper function to format times in Indianapolis timezone
 const formatTimeInIndianapolis = (isoString: string, formatString: string = 'HH:mm'): string => {
-  const utcDate = parseISO(isoString);
-  const zonedDate = utcToZonedTime(utcDate, TIMEZONE);
-  return format(zonedDate, formatString);
+  try {
+    const date = new Date(isoString);
+    // Convert to Indianapolis timezone string
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: TIMEZONE,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    };
+    
+    if (formatString === 'MM/dd HH:mm') {
+      options.month = '2-digit';
+      options.day = '2-digit';
+    }
+    
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    const parts = formatter.formatToParts(date);
+    
+    if (formatString === 'MM/dd HH:mm') {
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+      return `${month}/${day} ${hour}:${minute}`;
+    } else {
+      const hour = parts.find(p => p.type === 'hour')?.value;
+      const minute = parts.find(p => p.type === 'minute')?.value;
+      return `${hour}:${minute}`;
+    }
+  } catch (e) {
+    console.error('Error formatting time:', e);
+    return '-';
+  }
 };
 
 interface CheckIn {
