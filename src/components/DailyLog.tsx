@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/ssr';
+import { createBrowserClient } from '@supabase/ssr';
 import { zonedTimeToUtc, utcToZonedTime, format } from 'date-fns-tz';
 
 const TIMEZONE = 'America/Indiana/Indianapolis';
@@ -23,7 +23,11 @@ export default function DailyLog() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const supabase = createClientComponentClient();
+  // Create Supabase client
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   useEffect(() => {
     fetchCheckIns();
