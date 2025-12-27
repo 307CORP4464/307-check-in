@@ -7,32 +7,24 @@ import { differenceInMinutes } from 'date-fns';
 import Link from 'next/link';
 import AssignDockModal from './AssignDockModal';
 
-const TIMEZONE = 'America/New_York';
-
 const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
-  try {
-    const date = new Date(isoString);
-    
-    const options: Intl.DateTimeFormatOptions = {
-      timeZone: TIMEZONE,
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    };
-    
-    if (includeDate) {
-      options.month = '2-digit';
-      options.day = '2-digit';
-      options.year = 'numeric';
-    }
-    
-    const formatted = new Intl.DateTimeFormat('en-US', options).format(date);
-    return formatted;
-  } catch (e) {
-    console.error('Time formatting error:', e, isoString);
-    return isoString;
+  const date = new Date(isoString);
+  
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'America/New_York',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  };
+  
+  if (includeDate) {
+    options.month = '2-digit';
+    options.day = '2-digit';
   }
+  
+  return new Intl.DateTimeFormat('en-US', options).format(date);
 };
+
 
 interface CheckIn {
   id: string;
