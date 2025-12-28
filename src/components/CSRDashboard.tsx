@@ -202,12 +202,6 @@ export default function CSRDashboard() {
             <h3 className="text-gray-600 text-sm font-medium">Pending Check-ins</h3>
             <p className="text-3xl font-bold mt-2 text-orange-600">{checkIns.length}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-600 text-sm font-medium">Awaiting Assignment</h3>
-            <p className="text-3xl font-bold mt-2 text-blue-600">
-              {checkIns.filter(ci => !ci.dock_number).length}
-            </p>
-          </div>
         </div>
 
         {error && (
