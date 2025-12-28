@@ -79,65 +79,67 @@ export default function DriverCheckInForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+  setSuccess(false);
 
-    if (!validatePickupNumber(formData.pickupNumber)) {
-      setError('Invalid pickup number format');
-      setLoading(false);
-      return;
-    }
+  if (!validatePickupNumber(formData.pickupNumber)) {
+    setError('Invalid pickup number format');
+    setLoading(false);
+    return;
+  }
 
-    try {
-      const { data, error: insertError } = await supabase
-        .from('check_ins')
-        .insert([
-          {
-            driver_name: formData.driverName,
-            driver_phone: formData.driverPhone,
-            carrier_name: formData.carrierName,
-            trailer_number: formData.trailerNumber,
-            trailer_length: formData.trailerLength,
-            pickup_number: formData.pickupNumber,
-            load_type: formData.loadType,
-            destination_city: formData.destinationCity,
-            destination_state: formData.destinationState,
-            check_in_time: new Date().toISOString(),
-            status: 'pending',
-          }
-        ])
-        .select();
+  try {
+    // ✅ CORRECT: Store as ISO timestamp (UTC)
+    const { data, error: insertError } = await supabase
+      .from('check_ins')
+      .insert([
+        {
+          driver_name: formData.driverName,
+          driver_phone: formData.driverPhone,
+          carrier_name: formData.carrierName,
+          trailer_number: formData.trailerNumber,
+          trailer_length: formData.trailerLength,
+          pickup_number: formData.pickupNumber,
+          load_type: formData.loadType,
+          destination_city: formData.destinationCity,
+          destination_state: formData.destinationState,
+          check_in_time: new Date().toISOString(), // ⬅️ THIS IS THE FIX!
+          status: 'pending',
+        }
+      ])
+      .select();
 
-      if (insertError) throw insertError;
+    if (insertError) throw insertError;
 
-      setSuccess(true);
-      setFormData({
-        driverName: '',
-        driverPhone: '',
-        carrierName: '',
-        trailerNumber: '',
-        trailerLength: '',
-        pickupNumber: '',
-        loadType: 'inbound',
-        destinationCity: '',
-        destinationState: '',
-      });
-      setPickupError(null);
+    setSuccess(true);
+    setFormData({
+      driverName: '',
+      driverPhone: '',
+      carrierName: '',
+      trailerNumber: '',
+      trailerLength: '',
+      pickupNumber: '',
+      loadType: 'inbound',
+      destinationCity: '',
+      destinationState: '',
+    });
+    setPickupError(null);
 
-      setTimeout(() => {
-        setSuccess(false);
-      }, 5000);
+    setTimeout(() => {
+      setSuccess(false);
+    }, 5000);
 
-    } catch (err) {
-      console.error('Error checking in:', err);
-      setError(err instanceof Error ? err.message : 'Failed to check in');
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    console.error('Error checking in:', err);
+    setError(err instanceof Error ? err.message : 'Failed to check in');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
