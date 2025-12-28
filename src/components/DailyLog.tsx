@@ -14,7 +14,7 @@ const formatTimeInEastern = (isoString: string, includeDate: boolean = false): s
   try {
     const utcDate = new Date(isoString);
     
-    // Convert to local Indianapolis time string
+    // Convert to local Eastern time string
     const options: Intl.DateTimeFormatOptions = {
       timeZone: TIMEZONE,
       hour12: false,
@@ -66,7 +66,7 @@ const isOnTime = (checkInTime: string, appointmentTime: string | null | undefine
     
     const checkInDate = new Date(checkInTime);
     
-    // Get check-in time in Indianapolis timezone
+    // Get check-in time in Eastern timezone
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: TIMEZONE,
       hour: 'numeric',
@@ -162,15 +162,15 @@ export default function DailyLog() {
     try {
       setLoading(true);
       
-      // Convert selected date to Indianapolis timezone, then to UTC for querying
-      const startOfDayIndy = zonedTimeToUtc(`${selectedDate} 00:00:00`, TIMEZONE);
-      const endOfDayIndy = zonedTimeToUtc(`${selectedDate} 23:59:59`, TIMEZONE);
+      // Convert selected date to Eastern timezone, then to UTC for querying
+      const startOfDayEastern = zonedTimeToUtc(`${selectedDate} 00:00:00`, TIMEZONE);
+      const endOfDayEastern = zonedTimeToUtc(`${selectedDate} 23:59:59`, TIMEZONE);
 
       const { data, error } = await supabase
         .from('check_ins')
         .select('*')
-        .gte('check_in_time', startOfDayIndy.toISOString())
-        .lte('check_in_time', endOfDayIndy.toISOString())
+        .gte('check_in_time', startOfDayEastern.toISOString())
+        .lte('check_in_time', endOfDayEastern.toISOString())
         .order('check_in_time', { ascending: false });
 
       if (error) throw error;
