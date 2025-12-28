@@ -1,8 +1,6 @@
 'use client';
-
 import { useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-
 interface AssignDockModalProps {
   checkIn: {
     id: string;
@@ -16,7 +14,6 @@ interface AssignDockModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
-
 export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignDockModalProps) {
   const [dockNumber, setDockNumber] = useState(checkIn.dock_number || '');
   const [appointmentTime, setAppointmentTime] = useState(checkIn.appointment_time || '');
@@ -27,12 +24,10 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-
   const dockOptions = [
     'Ramp',
     ...Array.from({ length: 70 }, (_, i) => (i + 1).toString())
   ];
-
   const appointmentOptions = [
     { value: '0800', label: '08:00' },
     { value: '0900', label: '09:00' },
@@ -51,12 +46,10 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     { value: 'paid_to_load', label: 'Paid to Load' },
     { value: 'paid_charge_customer', label: 'Paid - Charge Customer' },
   ];
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
       const { error: updateError } = await supabase
         .from('check_ins')
@@ -67,9 +60,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
           start_time: new Date().toISOString(),
         })
         .eq('id', checkIn.id);
-
       if (updateError) throw updateError;
-
       onSuccess();
       onClose();
     } catch (err) {
@@ -79,7 +70,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
       setLoading(false);
     }
   };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -94,13 +84,11 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
             </svg>
           </button>
         </div>
-
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
-
         <div className="mb-4 p-3 bg-gray-50 rounded">
           <p className="text-sm text-gray-600">Check-in ID:</p>
           <p className="font-semibold">#{checkIn.id.slice(0, 8)}</p>
@@ -123,7 +111,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
             </>
           )}
         </div>
-
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
@@ -143,7 +130,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
               ))}
             </select>
           </div>
-
           <div className="mb-6">
             <label className="block text-gray-700 text-sm font-bold mb-2">
 <div className="mb-6">
@@ -164,9 +150,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     ))}
   </select>
 </div>
-
-              
-
           <div className="flex gap-3">
             <button
               type="submit"
