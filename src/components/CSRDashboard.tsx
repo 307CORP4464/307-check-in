@@ -12,29 +12,28 @@ const TIMEZONE = 'America/New_York';
 const formatTimeInEastern = (isoString: string, includeDate: boolean = false): string => {
   try {
     const date = new Date(isoString);
-    
-    // Check if date is valid
+
     if (isNaN(date.getTime())) {
       console.error('Invalid date:', isoString);
       return 'Invalid Date';
     }
-    
+
     const options: Intl.DateTimeFormatOptions = {
       timeZone: TIMEZONE,
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false
+      hour12: false,
+      timeZoneName: 'short'
     };
-    
+
     if (includeDate) {
       options.year = 'numeric';
       options.month = '2-digit';
       options.day = '2-digit';
     }
-    
+
     const formatter = new Intl.DateTimeFormat('en-US', options);
-    const formatted = formatter.format(date);
-    return formatted;
+    return formatter.format(date);
   } catch (e) {
     console.error('Time formatting error:', e, isoString);
     return isoString;
@@ -238,7 +237,7 @@ export default function CSRDashboard() {
                       Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Check-in Time (EST/EDT)
+                      Check-in Time (EST)
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Pickup Number
