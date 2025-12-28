@@ -91,8 +91,18 @@ const handleSubmit = async (e: React.FormEvent) => {
     return;
   }
 
-  try {
-    // ✅ CORRECT: Store as ISO timestamp (UTC)
+// If dashboard current time uses this format:
+const currentTime = new Date().toLocaleString('en-US', { 
+  timeZone: 'America/New_York',
+  hour12: true 
+});
+
+// Apply the SAME format to driver check-in time:
+const driverCheckInTime = new Date(driver.checkInTimestamp).toLocaleString('en-US', { 
+  timeZone: 'America/New_York',
+  hour12: true 
+});
+
     const { data, error: insertError } = await supabase
       .from('check_ins')
       .insert([
