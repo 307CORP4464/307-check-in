@@ -7,10 +7,10 @@ import { zonedTimeToUtc } from 'date-fns-tz';
 import Link from 'next/link';
 import StatusChangeModal from './StatusChangeModal';
 
-const TIMEZONE = 'America/Indiana/Indianapolis';
+const TIMEZONE = 'America/New_York';
 
 // Convert UTC time to EST/EDT
-const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
+const formatTimeInEastern = (isoString: string, includeDate: boolean = false): string => {
   try {
     const utcDate = new Date(isoString);
     
@@ -122,8 +122,8 @@ export default function DailyLog() {
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
   
-  // Get current date in Indianapolis timezone
-  const getCurrentDateInIndianapolis = () => {
+  // Get current date in Eastern timezone
+  const getCurrentDateInEastern = () => {
     const now = new Date();
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: TIMEZONE,
@@ -138,7 +138,7 @@ export default function DailyLog() {
     return `${year}-${month}-${day}`;
   };
 
-  const [selectedDate, setSelectedDate] = useState<string>(getCurrentDateInIndianapolis());
+  const [selectedDate, setSelectedDate] = useState<string>(getCurrentDateInEastern());
   const [selectedForStatusChange, setSelectedForStatusChange] = useState<CheckIn | null>(null);
   const [isStatusChangeModalOpen, setIsStatusChangeModalOpen] = useState(false);
 
@@ -223,7 +223,7 @@ export default function DailyLog() {
     const rows = checkIns.map(ci => [
       ci.load_type === 'inbound' ? 'I' : 'O',
       formatAppointmentTime(ci.appointment_time),
-      formatTimeInIndianapolis(ci.check_in_time, true),
+      formatTimeInEastern(ci.check_in_time, true),
       ci.pickup_number || '',
       ci.carrier_name || '',
       ci.trailer_number || '',
@@ -232,8 +232,8 @@ export default function DailyLog() {
       ci.driver_phone || '',
       ci.destination_city && ci.destination_state ? `${ci.destination_city}, ${ci.destination_state}` : '',
       ci.dock_number || '',
-      ci.start_time ? formatTimeInIndianapolis(ci.start_time, true) : '',
-      ci.end_time ? formatTimeInIndianapolis(ci.end_time, true) : ci.check_out_time ? formatTimeInIndianapolis(ci.check_out_time, true) : '',
+      ci.start_time ? formatTimeInEastern(ci.start_time, true) : '',
+      ci.end_time ? formatTimeInEastern(ci.end_time, true) : ci.check_out_time ? formatTimeInEastern(ci.check_out_time, true) : '',
       ci.status,
       ci.notes || ''
     ]);
@@ -270,7 +270,7 @@ export default function DailyLog() {
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
-              <p className="text-xs text-gray-500">Current time: {formatTimeInIndianapolis(new Date().toISOString())}</p>
+              <p className="text-xs text-gray-500">Current time: {formatTimeInEastern(new Date().toISOString())}</p>
             </div>
             <div className="flex gap-3">
               <Link
@@ -304,7 +304,7 @@ export default function DailyLog() {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setSelectedDate(getCurrentDateInIndianapolis())}
+                onClick={() => setSelectedDate(getCurrentDateInEastern())}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
               >
                 Today
@@ -387,7 +387,7 @@ export default function DailyLog() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatTimeInIndianapolis(checkIn.check_in_time, true)}
+                        {formatTimeInEastern(checkIn.check_in_time, true)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {checkIn.pickup_number || '-'}

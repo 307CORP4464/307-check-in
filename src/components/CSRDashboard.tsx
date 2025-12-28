@@ -7,9 +7,9 @@ import { differenceInMinutes } from 'date-fns';
 import Link from 'next/link';
 import AssignDockModal from './AssignDockModal';
 
-const TIMEZONE = 'America/Indiana/Indianapolis';
+const TIMEZONE = 'America/New_York';
 
-const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
+const formatTimeInEastern = (isoString: string, includeDate: boolean = false): string => {
   try {
     const date = new Date(isoString);
     
@@ -34,15 +34,6 @@ const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = fals
     
     const formatter = new Intl.DateTimeFormat('en-US', options);
     const formatted = formatter.format(date);
-    
-    // Log for debugging (remove after testing)
-    console.log('Formatting:', {
-      input: isoString,
-      parsed: date.toISOString(),
-      formatted: formatted,
-      timezone: TIMEZONE
-    });
-    
     return formatted;
   } catch (e) {
     console.error('Time formatting error:', e, isoString);
@@ -193,7 +184,7 @@ export default function CSRDashboard() {
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
-              <p className="text-xs text-gray-500">Current time: {formatTimeInIndianapolis(new Date().toISOString())}</p>
+              <p className="text-xs text-gray-500">Current time: {formatTimeInEastern(new Date().toISOString())}</p>
             </div>
             <div className="flex gap-3">
               <Link
@@ -297,7 +288,7 @@ export default function CSRDashboard() {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatTimeInIndianapolis(ci.check_in_time)}
+                          {formatTimeInEastern(ci.check_in_time)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                           {ci.pickup_number || '-'}
