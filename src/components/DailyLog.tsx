@@ -1,134 +1,134 @@
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { startOfDay, endOfDay } from 'date-fns';
+import { useRouter } from 'next/navigation';
+import { format, parseISO } from 'date-fns';
 import { zonedTimeToUtc } from 'date-fns-tz';
-import { saveAs } from 'file-saver';
+import Link from 'next/link';
+import StatusChangeModal from './StatusChangeModal';
 
 const TIMEZONE = 'America/Indiana/Indianapolis';
 
-const formatTimeInIndianapolis = (isoString: string | null | undefined): string => {
-  if (!isoString) return '-';
+// Convert UTC time to EST/EDT
+const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
   try {
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-
-    return new Intl.DateTimeFormat('en-US', {
+    const utcDate = new Date(isoString);
+    
+    // Convert to local Indianapolis time string
+    const options: Intl.DateTimeFormatOptions = {
       timeZone: TIMEZONE,
+      hour12: false,
+      ...(includeDate && {
+        month: '2-digit',
+        day: '2-digit',
+      }),
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false
-    }).format(date);
+    };
+    
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    return formatter.format(utcDate);
   } catch (e) {
-    console.error('Error formatting time', e);
-    return isoString;
+    console.error('Time formatting error:', e);
+    return '-';
   }
 };
 
+// Format appointment time (which is stored as a string like "0900" or "work_in")
+const formatAppointmentTime = (appointmentTime: string | null | undefined): string => {
+  if (!appointmentTime) return 'N/A';
+  
+  // Handle special appointment types
+  if (appointmentTime === 'work_in') return 'Work In';
+  if (appointmentTime === 'paid_to_load') return 'Paid to Load';
+  if (appointmentTime === 'paid_charge_customer') return 'Paid - Charge Customer';
+  
+  // Format time strings like "0900" to "09:00"
+  if (appointmentTime.length === 4 && /^\d{4}$/.test(appointmentTime)) {
+    const hours = appointmentTime.substring(0, 2);
+    const minutes = appointmentTime.substring(2, 4);
+    return `${hours}:${minutes}`;
+  }
+  
+  return appointmentTime;
+};
+
+// Check if driver checked in on time (within 15 minutes of appointment)
+const isOnTime = (checkInTime: string, appointmentTime: string | null | undefined): boolean => {
+  if (!appointmentTime || appointmentTime === 'work_in' || appointmentTime === 'paid_to_load' || appointmentTime === 'paid_charge_customer') {
+    return true; // Special appointments are always considered "on time"
+  }
+
+  // Parse appointment time (e.g., "0900" = 9:00 AM)
+  if (appointmentTime.length === 4 && /^\d{4}$/.test(appointmentTime)) {
+    const appointmentHour = parseInt(appointmentTime.substring(0, 2));
+    const appointmentMinute = parseInt(appointmentTime.substring(2, 4));
+    
+    const checkInDate = new Date(checkInTime);
+    
+    // Get check-in time in Indianapolis timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: TIMEZONE,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false
+    });
+    
+    const timeString = formatter.format(checkInDate);
+    const [checkInHour, checkInMinute] = timeString.split(':').map(Number);
+    
+    // Convert both to minutes for easier comparison
+    const appointmentTotalMinutes = appointmentHour * 60 + appointmentMinute;
+    const checkInTotalMinutes = checkInHour * 60 + checkInMinute;
+    
+    // Allow 15 minutes early or 15 minutes late
+    const difference = checkInTotalMinutes - appointmentTotalMinutes;
+    return difference >= -15 && difference <= 15;
+  }
+  
+  return true;
+};
+
+interface CheckIn {
+  id: string;
+  check_in_time: string;
+  check_out_time?: string | null;
+  status: string;
+  driver_name?: string;
+  driver_phone?: string;
+  carrier_name?: string;
+  trailer_number?: string;
+  trailer_length?: string;
+  load_type?: 'inbound' | 'outbound';
+  pickup_number?: string;
+  dock_number?: string;
+  appointment_time?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  notes?: string;
+  destination_city?: string;
+  destination_state?: string;
+}
+
 export default function DailyLog() {
+  const router = useRouter();
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-  const [logs, setLogs] = useState<any[]>([]);
+
+  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
   
-  useEffect(() => {
-    fetchLogs();
-  }, []);
-
-  const fetchLogs = async () => {
-    try {
-      setLoading(true);
-      const today = getCurrentDateInIndianapolis();
-      const start = zonedTimeToUtc(startOfDay(today), TIMEZONE);
-      const end = zonedTimeToUtc(endOfDay(today), TIMEZONE);
-
-      const { data, error } = await supabase
-        .from('check_ins')
-        .select('*')
-        .gte('check_in_time', start.toISOString())
-        .lte('check_in_time', end.toISOString())
-        .order('check_in_time', { ascending: false });
-
-      if (error) throw error;
-      setLogs(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Get current date in Indianapolis timezone
   const getCurrentDateInIndianapolis = () => {
     const now = new Date();
-    // convert to Indiana timezone by using toLocaleString and parsing back to Date
-    const s = now.toLocaleString('en-US', { timeZone: TIMEZONE });
-    return new Date(s);
-  };
-
-  const exportToCSV = () => {
-    const rows = [
-      ['Check-in Time (EST/EDT)', 'Driver', 'Pickup Number', 'Carrier', 'Trailer']
-    ];
-
-    logs.forEach((l) => {
-      rows.push([
-        formatTimeInIndianapolis(l.check_in_time),
-        l.driver_name || '-',
-        l.pickup_number || '-',
-        l.carrier_name || '-',
-        l.trailer_number || '-'
-      ]);
-    });
-
-    const csvContent = rows.map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, `daily-log-${new Date().toISOString()}.csv`);
-  };
-
-  if (loading) return <div className="p-4">Loading...</div>;
-
-  return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Daily Check-ins (EST/EDT)</h2>
-        <button
-          onClick={exportToCSV}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Export CSV
-        </button>
-      </div>
-
-      <div className="overflow-x-auto bg-white rounded shadow">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time (EST/EDT)</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Carrier</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trailer</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {logs.map((l) => (
-              <tr key={l.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTimeInIndianapolis(l.check_in_time)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{l.driver_name || '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{l.pickup_number || '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{l.carrier_name || '-'}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{l.trailer_number || '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
       day: '2-digit'
     });
     const parts = formatter.formatToParts(now);
@@ -138,7 +138,7 @@ export default function DailyLog() {
     return `${year}-${month}-${day}`;
   };
 
-  const [selectedDate, setSelectedDate] = useState<string>(getCurrentDateInEastern());
+  const [selectedDate, setSelectedDate] = useState<string>(getCurrentDateInIndianapolis());
   const [selectedForStatusChange, setSelectedForStatusChange] = useState<CheckIn | null>(null);
   const [isStatusChangeModalOpen, setIsStatusChangeModalOpen] = useState(false);
 
@@ -162,15 +162,15 @@ export default function DailyLog() {
     try {
       setLoading(true);
       
-      // Convert selected date to Eastern timezone, then to UTC for querying
-      const startOfDayEastern = zonedTimeToUtc(`${selectedDate} 00:00:00`, TIMEZONE);
-      const endOfDayEastern = zonedTimeToUtc(`${selectedDate} 23:59:59`, TIMEZONE);
+      // Convert selected date to Indianapolis timezone, then to UTC for querying
+      const startOfDayIndy = zonedTimeToUtc(`${selectedDate} 00:00:00`, TIMEZONE);
+      const endOfDayIndy = zonedTimeToUtc(`${selectedDate} 23:59:59`, TIMEZONE);
 
       const { data, error } = await supabase
         .from('check_ins')
         .select('*')
-        .gte('check_in_time', startOfDayEastern.toISOString())
-        .lte('check_in_time', endOfDayEastern.toISOString())
+        .gte('check_in_time', startOfDayIndy.toISOString())
+        .lte('check_in_time', endOfDayIndy.toISOString())
         .order('check_in_time', { ascending: false });
 
       if (error) throw error;
@@ -205,7 +205,7 @@ export default function DailyLog() {
     const headers = [
       'Type',
       'Appointment Time',
-      'Check-in Time (EST/EDT)',
+      'Check-in Time (EST)',
       'Pickup Number',
       'Carrier Name',
       'Trailer Number',
@@ -223,7 +223,7 @@ export default function DailyLog() {
     const rows = checkIns.map(ci => [
       ci.load_type === 'inbound' ? 'I' : 'O',
       formatAppointmentTime(ci.appointment_time),
-      formatTimeInEastern(ci.check_in_time, true),
+      formatTimeInIndianapolis(ci.check_in_time, true),
       ci.pickup_number || '',
       ci.carrier_name || '',
       ci.trailer_number || '',
@@ -232,8 +232,8 @@ export default function DailyLog() {
       ci.driver_phone || '',
       ci.destination_city && ci.destination_state ? `${ci.destination_city}, ${ci.destination_state}` : '',
       ci.dock_number || '',
-      ci.start_time ? formatTimeInEastern(ci.start_time, true) : '',
-      ci.end_time ? formatTimeInEastern(ci.end_time, true) : ci.check_out_time ? formatTimeInEastern(ci.check_out_time, true) : '',
+      ci.start_time ? formatTimeInIndianapolis(ci.start_time, true) : '',
+      ci.end_time ? formatTimeInIndianapolis(ci.end_time, true) : ci.check_out_time ? formatTimeInIndianapolis(ci.check_out_time, true) : '',
       ci.status,
       ci.notes || ''
     ]);
@@ -266,11 +266,11 @@ export default function DailyLog() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Daily Check-in Log (EST/EDT)</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Daily Check-in Log (EST)</h1>
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
-              <p className="text-xs text-gray-500">Current time: {formatTimeInEastern(new Date().toISOString())}</p>
+              <p className="text-xs text-gray-500">Current time: {formatTimeInIndianapolis(new Date().toISOString())}</p>
             </div>
             <div className="flex gap-3">
               <Link
@@ -304,7 +304,7 @@ export default function DailyLog() {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setSelectedDate(getCurrentDateInEastern())}
+                onClick={() => setSelectedDate(getCurrentDateInIndianapolis())}
                 className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
               >
                 Today
@@ -357,7 +357,7 @@ export default function DailyLog() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Appointment Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time (EST/EDT)</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time (EST)</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup Number</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Carrier</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trailer</th>
@@ -387,7 +387,7 @@ export default function DailyLog() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatTimeInEastern(checkIn.check_in_time, true)}
+                        {formatTimeInIndianapolis(checkIn.check_in_time, true)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {checkIn.pickup_number || '-'}
