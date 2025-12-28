@@ -19,9 +19,7 @@ interface AssignDockModalProps {
 
 export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignDockModalProps) {
   const [dockNumber, setDockNumber] = useState(checkIn.dock_number || '');
-  const [appointmentTime, setAppointmentTime] = useState(
-    checkIn.appointment_time || ''
-  );
+  const [appointmentTime, setAppointmentTime] = useState(checkIn.appointment_time || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
