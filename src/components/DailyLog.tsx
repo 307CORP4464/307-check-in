@@ -87,7 +87,7 @@ const calculateDetention = (checkIn: CheckIn): string => {
   const startTime = new Date(checkIn.start_time);
   const endTime = new Date(checkIn.end_time);
   
-  const differenceMs = endTime.getTime() - startTime.getTime();
+  const differenceMs = endTime.getTime() - appointmentTime.getTime();
   const differenceMinutes = Math.floor(differenceMs / (1000 * 60));
   
   // Assuming standard load/unload time is 2 hours (120 minutes)
@@ -218,11 +218,8 @@ export default function DailyLog() {
   const getStatusBadgeColor = (status: string): string => {
     const statusLower = status.toLowerCase();
     if (statusLower === 'completed') return 'bg-green-500 text-white';
-    if (statusLower === 'in_progress') return 'bg-blue-500 text-white';
     if (statusLower === 'pending') return 'bg-yellow-500 text-white';
     if (statusLower === 'checked_in') return 'bg-purple-500 text-white';
-    if (statusLower === 'loading') return 'bg-indigo-500 text-white';
-    if (statusLower === 'unloading') return 'bg-cyan-500 text-white';
     return 'bg-gray-500 text-white';
   };
 
@@ -315,7 +312,7 @@ export default function DailyLog() {
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <Link
-                href="/csr-dashboard"
+                href="/dashboard"
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
                 CSR Dashboard
