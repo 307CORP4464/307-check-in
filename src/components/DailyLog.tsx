@@ -78,6 +78,34 @@ const isOnTime = (checkInTime: string, appointmentTime: string | null | undefine
   return true;
 };
 
+// Calculate detention time in minutes
+const calculateDetention = (checkIn: CheckIn): string => {
+  if (!checkIn.start_time || !checkIn.end_time) {
+    return '-';
+  }
+
+  const startTime = new Date(checkIn.start_time);
+  const endTime = new Date(checkIn.end_time);
+  
+  const differenceMs = endTime.getTime() - startTime.getTime();
+  const differenceMinutes = Math.floor(differenceMs / (1000 * 60));
+  
+  // Assuming standard load/unload time is 2 hours (120 minutes)
+  const detentionMinutes = Math.max(0, differenceMinutes - 120);
+  
+  if (detentionMinutes === 0) {
+    return 'None';
+  }
+  
+  const hours = Math.floor(detentionMinutes / 60);
+  const minutes = detentionMinutes % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+};
+
 interface CheckIn {
   id: string;
   check_in_time: string;
@@ -208,6 +236,7 @@ export default function DailyLog() {
       'Trailer Length',
       'Destination',
       'Dock Number',
+      'Detention',
       'Start Time',
       'End Time',
       'Status',
@@ -226,6 +255,7 @@ export default function DailyLog() {
       ci.trailer_length || '',
       ci.destination_city && ci.destination_state ? `${ci.destination_city}, ${ci.destination_state}` : '',
       ci.dock_number || '',
+      calculateDetention(ci),
       ci.start_time ? formatTimeInIndianapolis(ci.start_time, true) : '',
       ci.end_time ? formatTimeInIndianapolis(ci.end_time, true) : ci.check_out_time ? formatTimeInIndianapolis(ci.check_out_time, true) : '',
       ci.status,
@@ -255,12 +285,10 @@ export default function DailyLog() {
   }
 
   const totalCheckIns = checkIns.length;
-  // Count all statuses except "checked_in" or "pending" as completed
   const completedCheckIns = checkIns.filter(ci => {
     const statusLower = ci.status.toLowerCase();
     return statusLower !== 'checked_in' && statusLower !== 'pending';
   }).length;
-  const inProgressCheckIns = checkIns.filter(ci => ci.status === 'in_progress').length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -302,8 +330,8 @@ export default function DailyLog() {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-6">
+          {/* Stats - Removed In Progress box */}
+          <div className="grid grid-cols-2 gap-4 mt-6">
             <div className="bg-blue-50 p-4 rounded-lg">
               <p className="text-sm text-blue-600 font-medium">Total Check-ins</p>
               <p className="text-2xl font-bold text-blue-900">{totalCheckIns}</p>
@@ -311,10 +339,6 @@ export default function DailyLog() {
             <div className="bg-green-50 p-4 rounded-lg">
               <p className="text-sm text-green-600 font-medium">Completed (All except Checked In)</p>
               <p className="text-2xl font-bold text-green-900">{completedCheckIns}</p>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <p className="text-sm text-yellow-600 font-medium">In Progress</p>
-              <p className="text-2xl font-bold text-yellow-900">{inProgressCheckIns}</p>
             </div>
           </div>
         </div>
@@ -341,10 +365,11 @@ export default function DailyLog() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Appointment Time</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup #</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Carrier / Driver Info</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver Info</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trailer Info</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dock</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detention</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -366,7 +391,7 @@ export default function DailyLog() {
                           <span className={`font-medium px-3 py-1 rounded-md ${
                             onTime 
                               ? 'bg-green-100 text-green-800 border-2 border-green-500' 
-                              : 'bg-red-100 text-red-800 border-2 border-red-500'
+                              : 'bg-gray-200 text-gray-700 border-2 border-gray-400'
                           }`}>
                             {formatAppointmentTime(checkIn.appointment_time)}
                           </span>
@@ -399,6 +424,9 @@ export default function DailyLog() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
                           {checkIn.dock_number || '-'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          {calculateDetention(checkIn)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(checkIn.status)}`}>
