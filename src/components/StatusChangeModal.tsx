@@ -14,7 +14,7 @@ interface StatusChangeModalProps {
   onSuccess: () => void;
 }
 
-type StatusAction = 'complete' | 'rejected' | 'turned_away' | 'driver_left';
+type StatusAction = 'complete' | 'unloaded' | 'rejected' | 'turned_away' | 'driver_left';
 
 export default function StatusChangeModal({ checkIn, onClose, onSuccess }: StatusChangeModalProps) {
   const [endTime, setEndTime] = useState(
@@ -47,6 +47,8 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
         status = 'turned_away';
       } else if (statusAction === 'driver_left') {
         status = 'driver_left';
+      } else if (statusAction === 'unloaded') {
+        status = 'unloaded';
       }
 
       const updateData: any = {
@@ -159,7 +161,7 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
                   <input
                     type="radio"
                     value="unloaded"
-                    checked={statusAction === 'complete'}
+                    checked={statusAction === 'unloaded'}
                     onChange={(e) => setStatusAction(e.target.value as StatusAction)}
                     className="mr-2"
                   />
@@ -229,6 +231,7 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
             >
               {loading ? 'Updating...' : 
                 statusAction === 'complete' ? 'Complete Loading' :
+                statusAction === 'unloaded' ? 'Mark as Unloaded' :
                 statusAction === 'rejected' ? 'Mark as Rejected' :
                 statusAction === 'driver_left' ? 'Mark as Driver Left' :
                 'Mark as Turned Away'
