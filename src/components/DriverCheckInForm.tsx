@@ -92,6 +92,9 @@ export default function DriverCheckInForm() {
     }
 
     try {
+      // Store as ISO string - let the database handle it
+      const checkInTime = new Date().toISOString();
+
       const { data, error: insertError } = await supabase
         .from('check_ins')
         .insert([
@@ -105,9 +108,7 @@ export default function DriverCheckInForm() {
             load_type: formData.loadType,
             destination_city: formData.destinationCity,
             destination_state: formData.destinationState,
-            check_in_time: new Date().toLocaleString('en-US', { 
-            timeZone: 'America/Indiana/Indianapolis' 
-            }),
+            check_in_time: checkInTime,
             status: 'pending',
           }
         ])
@@ -120,7 +121,6 @@ export default function DriverCheckInForm() {
         driverName: '',
         driverPhone: '',
         carrierName: '',
-        trailerNumber: '',
         trailerLength: '',
         pickupNumber: '',
         loadType: 'inbound',
@@ -284,82 +284,60 @@ export default function DriverCheckInForm() {
               value={formData.pickupNumber}
               onChange={handleInputChange}
               required
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                pickupError ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="e.g., 2123456, 44123456789, TLNA-SO-001234"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter pickup number"
             />
-            <p className="mt-1 text-sm text-gray-500">
-              Valid formats: 2xxxxxx, 4xxxxxx, 44xxxxxxxx, 8xxxxxxx, TLNA-SO-00xxxx, or xxxxxx
-            </p>
             {pickupError && (
-              <p className="mt-1 text-sm text-red-600">{pickupError}</p>
+              <p className="text-red-500 text-sm mt-1">{pickupError}</p>
             )}
           </div>
 
-          {/* Destination City and State in a grid */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="destinationCity" className="block text-sm font-medium text-gray-700 mb-2">
-                Destination City <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="destinationCity"
-                name="destinationCity"
-                value={formData.destinationCity}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter city"
-              />
-            </div>
+          {/* Destination City */}
+          <div>
+            <label htmlFor="destinationCity" className="block text-sm font-medium text-gray-700 mb-2">
+              Destination City <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="destinationCity"
+              name="destinationCity"
+              value={formData.destinationCity}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter destination city"
+            />
+          </div>
 
-            <div>
-              <label htmlFor="destinationState" className="block text-sm font-medium text-gray-700 mb-2">
-                State <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="destinationState"
-                name="destinationState"
-                value={formData.destinationState}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Select state</option>
-                {usStates.map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
-            </div>
+          {/* Destination State */}
+          <div>
+            <label htmlFor="destinationState" className="block text-sm font-medium text-gray-700 mb-2">
+              Destination State <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="destinationState"
+              name="destinationState"
+              value={formData.destinationState}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Select state</option>
+              {usStates.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
           </div>
 
           {/* Submit Button */}
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={loading || !!pickupError}
-              className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Checking In...
-                </span>
-              ) : (
-                'Check In'
-              )}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={loading || !!pickupError}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium text-lg transition-colors"
+          >
+            {loading ? 'Checking In...' : 'Check In'}
+          </button>
         </form>
-
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>After checking in, please wait for dock assignment notification.</p>
-        </div>
       </div>
     </div>
   );
