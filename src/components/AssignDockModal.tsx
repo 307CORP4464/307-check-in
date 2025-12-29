@@ -51,6 +51,183 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     { value: 'paid_charge_customer', label: 'Paid - Charge Customer' },
   ];
 
+  const formatAppointmentTime = (time: string) => {
+    const option = appointmentOptions.find(opt => opt.value === time);
+    return option ? option.label : time;
+  };
+
+  const printReceipt = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to print the receipt');
+      return;
+    }
+
+    const currentDate = new Date().toLocaleString();
+    const dockDisplay = dockNumber === 'Ramp' ? 'Ramp' : `Dock ${dockNumber}`;
+
+    const receiptHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Load Assignment Receipt</title>
+          <style>
+            @media print {
+              body { margin: 0; }
+              .no-print { display: none; }
+            }
+            body {
+              font-family: 'Courier New', monospace;
+              padding: 20px;
+              max-width: 400px;
+              margin: 0 auto;
+            }
+            .receipt-header {
+              text-align: center;
+              border-bottom: 2px dashed #000;
+              padding-bottom: 15px;
+              margin-bottom: 15px;
+            }
+            .receipt-header h1 {
+              margin: 0 0 5px 0;
+              font-size: 24px;
+            }
+            .receipt-header p {
+              margin: 3px 0;
+              font-size: 12px;
+            }
+            .receipt-section {
+              margin: 15px 0;
+              padding: 10px 0;
+              border-bottom: 1px dashed #000;
+            }
+            .receipt-row {
+              display: flex;
+              justify-content: space-between;
+              margin: 8px 0;
+              font-size: 14px;
+            }
+            .receipt-label {
+              font-weight: bold;
+              text-transform: uppercase;
+            }
+            .receipt-value {
+              text-align: right;
+            }
+            .highlight {
+              background-color: #ffeb3b;
+              padding: 10px;
+              margin: 15px 0;
+              border: 2px solid #000;
+              text-align: center;
+            }
+            .highlight-title {
+              font-size: 16px;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .highlight-value {
+              font-size: 32px;
+              font-weight: bold;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 20px;
+              padding-top: 15px;
+              border-top: 2px dashed #000;
+              font-size: 12px;
+            }
+            .print-button {
+              display: block;
+              margin: 20px auto;
+              padding: 10px 30px;
+              background-color: #4CAF50;
+              color: white;
+              border: none;
+              border-radius: 5px;
+              font-size: 16px;
+              cursor: pointer;
+            }
+            .print-button:hover {
+              background-color: #45a049;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-header">
+            <h1>LOAD ASSIGNMENT</h1>
+            <p>Date: ${currentDate}</p>
+          </div>
+
+          <div class="highlight">
+            <div class="highlight-title">ASSIGNED TO</div>
+            <div class="highlight-value">${dockDisplay}</div>
+          </div>
+
+          <div class="receipt-section">
+            <div class="receipt-row">
+              <span class="receipt-label">Check-in ID:</span>
+              <span class="receipt-value">#${checkIn.id.slice(0, 8).toUpperCase()}</span>
+            </div>
+            ${checkIn.pickup_number ? `
+            <div class="receipt-row">
+              <span class="receipt-label">Pickup Number:</span>
+              <span class="receipt-value">${checkIn.pickup_number}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          <div class="receipt-section">
+            ${checkIn.driver_name ? `
+            <div class="receipt-row">
+              <span class="receipt-label">Driver:</span>
+              <span class="receipt-value">${checkIn.driver_name}</span>
+            </div>
+            ` : ''}
+            ${checkIn.carrier_name ? `
+            <div class="receipt-row">
+              <span class="receipt-label">Carrier:</span>
+              <span class="receipt-value">${checkIn.carrier_name}</span>
+            </div>
+            ` : ''}
+            ${checkIn.company ? `
+            <div class="receipt-row">
+              <span class="receipt-label">Company:</span>
+              <span class="receipt-value">${checkIn.company}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          <div class="receipt-section">
+            <div class="receipt-row">
+              <span class="receipt-label">Appointment Time:</span>
+              <span class="receipt-value">${formatAppointmentTime(appointmentTime)}</span>
+            </div>
+            <div class="receipt-row">
+              <span class="receipt-label">Status:</span>
+              <span class="receipt-value">CHECKED IN</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Please proceed to assigned dock/door</p>
+            <p>Keep this receipt for your records</p>
+          </div>
+
+          <button class="print-button no-print" onclick="window.print()">Print Receipt</button>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(receiptHTML);
+    printWindow.document.close();
+    
+    // Auto-print after a short delay
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -74,6 +251,9 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
         .eq('id', checkIn.id);
 
       if (updateError) throw updateError;
+
+      // Print receipt after successful assignment
+      printReceipt();
 
       onSuccess();
       onClose();
@@ -189,3 +369,4 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     </div>
   );
 }
+
