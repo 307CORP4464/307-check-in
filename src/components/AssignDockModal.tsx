@@ -11,6 +11,11 @@ interface AssignDockModalProps {
     appointment_time?: string | null;
     carrier_name?: string;
     pickup_number?: string;
+    driver_phone?: string;
+    trailer_number?: string;
+    trailer_length?: string;
+    delivery_city?: string;
+    delivery_state?: string;
   };
   onClose: () => void;
   onSuccess: () => void;
@@ -66,6 +71,14 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     const currentDate = new Date().toLocaleString();
     const dockDisplay = dockNumber === 'Ramp' ? 'Ramp' : `Dock ${dockNumber}`;
 
+    // Simple on-time heuristic: if start_time exists and is <= appointment_time (as ISO strings)
+    // We'll attempt to determine "On Time" based on available fields.
+    const onTime =
+      checkIn &&
+      checkIn.appointment_time &&
+      (checkIn as any).start_time &&
+      (new Date((checkIn as any).start_time).getTime() <= new Date(checkIn.appointment_time).getTime());
+
     const receiptHTML = `
       <!DOCTYPE html>
       <html>
@@ -79,139 +92,156 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
             body {
               font-family: 'Courier New', monospace;
               padding: 20px;
-              max-width: 400px;
+              max-width: 420px;
               margin: 0 auto;
             }
             .receipt-header {
               text-align: center;
               border-bottom: 2px dashed #000;
-              padding-bottom: 15px;
-              margin-bottom: 15px;
+              padding-bottom: 12px;
+              margin-bottom: 12px;
             }
             .receipt-header h1 {
-              margin: 0 0 5px 0;
-              font-size: 24px;
+              margin: 0;
+              font-size: 20px;
             }
-            .receipt-header p {
-              margin: 3px 0;
-              font-size: 12px;
+            .section {
+              margin: 10px 0;
+              padding: 6px 0;
+              border-bottom: 1px dashed #bbb;
             }
-            .receipt-section {
-              margin: 15px 0;
-              padding: 10px 0;
-              border-bottom: 1px dashed #000;
-            }
-            .receipt-row {
+            .section:last-child { border-bottom: none; }
+
+            .row {
               display: flex;
               justify-content: space-between;
-              margin: 8px 0;
               font-size: 14px;
+              margin: 6px 0;
             }
-            .receipt-label {
+
+            .label {
               font-weight: bold;
               text-transform: uppercase;
+              font-size: 12px;
+              color: #333;
             }
-            .receipt-value {
+
+            .value {
               text-align: right;
             }
+
             .highlight {
               background-color: #ffeb3b;
-              padding: 10px;
-              margin: 15px 0;
+              padding: 8px;
+              margin: 10px 0 6px;
               border: 2px solid #000;
               text-align: center;
-            }
-            .highlight-title {
-              font-size: 16px;
-              font-weight: bold;
-              margin-bottom: 5px;
-            }
-            .highlight-value {
-              font-size: 32px;
               font-weight: bold;
             }
+
+            .bold {
+              font-weight: bold;
+            }
+
             .footer {
               text-align: center;
-              margin-top: 20px;
-              padding-top: 15px;
-              border-top: 2px dashed #000;
+              margin-top: 14px;
               font-size: 12px;
             }
+
             .print-button {
               display: block;
-              margin: 20px auto;
-              padding: 10px 30px;
+              margin: 12px auto 0;
+              padding: 8px 20px;
               background-color: #4CAF50;
               color: white;
               border: none;
-              border-radius: 5px;
-              font-size: 16px;
-              cursor: pointer;
-            }
-            .print-button:hover {
-              background-color: #45a049;
+              border-radius: 4px;
+              font-size: 14px;
             }
           </style>
         </head>
         <body>
           <div class="receipt-header">
-            <h1>LOAD ASSIGNMENT</h1>
-            <p>Date: ${currentDate}</p>
+            <h1>Load Assignment</h1>
+            <div>${currentDate}</div>
           </div>
 
-          <div class="highlight">
-            <div class="highlight-title">ASSIGNED TO</div>
-            <div class="highlight-value">${dockDisplay}</div>
-          </div>
+          <div class="highlight">ALOCATION: ${dockDisplay}</div>
 
-          <div class="receipt-section">
-            <div class="receipt-row">
-              <span class="receipt-label">Check-in ID:</span>
-              <span class="receipt-value">#${checkIn.id.slice(0, 8).toUpperCase()}</span>
-            </div>
+          <div class="section">
             ${checkIn.pickup_number ? `
-            <div class="receipt-row">
-              <span class="receipt-label">Pickup Number:</span>
-              <span class="receipt-value">${checkIn.pickup_number}</span>
-            </div>
+              <div class="row">
+                <span class="label">Pickup Number</span>
+                <span class="value">${checkIn.pickup_number}</span>
+              </div>
             ` : ''}
           </div>
 
-          <div class="receipt-section">
-            ${checkIn.driver_name ? `
-            <div class="receipt-row">
-              <span class="receipt-label">Driver:</span>
-              <span class="receipt-value">${checkIn.driver_name}</span>
-            </div>
-            ` : ''}
+          <div class="section">
             ${checkIn.carrier_name ? `
-            <div class="receipt-row">
-              <span class="receipt-label">Carrier:</span>
-              <span class="receipt-value">${checkIn.carrier_name}</span>
+            <div class="row">
+              <span class="label">Carrier</span>
+              <span class="value">${checkIn.carrier_name}</span>
             </div>
-            ` : ''}
-            ${checkIn.company ? `
-            <div class="receipt-row">
-              <span class="receipt-label">Company:</span>
-              <span class="receipt-value">${checkIn.company}</span>
+            ` : ''
+            }
+            ${checkIn.driver_name ? `
+            <div class="row">
+              <span class="label">Driver</span>
+              <span class="value">${checkIn.driver_name}</span>
             </div>
-            ` : ''}
+            ` : ''
+            }
+            ${checkIn.driver_phone ? `
+            <div class="row">
+              <span class="label">Driver Phone</span>
+              <span class="value">${checkIn.driver_phone}</span>
+            </div>
+            ` : ''
+            }
+            ${checkIn.trailer_number ? `
+            <div class="row">
+              <span class="label">Trailer Number</span>
+              <span class="value">${checkIn.trailer_number}</span>
+            </div>
+            ` : ''
+            }
+            ${checkIn.trailer_length ? `
+            <div class="row">
+              <span class="label">Trailer Length</span>
+              <span class="value">${checkIn.trailer_length}</span>
+            </div>
+            ` : ''
+            }
+            ${checkIn.delivery_city || checkIn.delivery_state ? `
+            <div class="row">
+              <span class="label">Delivery City</span>
+              <span class="value">${checkIn.delivery_city ?? ''}</span>
+            </div>
+            <div class="row">
+              <span class="label">Delivery State</span>
+              <span class="value">${checkIn.delivery_state ?? ''}</span>
+            </div>
+            ` : ''
+            }
           </div>
 
-          <div class="receipt-section">
-            <div class="receipt-row">
-              <span class="receipt-label">Appointment Time:</span>
-              <span class="receipt-value">${formatAppointmentTime(appointmentTime)}</span>
+          <div class="section">
+            <div class="row">
+              <span class="label">Appointment Time</span>
+              <span class="value">${formatAppointmentTime(appointmentTime)}</span>
             </div>
-            <div class="receipt-row">
-              <span class="receipt-label">Status:</span>
-              <span class="receipt-value">CHECKED IN</span>
+            ${onTime ? `
+            <div class="row">
+              <span class="label">Status</span>
+              <span class="value bold">On Time</span>
             </div>
+            ` : ''}
           </div>
 
           <div class="footer">
-            <p>Please proceed to assigned dock/door</p>
-            <p>Keep this receipt for your records</p>
+            <!-- This space intentionally left blank per requirements -->
           </div>
 
           <button class="print-button no-print" onclick="window.print()">Print Receipt</button>
@@ -221,7 +251,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
 
     printWindow.document.write(receiptHTML);
     printWindow.document.close();
-    
+
     // Auto-print after a short delay
     setTimeout(() => {
       printWindow.print();
@@ -307,6 +337,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
               <p className="font-semibold">{checkIn.carrier_name}</p>
             </>
           )}
+          {/* Optional additional fields for display in the modal (not required in receipt) */}
         </div>
 
         <form onSubmit={handleSubmit}>
