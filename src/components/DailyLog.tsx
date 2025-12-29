@@ -91,6 +91,7 @@ const isOnTime = (checkInTime: string, appointmentTime: string | null | undefine
   return false;
 };
 
+
 const calculateDetention = (checkIn: CheckIn): string => {
   // Check if we have the necessary data
   if (!checkIn.appointment_time || !checkIn.end_time) {
@@ -105,6 +106,13 @@ const calculateDetention = (checkIn: CheckIn): string => {
   const endTime = new Date(checkIn.end_time);
   const standardMinutes = 120;
   let detentionMinutes = 0;
+
+  // Handle special appointment types - they don't get detention
+  if (checkIn.appointment_time === 'work_in' || 
+      checkIn.appointment_time === 'paid_to_load' || 
+      checkIn.appointment_time === 'paid_charge_customer') {
+    return '-';
+  }
 
   // Handle regular appointment times (4-digit format like "0800")
   if (checkIn.appointment_time.length === 4 && /^\d{4}$/.test(checkIn.appointment_time)) {
@@ -137,12 +145,6 @@ const calculateDetention = (checkIn: CheckIn): string => {
     
     // Detention is any time over 2 hours (120 minutes) from appointment time
     detentionMinutes = Math.max(0, minutesSinceAppointment - standardMinutes);
-  } 
-  // Handle special appointment types - they don't get detention
-  else if (checkIn.appointment_time === 'work_in' || 
-           checkIn.appointment_time === 'paid_to_load' || 
-           checkIn.appointment_time === 'paid_charge_customer') {
-    return '-';
   }
   
   // If no detention time
@@ -159,6 +161,7 @@ const calculateDetention = (checkIn: CheckIn): string => {
   }
   return `${minutes}m`;
 };
+
 
     
     const parts = formatter.formatToParts(checkInDate);
