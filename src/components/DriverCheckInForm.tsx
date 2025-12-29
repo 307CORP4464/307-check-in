@@ -269,12 +269,13 @@ export default function DriverCheckInForm() {
               <option value="Box">Box Truck</option>
               <option value="20">20 ft</option>
               <option value="40">40 ft</option>
+              <option value='45">45 ft</option>
               <option value="48">48 ft</option>
               <option value="53">53 ft</option>
             </select>
           </div>
 
-          {/* PU Number */}
+          {/* Pickup Number */}
           <div>
             <label htmlFor="pickupNumber" className="block text-sm font-medium text-gray-700 mb-2">
               Pickup Number <span className="text-red-500">*</span>
