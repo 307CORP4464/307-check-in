@@ -177,12 +177,11 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
         </head>
         <body>
           <div class="receipt-header">
-            <h1>Load Assignment</h1>
+            <h1>Load Assignment Receipt</h1>
             <div>${currentDate}</div>
           </div>
 
-          <div class="highlight">Pickup: ${checkIn.pickup_number ?? ''}</div>
-          <div class="highlight">Pickup: ${checkIn.dock_number ?? ''}</div>
+          <div class="highlight">Pickup Number: ${checkIn.pickup_number ?? ''} ${checkIn.dock_number ?? ''}</div>
 
           <div class="section">
             ${checkIn.carrier_name ? `
