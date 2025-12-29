@@ -14,7 +14,7 @@ interface StatusChangeModalProps {
   onSuccess: () => void;
 }
 
-type StatusAction = 'complete' | 'rejected' | 'turned_away' | 'driver_left' ;
+type StatusAction = 'complete' | 'rejected' | 'turned_away' | 'driver_left';
 
 export default function StatusChangeModal({ checkIn, onClose, onSuccess }: StatusChangeModalProps) {
   const [endTime, setEndTime] = useState(
@@ -154,8 +154,8 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
                     className="mr-2"
                   />
                   <span>Complete Loading</span>
-                   </label>
-                <label className="space-y-2">
+                </label>
+                <label className="flex items-center">
                   <input
                     type="radio"
                     value="unloaded"
@@ -185,7 +185,7 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
                   />
                   <span>Turned Away</span>
                 </label>
-               <label className="flex items-center">
+                <label className="flex items-center">
                   <input
                     type="radio"
                     value="driver_left"
@@ -228,8 +228,9 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
               } disabled:bg-gray-400`}
             >
               {loading ? 'Updating...' : 
-                statusAction === 'complete' ? 'Complete Loading' 
+                statusAction === 'complete' ? 'Complete Loading' :
                 statusAction === 'rejected' ? 'Mark as Rejected' :
+                statusAction === 'driver_left' ? 'Mark as Driver Left' :
                 'Mark as Turned Away'
               }
             </button>
