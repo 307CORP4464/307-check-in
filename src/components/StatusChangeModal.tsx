@@ -154,6 +154,16 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
                     className="mr-2"
                   />
                   <span>Complete Loading</span>
+                   </label>
+                <label className="space-y-2">
+                  <input
+                    type="radio"
+                    value="unloaded"
+                    checked={statusAction === 'complete'}
+                    onChange={(e) => setStatusAction(e.target.value as StatusAction)}
+                    className="mr-2"
+                  />
+                  <span>Unloaded</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -174,6 +184,16 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
                     className="mr-2"
                   />
                   <span>Turned Away</span>
+                </label>
+               <label className="flex items-center">
+                  <input
+                    type="radio"
+                    value="driver_left"
+                    checked={statusAction === 'driver_left'}
+                    onChange={(e) => setStatusAction(e.target.value as StatusAction)}
+                    className="mr-2"
+                  />
+                  <span>Driver Left</span>
                 </label>
               </div>
             </div>
