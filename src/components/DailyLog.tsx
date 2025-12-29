@@ -96,7 +96,6 @@ const calculateDetention = (checkIn: CheckIn): string => {
     return '-';
   }
 
-  const startTime = new Date(checkIn.start_time);
   const endTime = new Date(checkIn.end_time);
   
   const differenceMs = endTime.getTime() - startTime.getTime();
