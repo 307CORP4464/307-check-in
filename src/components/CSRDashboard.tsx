@@ -182,7 +182,7 @@ export default function CSRDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b shadow-sm">
-        <div className="max-w-full mx-auto px-4 py-4">
+        <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard - Pending Check-ins (EST/EDT)</h1>
@@ -209,7 +209,7 @@ export default function CSRDashboard() {
         </div>
       </div>
 
-      <div className="max-w-full mx-auto p-4">
+      <div className="max-w-[1600px] mx-auto p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-gray-600 text-sm font-medium">Pending Check-ins</h3>
@@ -223,7 +223,7 @@ export default function CSRDashboard() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-4 border-b">
             <h2 className="text-xl font-bold">Pending Assignments</h2>
           </div>
@@ -235,35 +235,35 @@ export default function CSRDashboard() {
               <p className="text-sm mt-2">All check-ins have been processed</p>
             </div>
           ) : (
-            <div className="w-full">
-              <table className="w-full table-fixed">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Type
                     </th>
-                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Appt Time
                     </th>
-                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Check-in
                     </th>
-                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Pickup #
                     </th>
-                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Carrier/Trailer
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Carrier / Trailer
                     </th>
-                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Driver
                     </th>
-                    <th className="w-[14%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Destination
                     </th>
-                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Wait Time
                     </th>
-                    <th className="w-[10%] px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Action
                     </th>
                   </tr>
@@ -274,7 +274,7 @@ export default function CSRDashboard() {
                     const waitTimeColor = getWaitTimeColor(ci);
                     return (
                       <tr key={ci.id} className="hover:bg-gray-50">
-                        <td className="px-3 py-4 text-sm">
+                        <td className="px-4 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             ci.load_type === 'inbound' 
                               ? 'bg-blue-100 text-blue-800' 
@@ -283,50 +283,50 @@ export default function CSRDashboard() {
                             {ci.load_type === 'inbound' ? 'In' : 'Out'}
                           </span>
                         </td>
-                        <td className="px-3 py-4 text-sm text-gray-900">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           {ci.appointment_time ? formatTimeInIndianapolis(ci.appointment_time) : 'N/A'}
                         </td>
-                        <td className="px-3 py-4 text-sm text-gray-900">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatTimeInIndianapolis(ci.check_in_time)}
                         </td>
-                        <td className="px-3 py-4 text-sm">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm">
                           <span className="font-bold text-gray-900">
                             {ci.pickup_number || 'N/A'}
                           </span>
                         </td>
-                        <td className="px-3 py-4 text-sm">
-                          <div className="flex flex-col">
-                            <span className="text-gray-900">{ci.carrier_name || 'N/A'}</span>
-                            <span className="text-gray-500 text-xs">
+                        <td className="px-4 py-4 text-sm">
+                          <div className="space-y-0.5">
+                            <div className="text-gray-900">{ci.carrier_name || 'N/A'}</div>
+                            <div className="text-gray-500 text-xs">
                               {ci.trailer_number || 'N/A'}
-                            </span>
+                            </div>
                             {ci.trailer_length && (
-                              <span className="text-gray-500 text-xs">
+                              <div className="text-gray-500 text-xs">
                                 {ci.trailer_length}&apos;
-                              </span>
+                              </div>
                             )}
                           </div>
                         </td>
-                        <td className="px-3 py-4 text-sm">
-                          <div className="flex flex-col">
-                            <span className="text-gray-900">{ci.driver_name || 'N/A'}</span>
-                            <span className="text-gray-500 text-xs">
+                        <td className="px-4 py-4 text-sm">
+                          <div className="space-y-0.5">
+                            <div className="text-gray-900">{ci.driver_name || 'N/A'}</div>
+                            <div className="text-gray-500 text-xs">
                               {ci.driver_phone || 'N/A'}
-                            </span>
+                            </div>
                           </div>
                         </td>
-                        <td className="px-3 py-4 text-sm text-gray-900">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           {ci.destination_city && ci.destination_state 
                             ? `${ci.destination_city}, ${ci.destination_state}` 
                             : 'N/A'}
                         </td>
-                        <td className={`px-3 py-4 text-sm font-semibold ${waitTimeColor}`}>
+                        <td className={`px-4 py-4 whitespace-nowrap text-sm font-semibold ${waitTimeColor}`}>
                           {waitTime}
                         </td>
-                        <td className="px-3 py-4 text-center">
+                        <td className="px-4 py-4 whitespace-nowrap text-center">
                           <button
                             onClick={() => handleAssignDock(ci)}
-                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm w-full"
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
                           >
                             Assign
                           </button>
