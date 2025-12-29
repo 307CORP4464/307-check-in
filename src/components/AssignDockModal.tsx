@@ -14,8 +14,8 @@ interface AssignDockModalProps {
     driver_phone?: string;
     trailer_number?: string;
     trailer_length?: string;
-    delivery_city?: string;
-    delivery_state?: string;
+    destination_city?: string;
+    destination_state?: string;
     check_in_time?: string | null;
   };
   onClose: () => void;
@@ -228,13 +228,13 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
             ${checkIn.delivery_city ? `
             <div class="row">
               <span class="label">Destination City</span>
-              <span class="value">${checkIn.delivery_city}</span>
+              <span class="value">${checkIn.destination_city}</span>
             </div>
             ` : ''}
              ${checkIn.delivery_state ? `
             <div class="row">
               <span class="label">Destination State</span>
-              <span class="value">${checkIn.delivery_state}</span>
+              <span class="value">${checkIn.destination_state}</span>
             </div>
             ` : ''}
           </span>
