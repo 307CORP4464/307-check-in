@@ -16,7 +16,7 @@ interface AssignDockModalProps {
     trailer_length?: string;
     delivery_city?: string;
     delivery_state?: string;
-    check_in_time?: string | null; // Changed from start_time
+    check_in_time?: string | null;
   };
   onClose: () => void;
   onSuccess: () => void;
@@ -77,8 +77,8 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     const { appointment_time, check_in_time } = checkIn;
     if (!appointment_time || !check_in_time) return null;
     const appt = new Date(appointment_time).getTime();
-    const checkIn = new Date(check_in_time).getTime();
-    return checkIn <= appt;
+    const checkInTimestamp = new Date(check_in_time).getTime();
+    return checkInTimestamp <= appt;
   };
 
   const printReceipt = () => {
@@ -406,3 +406,4 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     </div>
   );
 }
+
