@@ -185,7 +185,7 @@ export default function CSRDashboard() {
         <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard(</h1>
+              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard</h1>
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
@@ -243,7 +243,7 @@ export default function CSRDashboard() {
                       Type
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Check-in
+                      Check-in Time
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Pickup Number
