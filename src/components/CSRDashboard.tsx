@@ -185,7 +185,7 @@ export default function CSRDashboard() {
         <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard - Pending Check-ins (EST/EDT)</h1>
+              <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard(</h1>
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
@@ -225,7 +225,7 @@ export default function CSRDashboard() {
 
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-4 border-b">
-            <h2 className="text-xl font-bold">Pending Assignments</h2>
+            <h2 className="text-xl font-bold">Pending Check-Ins</h2>
           </div>
           
           {checkIns.length === 0 ? (
@@ -243,19 +243,16 @@ export default function CSRDashboard() {
                       Type
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Appt Time
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Check-in
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Pickup #
+                      Pickup Number
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Carrier / Trailer
+                      Driver Info
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Driver
+                      Trailer
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Destination
@@ -277,10 +274,10 @@ export default function CSRDashboard() {
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             ci.load_type === 'inbound' 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : 'bg-green-100 text-green-800'
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
                           }`}>
-                            {ci.load_type === 'inbound' ? 'In' : 'Out'}
+                            {ci.load_type === 'inbound' ? 'I' : 'O'}
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -298,20 +295,21 @@ export default function CSRDashboard() {
                           <div className="space-y-0.5">
                             <div className="text-gray-900">{ci.carrier_name || 'N/A'}</div>
                             <div className="text-gray-500 text-xs">
-                              {ci.trailer_number || 'N/A'}
+                              {ci.driver_name || 'N/A'}
+                              
                             </div>
-                            {ci.trailer_length && (
+                            {ci.driver_phone && (
                               <div className="text-gray-500 text-xs">
-                                {ci.trailer_length}&apos;
+                                {ci.driver_phone}&apos;
                               </div>
                             )}
                           </div>
                         </td>
                         <td className="px-4 py-4 text-sm">
                           <div className="space-y-0.5">
-                            <div className="text-gray-900">{ci.driver_name || 'N/A'}</div>
+                            <div className="text-gray-900">{ci.trailer_number || 'N/A'}</div>
                             <div className="text-gray-500 text-xs">
-                              {ci.driver_phone || 'N/A'}
+                              {ci.trailer_length || 'N/A'}
                             </div>
                           </div>
                         </td>
