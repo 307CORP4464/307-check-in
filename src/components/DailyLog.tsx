@@ -301,7 +301,7 @@ export default function DailyLog() {
         <div className="max-w-[1800px] mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Daily Activity Log</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Daily Check-in Log</h1>
               <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
             </div>
             <div className="flex gap-3">
@@ -351,56 +351,44 @@ export default function DailyLog() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Load Type
+                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Appointment
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Driver Name
+                    Check In Time
+                  </th>
+                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    End Time
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phone
+                    Detention
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Carrier
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Trailer #
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Trailer Length
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    PU/DO #
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dock #
+                    Pickup #
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Destination
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Appt Time
+                    Driver Info
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Check-In
+                    Trailer Info
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Start Time
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    End Time
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Check-Out
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Detention
+                    Dock
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Notes
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -425,25 +413,19 @@ export default function DailyLog() {
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           checkIn.load_type === 'inbound' 
                             ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-purple-100 text-purple-800'
+                            : 'bg-orange-100 text-orange-800'
                         }`}>
-                          {checkIn.load_type === 'inbound' ? 'Inbound' : 'Outbound'}
+                          {checkIn.load_type === 'inbound' ? 'I' : 'O'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
+                        {checkIn.carrier_name || 'N/A'}
                         {checkIn.driver_name || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
                         {formatPhoneNumber(checkIn.driver_phone)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {checkIn.carrier_name || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
                         {checkIn.trailer_number || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {checkIn.trailer_length || 'N/A'}
+                        {checkIn.trailer_length && ` (${checkIn.trailer_length}')`}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         {checkIn.pickup_number || 'N/A'}
