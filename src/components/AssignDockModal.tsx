@@ -225,10 +225,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
           ` : ''}
 
       <div class="section">
-  <div class="row">
-    <span class="label">Destination</span>
-    <span class="value">
-    ${checkIn.delivery_city ? `
+            ${checkIn.delivery_city ? `
             <div class="row">
               <span class="label">Destination City</span>
               <span class="value">${checkIn.delivery_city}</span>
@@ -240,9 +237,9 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
               <span class="value">${checkIn.delivery_state}</span>
             </div>
             ` : ''}
-    </span>
-  </div>
-</div>
+          </span>
+        </div>
+       </div>
 
           <div class="section">
             ${checkIn.carrier_name ? `
