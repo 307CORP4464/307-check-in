@@ -118,15 +118,17 @@ export default function DriverCheckInForm() {
 
       setSuccess(true);
       setFormData({
-        driverName: '',
-        driverPhone: '',
-        carrierName: '',
-        trailerLength: '',
-        pickupNumber: '',
-        loadType: 'inbound',
-        destinationCity: '',
-        destinationState: '',
-      });
+  driverName: '',
+  driverPhone: '',
+  carrierName: '',
+  trailerNumber: '',  // ← ADD THIS LINE
+  trailerLength: '',
+  pickupNumber: '',
+  loadType: 'inbound',
+  destinationCity: '',
+  destinationState: '',
+});
+
       setPickupError(null);
 
       setTimeout(() => {
