@@ -217,10 +217,13 @@ export default function DailyLog() {
 
   const getStatusBadgeColor = (status: string): string => {
     const statusLower = status.toLowerCase();
-    if (statusLower === 'completed') return 'bg-green-100 text-green-800';
-    if (statusLower === 'in_progress') return 'bg-blue-100 text-blue-800';
-    if (statusLower === 'pending') return 'bg-yellow-100 text-yellow-800';
-    return 'bg-gray-100 text-gray-800';
+    if (statusLower === 'completed') return 'bg-green-500 text-white';
+    if (statusLower === 'in_progress') return 'bg-blue-500 text-white';
+    if (statusLower === 'pending') return 'bg-yellow-500 text-white';
+    if (statusLower === 'checked_in') return 'bg-purple-500 text-white';
+    if (statusLower === 'loading') return 'bg-indigo-500 text-white';
+    if (statusLower === 'unloading') return 'bg-cyan-500 text-white';
+    return 'bg-gray-500 text-white';
   };
 
   const exportToCSV = () => {
@@ -362,11 +365,8 @@ export default function DailyLog() {
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time</th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Load End Time</th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup #</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Carrier</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trailer #</th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Length</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Carrier / Driver</th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trailer Info</th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dock #</th>
                   <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detention</th>
@@ -382,7 +382,7 @@ export default function DailyLog() {
                     <tr key={checkIn.id} className="hover:bg-gray-50">
                       <td className="px-3 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          checkIn.load_type === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                          checkIn.load_type === 'inbound' ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
                         }`}>
                           {checkIn.load_type === 'inbound' ? 'I' : 'O'}
                         </span>
@@ -402,37 +402,35 @@ export default function DailyLog() {
                           ? formatTimeInIndianapolis(checkIn.check_out_time)
                           : '-'}
                       </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                         {checkIn.pickup_number || '-'}
                       </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {checkIn.carrier_name || '-'}
+                      <td className="px-3 py-4 text-sm text-gray-900">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{checkIn.carrier_name || '-'}</span>
+                          <span className="text-gray-600">{checkIn.driver_name || '-'}</span>
+                          <span className="text-gray-500 text-xs">{checkIn.driver_phone || '-'}</span>
+                        </div>
                       </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {checkIn.driver_name || '-'}
-                      </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {checkIn.driver_phone || '-'}
-                      </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {checkIn.trailer_number || '-'}
-                      </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {checkIn.trailer_length || '-'}
+                      <td className="px-3 py-4 text-sm text-gray-900">
+                        <div className="flex flex-col">
+                          <span className="font-medium">{checkIn.trailer_number || '-'}</span>
+                          <span className="text-gray-600 text-xs">{checkIn.trailer_length || '-'}</span>
+                        </div>
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
                         {checkIn.destination_city && checkIn.destination_state 
                           ? `${checkIn.destination_city}, ${checkIn.destination_state}`
                           : '-'}
                       </td>
-                      <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                         {checkIn.dock_number || '-'}
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
                         {calculateDetention(checkIn)}
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(checkIn.status)}`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${getStatusBadgeColor(checkIn.status)}`}>
                           {checkIn.status.replace(/_/g, ' ')}
                         </span>
                       </td>
@@ -442,20 +440,12 @@ export default function DailyLog() {
                         </div>
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <Link
-                            href={`/check-in/${checkIn.id}`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            View
-                          </Link>
-                          <button
-                            onClick={() => handleStatusChange(checkIn)}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            Update
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleStatusChange(checkIn)}
+                          className="text-green-600 hover:text-green-900 font-semibold"
+                        >
+                          Update
+                        </button>
                       </td>
                     </tr>
                   );
