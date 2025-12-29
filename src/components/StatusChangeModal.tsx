@@ -228,9 +228,10 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
               } disabled:bg-gray-400`}
             >
               {loading ? 'Updating...' : 
-                statusAction === 'complete' ? 'Complete Loading' :
+                statusAction === 'complete' ? 'Complete Loading' 
                 statusAction === 'rejected' ? 'Mark as Rejected' :
                 'Mark as Turned Away'
+                'Mark as Driver Left'
               }
             </button>
             <button
