@@ -8,21 +8,15 @@ interface StatusChangeModalProps {
     id: string;
     pickup_number?: string;
     driver_name?: string;
-    start_time?: string | null;
     end_time?: string | null;
   };
   onClose: () => void;
   onSuccess: () => void;
 }
 
-type StatusAction = 'complete' | 'rejected' | 'turned_away';
+type StatusAction = 'complete' | 'rejected' | 'turned_away' | 'driver_left' ;
 
 export default function StatusChangeModal({ checkIn, onClose, onSuccess }: StatusChangeModalProps) {
-  const [startTime, setStartTime] = useState(
-    checkIn.start_time 
-      ? new Date(checkIn.start_time).toISOString().slice(0, 16) 
-      : ''
-  );
   const [endTime, setEndTime] = useState(
     checkIn.end_time 
       ? new Date(checkIn.end_time).toISOString().slice(0, 16) 
@@ -44,7 +38,6 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
     setError(null);
 
     try {
-      const startTimeISO = startTime ? new Date(startTime).toISOString() : null;
       const endTimeISO = endTime ? new Date(endTime).toISOString() : null;
 
       let status = 'checked_out';
@@ -52,15 +45,13 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
         status = 'rejected';
       } else if (statusAction === 'turned_away') {
         status = 'turned_away';
+      } else if (statusAction === 'driver_left') {
+        status = 'driver_left';
       }
 
       const updateData: any = {
         status: status,
       };
-
-      if (startTimeISO) {
-        updateData.start_time = startTimeISO;
-      }
 
       if (endTimeISO) {
         updateData.end_time = endTimeISO;
@@ -95,7 +86,7 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
     }
   };
 
-  const isNotesRequired = statusAction === 'rejected' || statusAction === 'turned_away';
+  const isNotesRequired = statusAction === 'rejected' || statusAction === 'turned_away' || statusAction === 'driver_left';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
@@ -134,19 +125,6 @@ export default function StatusChangeModal({ checkIn, onClose, onSuccess }: Statu
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Load Start Time *
-              </label>
-              <input
-                type="datetime-local"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
             <div>
               <label className="block text-gray-700 text-sm font-bold mb-2">
                 Load End Time *
