@@ -224,7 +224,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
           </div>
           ` : ''}
 
-          <div class="section">
+      <div class="section">
   <div class="row">
     <span class="label">Destination</span>
     <span class="value">
@@ -232,7 +232,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
     </span>
   </div>
 </div>
-
 
           <div class="section">
             ${checkIn.carrier_name ? `
