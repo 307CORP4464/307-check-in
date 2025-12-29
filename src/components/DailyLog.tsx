@@ -308,10 +308,6 @@ export default function DailyLog() {
               <p className="text-sm text-green-600 font-medium">Completed</p>
               <p className="text-2xl font-bold text-green-900">{completedCheckIns}</p>
             </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <p className="text-sm text-yellow-600 font-medium">In Progress</p>
-              <p className="text-2xl font-bold text-yellow-900">{inProgressCheckIns}</p>
-            </div>
           </div>
         </div>
       </div>
@@ -355,7 +351,7 @@ export default function DailyLog() {
                       <tr key={checkIn.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full font-semibold text-xs ${
-                            checkIn.load_type === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
+                            checkIn.load_type === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
                           }`}>
                             {checkIn.load_type === 'inbound' ? 'I' : 'O'}
                           </span>
@@ -364,7 +360,7 @@ export default function DailyLog() {
                           <span className={`font-medium px-3 py-1 rounded-md ${
                             onTime 
                               ? 'bg-green-100 text-green-800 border-2 border-green-500' 
-                              : 'bg-red-100 text-red-800 border-2 border-red-500'
+                              : 'bg-grey-100 text-grey-800 border-2 border-grey-500'
                           }`}>
                             {formatAppointmentTime(checkIn.appointment_time)}
                           </span>
