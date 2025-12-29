@@ -288,7 +288,7 @@ export default function CSRDashboard() {
                           <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             ci.load_type === 'inbound' 
                               ? 'bg-green-100 text-green-800' 
-                              : 'bg-blue-100 text-blue-800'
+                              : 'bg-orange-100 text-orange-800'
                           }`}>
                             {ci.load_type === 'inbound' ? 'I' : 'O'}
                           </span>
