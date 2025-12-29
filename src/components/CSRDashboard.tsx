@@ -13,7 +13,6 @@ const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = fals
   try {
     const date = new Date(isoString);
     
-    // Check if date is valid
     if (isNaN(date.getTime())) {
       console.error('Invalid date:', isoString);
       return 'Invalid Date';
@@ -35,7 +34,6 @@ const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = fals
     const formatter = new Intl.DateTimeFormat('en-US', options);
     const formatted = formatter.format(date);
     
-    // Log for debugging (remove after testing)
     console.log('Formatting:', {
       input: isoString,
       parsed: date.toISOString(),
@@ -49,7 +47,6 @@ const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = fals
     return isoString;
   }
 };
-
 
 interface CheckIn {
   id: string;
@@ -186,7 +183,7 @@ export default function CSRDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-full mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">CSR Dashboard - Pending Check-ins (EST/EDT)</h1>
@@ -213,7 +210,7 @@ export default function CSRDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4">
+      <div className="max-w-full mx-auto p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-gray-600 text-sm font-medium">Pending Check-ins</h3>
@@ -239,41 +236,35 @@ export default function CSRDashboard() {
               <p className="text-sm mt-2">All check-ins have been processed</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+            <div className="w-full">
+              <table className="w-full table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Check-in Time (EST)
+                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Appt Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Pickup Number
+                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Check-in
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Driver Name
+                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Pickup #
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Driver Phone
+                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Carrier/Trailer
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Carrier
+                    <th className="w-[15%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Driver
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trailer
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[14%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Destination
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Wait Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Dock
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[10%] px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Action
                     </th>
                   </tr>
@@ -284,51 +275,59 @@ export default function CSRDashboard() {
                     const waitTimeColor = getWaitTimeColor(ci);
                     return (
                       <tr key={ci.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded ${
+                        <td className="px-3 py-4 text-sm">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             ci.load_type === 'inbound' 
                               ? 'bg-blue-100 text-blue-800' 
                               : 'bg-green-100 text-green-800'
                           }`}>
-                            {ci.load_type === 'inbound' ? 'I' : 'O'}
+                            {ci.load_type === 'inbound' ? 'In' : 'Out'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-3 py-4 text-sm text-gray-900">
+                          {ci.appointment_time ? formatTimeInIndianapolis(ci.appointment_time) : 'N/A'}
+                        </td>
+                        <td className="px-3 py-4 text-sm text-gray-900">
                           {formatTimeInIndianapolis(ci.check_in_time)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                          {ci.pickup_number || '-'}
+                        <td className="px-3 py-4 text-sm">
+                          <span className="font-bold text-gray-900">
+                            {ci.pickup_number || 'N/A'}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {ci.driver_name || '-'}
+                        <td className="px-3 py-4 text-sm">
+                          <div className="flex flex-col">
+                            <span className="text-gray-900">{ci.carrier_name || 'N/A'}</span>
+                            <span className="text-gray-500 text-xs">
+                              {ci.trailer_number || 'N/A'}
+                            </span>
+                            {ci.trailer_length && (
+                              <span className="text-gray-500 text-xs">
+                                {ci.trailer_length}'
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {ci.driver_phone || '-'}
+                        <td className="px-3 py-4 text-sm">
+                          <div className="flex flex-col">
+                            <span className="text-gray-900">{ci.driver_name || 'N/A'}</span>
+                            <span className="text-gray-500 text-xs">
+                              {ci.driver_phone || 'N/A'}
+                            </span>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {ci.carrier_name || '-'}
-                        </td>
-                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {checkIn.trailer_number ? `${checkIn.trailer_number}${checkIn.trailer_length ? ` (${checkIn.trailer_length}')`
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-3 py-4 text-sm text-gray-900">
                           {ci.destination_city && ci.destination_state 
-                            ? `${ci.destination_city}, ${ci.destination_state}`
-                            : '-'
-                          }
+                            ? `${ci.destination_city}, ${ci.destination_state}` 
+                            : 'N/A'}
                         </td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${waitTimeColor}`}>
+                        <td className={`px-3 py-4 text-sm font-semibold ${waitTimeColor}`}>
                           {waitTime}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {ci.dock_number || (
-                            <span className="text-orange-600 font-medium">Not Assigned</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <td className="px-3 py-4 text-center">
                           <button
                             onClick={() => handleAssignDock(ci)}
-                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm w-full"
                           >
                             Assign
                           </button>
@@ -346,6 +345,7 @@ export default function CSRDashboard() {
       {isDockModalOpen && selectedForDock && (
         <AssignDockModal
           checkIn={selectedForDock}
+          isOpen={isDockModalOpen}
           onClose={() => {
             setIsDockModalOpen(false);
             setSelectedForDock(null);
