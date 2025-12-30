@@ -10,7 +10,7 @@ interface AssignDockModalProps {
     dock_number?: string;
     appointment_time?: string | null;
     carrier_name?: string;
-    pickup_number?: string;
+    reference_number?: string;
     driver_phone?: string;
     trailer_number?: string;
     trailer_length?: string;
@@ -151,7 +151,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
               text-align: center;
             }
 
-            .pickup-box .pickup-number {
+            .pickup-box .reference-number {
               font-size: 18px;
               font-weight: bold;
               margin-bottom: 4px;
@@ -209,7 +209,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignD
           </div>
 
           <div class="pickup-box">
-            <div class="pickup-number">Pickup #: ${checkIn.pickup_number ?? 'N/A'}</div>
+            <div class="reference-number">Pickup #: ${checkIn.reference_number ?? 'N/A'}</div>
             <div class="dock-number">${dockDisplay}</div>
           </div>
 
