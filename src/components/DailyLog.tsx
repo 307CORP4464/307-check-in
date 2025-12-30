@@ -176,7 +176,7 @@ interface CheckIn {
   trailer_number?: string;
   trailer_length?: string;
   load_type?: 'inbound' | 'outbound';
-  pickup_number?: string;
+  reference_number?: string;
   dock_number?: string;
   appointment_time?: string | null;
   end_time?: string | null;
@@ -409,7 +409,7 @@ return (
                     Detention
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pickup Number
+                    Reference Number
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Destination
@@ -475,9 +475,9 @@ return (
                         {calculateDetention(checkIn)}
                       </td>
 
-                      {/* Pickup Number */}
+                      {/* Reference Number */}
                       <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                        {checkIn.pickup_number || 'N/A'}
+                        {checkIn.reference_number || 'N/A'}
                       </td>
 
                       {/* Destination */}
