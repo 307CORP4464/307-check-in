@@ -295,37 +295,74 @@ export default function DailyLog() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-[1800px] mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Daily Activity Log</h1>
-              <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
-            </div>
-            <div className="flex gap-3">
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Back to Dashboard
-                <Link>
-                  <Link 
-  href="/tracking"
-  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition inline-block text-center"
->
-  View Tracking
-</Link>
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
+return (
+  <div className="min-h-screen bg-gray-50 p-6">
+    <div className="mb-6">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-3xl font-bold text-gray-800">Daily Log</h1>
+        <div className="flex gap-3">
+          <Link 
+            href="/tracking"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition inline-block text-center"
+          >
+            View Tracking
+          </Link>
+          <Link 
+            href="/dashboard"
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition inline-block text-center"
+          >
+            Back to Dashboard
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Date Selector */}
+      <div className="bg-white rounded-lg shadow p-4 mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Select Date
+        </label>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-sm text-gray-600">Total Check-Ins</div>
+          <div className="text-2xl font-bold text-blue-600">{checkIns.length}</div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-sm text-gray-600">Inbound</div>
+          <div className="text-2xl font-bold text-green-600">
+            {checkIns.filter(c => c.load_type === 'inbound').length}
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="text-sm text-gray-600">Outbound</div>
+          <div className="text-2xl font-bold text-purple-600">
+            {checkIns.filter(c => c.load_type === 'outbound').length}
           </div>
         </div>
       </div>
+    </div>
+    
+    {/* Rest of your component... */}
 
       <div className="max-w-[1800px] mx-auto px-4 py-6">
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
