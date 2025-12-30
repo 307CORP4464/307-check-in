@@ -107,7 +107,7 @@ export default function TrackingPage() {
     link.href = url
     const dateString = new Date().toISOString()
     const dateParts = dateString.split('T')
-    const today = dateParts<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>
+    const today = dateParts.at(0) || 'date'
     link.download = `check-in-data-${today}.json`
     link.click()
     URL.revokeObjectURL(url)
@@ -139,8 +139,8 @@ export default function TrackingPage() {
 
     const entries = Object.entries(data)
     const sortedData = entries.sort((a, b) => {
-      const valueA = a<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>
-      const valueB = b<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>
+      const valueA = a.at(1) || 0
+      const valueB = b.at(1) || 0
       return valueB - valueA
     })
     const maxValue = Math.max(...Object.values(data))
@@ -148,8 +148,8 @@ export default function TrackingPage() {
     return (
       <div className="bar-chart">
         {sortedData.map((item) => {
-          const label = item<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>
-          const value = item<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>
+          const label = item.at(0) || ''
+          const value = item.at(1) || 0
           const percentage = (value / maxValue) * 100
           return (
             <div key={label} className="bar-item">
