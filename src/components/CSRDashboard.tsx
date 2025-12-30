@@ -6,53 +6,7 @@ import { useRouter } from 'next/navigation';
 import { differenceInMinutes } from 'date-fns';
 import Link from 'next/link';
 import AssignDockModal from './AssignDockModal';
-// Add import at the top
 import EditCheckInModal from './EditCheckInModal';
-
-// Add state for edit modal after other state declarations
-const [selectedForEdit, setSelectedForEdit] = useState<CheckIn | null>(null);
-
-// Add handler function
-const handleEdit = (checkIn: CheckIn) => {
-  setSelectedForEdit(checkIn);
-};
-
-const handleEditSuccess = () => {
-  fetchCheckIns();
-  setSelectedForEdit(null);
-};
-
-// In your table, add an Edit button column. Update the table header to include:
-<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-  Actions
-</th>
-
-// And update the table row to include both buttons:
-<td className="px-4 py-4 whitespace-nowrap text-center">
-  <div className="flex gap-2 justify-center">
-    <button
-      onClick={() => handleEdit(ci)}
-      className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 text-sm"
-    >
-      Edit
-    </button>
-    <button
-      onClick={() => handleAssignDock(ci)}
-      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
-    >
-      Assign Dock
-    </button>
-  </div>
-</td>
-
-// Add the modal at the end before the closing div:
-{selectedForEdit && (
-  <EditCheckInModal
-    checkIn={selectedForEdit}
-    onClose={() => setSelectedForEdit(null)}
-    onSuccess={handleEditSuccess}
-  />
-)}
 
 const TIMEZONE = 'America/Indiana/Indianapolis';
 
@@ -95,7 +49,6 @@ const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = fals
   }
 };
 
-// Add this phone formatting function
 const formatPhoneNumber = (phone: string | undefined): string => {
   if (!phone) return 'N/A';
   
@@ -126,6 +79,7 @@ interface CheckIn {
   end_time?: string | null;
   destination_city?: string;
   destination_state?: string;
+  notes?: string;
 }
 
 export default function CSRDashboard() {
@@ -140,6 +94,7 @@ export default function CSRDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
   const [selectedForDock, setSelectedForDock] = useState<CheckIn | null>(null);
+  const [selectedForEdit, setSelectedForEdit] = useState<CheckIn | null>(null);
 
   useEffect(() => {
     const getUser = async () => {
@@ -205,6 +160,15 @@ export default function CSRDashboard() {
   const handleDockAssignSuccess = () => {
     fetchCheckIns();
     setSelectedForDock(null);
+  };
+
+  const handleEdit = (checkIn: CheckIn) => {
+    setSelectedForEdit(checkIn);
+  };
+
+  const handleEditSuccess = () => {
+    fetchCheckIns();
+    setSelectedForEdit(null);
   };
 
   const calculateWaitTime = (checkIn: CheckIn): string => {
@@ -321,7 +285,7 @@ export default function CSRDashboard() {
                       Wait Time
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Action
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -343,36 +307,41 @@ export default function CSRDashboard() {
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatTimeInIndianapolis(ci.check_in_time)}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
-                          <span className="font-medium text-gray-900">{ci.reference_number || 'N/A'}</span>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {ci.reference_number || 'N/A'}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
-                          <div className="text-gray-900 font-medium">{ci.carrier_name || 'N/A'}</div>
-                          <div className="text-gray-900 font-medium">{ci.driver_name || 'N/A'}</div>
+                        <td className="px-4 py-4 text-sm text-gray-900">
+                          <div className="font-medium">{ci.driver_name || 'N/A'}</div>
                           <div className="text-gray-500">{formatPhoneNumber(ci.driver_phone)}</div>
-                          
+                          {ci.carrier_name && <div className="text-gray-500 text-xs">{ci.carrier_name}</div>}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
-                          <div className="text-gray-900">{ci.trailer_number || 'N/A'}</div>
-                          <div className="text-gray-500 text-xs">{ci.trailer_length || 'N/A'}</div>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div>{ci.trailer_number || 'N/A'}</div>
+                          {ci.trailer_length && <div className="text-gray-500 text-xs">{ci.trailer_length}'</div>}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           {ci.destination_city && ci.destination_state 
                             ? `${ci.destination_city}, ${ci.destination_state}`
                             : 'N/A'}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm">
-                          <span className={`font-semibold ${waitTimeColor}`}>
-                            {waitTime}
-                          </span>
+                        <td className={`px-4 py-4 whitespace-nowrap text-sm font-medium ${waitTimeColor}`}>
+                          {waitTime}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-center text-sm">
-                          <button
-                            onClick={() => handleAssignDock(ci)}
-                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors font-medium"
-                          >
-                            Assign Dock
-                          </button>
+                        <td className="px-4 py-4 whitespace-nowrap text-center">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => handleEdit(ci)}
+                              className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 text-sm"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleAssignDock(ci)}
+                              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
+                            >
+                              Assign Dock
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -389,6 +358,14 @@ export default function CSRDashboard() {
           checkIn={selectedForDock}
           onClose={() => setSelectedForDock(null)}
           onSuccess={handleDockAssignSuccess}
+        />
+      )}
+
+      {selectedForEdit && (
+        <EditCheckInModal
+          checkIn={selectedForEdit}
+          onClose={() => setSelectedForEdit(null)}
+          onSuccess={handleEditSuccess}
         />
       )}
     </div>
