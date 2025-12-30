@@ -44,6 +44,44 @@ const formatPhoneNumber = (phone: string | undefined): string => {
   return phone;
 };
 
+// Add inline editing to daily log entries
+const DailyLogEntry = ({ entry, isEditable }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedEntry, setEditedEntry] = useState(entry);
+
+  const handleUpdate = async () => {
+    try {
+      await updateDailyLogEntry(entry.id, editedEntry);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating log entry:', error);
+    }
+  };
+
+  return (
+    <tr>
+      {isEditing ? (
+        <>
+          <td><input value={editedEntry.time} onChange={(e) => setEditedEntry({...editedEntry, time: e.target.value})} /></td>
+          <td><input value={editedEntry.location} onChange={(e) => setEditedEntry({...editedEntry, location: e.target.value})} /></td>
+          <td><input value={editedEntry.notes} onChange={(e) => setEditedEntry({...editedEntry, notes: e.target.value})} /></td>
+          <td>
+            <button onClick={handleUpdate}>Save</button>
+            <button onClick={() => setIsEditing(false)}>Cancel</button>
+          </td>
+        </>
+      ) : (
+        <>
+          <td>{entry.time}</td>
+          <td>{entry.location}</td>
+          <td>{entry.notes}</td>
+          <td><button onClick={() => setIsEditing(true)}>Edit</button></td>
+        </>
+      )}
+    </tr>
+  );
+};
+
 const formatAppointmentTime = (appointmentTime: string | null | undefined): string => {
   if (!appointmentTime) return 'N/A';
   
