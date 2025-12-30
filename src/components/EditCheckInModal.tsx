@@ -14,6 +14,7 @@ interface EditCheckInModalProps {
     load_type?: 'inbound' | 'outbound';
     reference_number?: string;
     appointment_time?: string | null;
+    dock_number?: string; // Added
     destination_city?: string;
     destination_state?: string;
     notes?: string;
@@ -37,6 +38,7 @@ export default function EditCheckInModal({ checkIn, onClose, onSuccess }: EditCh
     load_type: checkIn.load_type || 'inbound' as 'inbound' | 'outbound',
     reference_number: checkIn.reference_number || '',
     appointment_time: checkIn.appointment_time || '',
+    dock_number: checkIn.dock_number || '', // Added
     destination_city: checkIn.destination_city || '',
     destination_state: checkIn.destination_state || '',
     notes: checkIn.notes || '',
@@ -70,6 +72,7 @@ export default function EditCheckInModal({ checkIn, onClose, onSuccess }: EditCh
           load_type: formData.load_type,
           reference_number: formData.reference_number,
           appointment_time: formData.appointment_time || null,
+          dock_number: formData.dock_number || null, // Added
           destination_city: formData.destination_city,
           destination_state: formData.destination_state,
           notes: formData.notes,
@@ -127,6 +130,49 @@ export default function EditCheckInModal({ checkIn, onClose, onSuccess }: EditCh
                 value={formData.reference_number}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* ADDED: Appointment Time Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Appointment Time
+              </label>
+              <select
+                name="appointment_time"
+                value={formData.appointment_time}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select...</option>
+                <option value="work_in">Work In</option>
+                <option value="paid_to_load">Paid - No Appt</option>
+                <option value="paid_charge_customer">Paid - Charge Customer</option>
+                <option value="0700">07:00</option>
+                <option value="0800">08:00</option>
+                <option value="0900">09:00</option>
+                <option value="1000">10:00</option>
+                <option value="1100">11:00</option>
+                <option value="1200">12:00</option>
+                <option value="1300">13:00</option>
+                <option value="1400">14:00</option>
+                <option value="1500">15:00</option>
+                <option value="1600">16:00</option>
+              </select>
+            </div>
+
+            {/* ADDED: Dock Number Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dock Number
+              </label>
+              <input
+                type="text"
+                name="dock_number"
+                value={formData.dock_number}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., A1, B2, etc."
               />
             </div>
 
@@ -202,33 +248,6 @@ export default function EditCheckInModal({ checkIn, onClose, onSuccess }: EditCh
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Appointment Time
-              </label>
-              <select
-                name="appointment_time"
-                value={formData.appointment_time}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select...</option>
-                <option value="work_in">Work In</option>
-                <option value="paid_to_load">Paid - No Appt</option>
-                <option value="paid_charge_customer">Paid - Charge Customer</option>
-                <option value="0700">07:00</option>
-                <option value="0800">08:00</option>
-                <option value="0900">09:00</option>
-                <option value="1000">10:00</option>
-                <option value="1100">11:00</option>
-                <option value="1200">12:00</option>
-                <option value="1300">13:00</option>
-                <option value="1400">14:00</option>
-                <option value="1500">15:00</option>
-                <option value="1600">16:00</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Destination City
               </label>
               <input
@@ -268,21 +287,21 @@ export default function EditCheckInModal({ checkIn, onClose, onSuccess }: EditCh
             />
           </div>
 
-          <div className="flex gap-3 mt-6">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 disabled:bg-gray-400 font-medium"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
+          <div className="mt-6 flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               disabled={saving}
-              className="flex-1 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 disabled:bg-gray-200 font-medium"
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
