@@ -105,7 +105,9 @@ export default function TrackingPage() {
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
-    const today = new Date().toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>
+    const dateString = new Date().toISOString()
+    const dateParts = dateString.split('T')
+    const today = dateParts<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>
     link.download = `check-in-data-${today}.json`
     link.click()
     URL.revokeObjectURL(url)
@@ -135,12 +137,19 @@ export default function TrackingPage() {
       return <p style={{ textAlign: 'center', color: '#999' }}>No data yet</p>
     }
 
-    const sortedData = Object.entries(data).sort((a, b) => b<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a> - a<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>)
+    const entries = Object.entries(data)
+    const sortedData = entries.sort((a, b) => {
+      const valueA = a<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>
+      const valueB = b<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>
+      return valueB - valueA
+    })
     const maxValue = Math.max(...Object.values(data))
 
     return (
       <div className="bar-chart">
-        {sortedData.map(([label, value]) => {
+        {sortedData.map((item) => {
+          const label = item<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>
+          const value = item<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>
           const percentage = (value / maxValue) * 100
           return (
             <div key={label} className="bar-item">
