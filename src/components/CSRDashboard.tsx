@@ -6,6 +6,53 @@ import { useRouter } from 'next/navigation';
 import { differenceInMinutes } from 'date-fns';
 import Link from 'next/link';
 import AssignDockModal from './AssignDockModal';
+// Add import at the top
+import EditCheckInModal from './EditCheckInModal';
+
+// Add state for edit modal after other state declarations
+const [selectedForEdit, setSelectedForEdit] = useState<CheckIn | null>(null);
+
+// Add handler function
+const handleEdit = (checkIn: CheckIn) => {
+  setSelectedForEdit(checkIn);
+};
+
+const handleEditSuccess = () => {
+  fetchCheckIns();
+  setSelectedForEdit(null);
+};
+
+// In your table, add an Edit button column. Update the table header to include:
+<th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+  Actions
+</th>
+
+// And update the table row to include both buttons:
+<td className="px-4 py-4 whitespace-nowrap text-center">
+  <div className="flex gap-2 justify-center">
+    <button
+      onClick={() => handleEdit(ci)}
+      className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 text-sm"
+    >
+      Edit
+    </button>
+    <button
+      onClick={() => handleAssignDock(ci)}
+      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
+    >
+      Assign Dock
+    </button>
+  </div>
+</td>
+
+// Add the modal at the end before the closing div:
+{selectedForEdit && (
+  <EditCheckInModal
+    checkIn={selectedForEdit}
+    onClose={() => setSelectedForEdit(null)}
+    onSuccess={handleEditSuccess}
+  />
+)}
 
 const TIMEZONE = 'America/Indiana/Indianapolis';
 
