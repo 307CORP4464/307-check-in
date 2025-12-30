@@ -310,6 +310,13 @@ export default function DailyLog() {
                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Back to Dashboard
+                <Link 
+  href="/tracking"
+  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+>
+  View Tracking Reports
+</Link>
+
               </Link>
               <button
                 onClick={handleLogout}
