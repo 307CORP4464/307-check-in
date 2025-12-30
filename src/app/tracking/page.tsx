@@ -369,7 +369,7 @@ export default function Tracking() {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold text-gray-800">Daily Tracking Report</h1>
           <Link 
-            href="/daily-log"
+            href="/logs"
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
           >
             Back to Daily Log
