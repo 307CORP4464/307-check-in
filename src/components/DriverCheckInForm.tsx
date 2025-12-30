@@ -10,7 +10,7 @@ interface FormData {
   carrierName: string;
   trailerNumber: string;
   trailerLength: string;
-  pickupNumber: string;
+  referenceNumber: string; // Changed from pickupNumber
   loadType: 'inbound' | 'outbound';
   destinationCity: string;
   destinationState: string;
@@ -22,7 +22,7 @@ const INITIAL_FORM_DATA: FormData = {
   carrierName: '',
   trailerNumber: '',
   trailerLength: '',
-  pickupNumber: '',
+  referenceNumber: '', // Changed from pickupNumber
   loadType: 'inbound',
   destinationCity: '',
   destinationState: '',
@@ -58,8 +58,8 @@ const getSupabaseClient = () => {
   return createBrowserClient(url, key);
 };
 
-// Validation patterns for pickup numbers
-const PICKUP_NUMBER_PATTERNS = [
+// Validation patterns for reference numbers (formerly pickup numbers)
+const REFERENCE_NUMBER_PATTERNS = [
   /^2\d{6}$/,           // 2xxxxxx
   /^4\d{6}$/,           // 4xxxxxx
   /^44\d{8}$/,          // 44xxxxxxxx
@@ -68,10 +68,10 @@ const PICKUP_NUMBER_PATTERNS = [
   /^\d{6}$/             // xxxxxx
 ];
 
-const validatePickupNumber = (value: string): boolean => {
+const validateReferenceNumber = (value: string): boolean => {
   if (!value) return false;
   const cleaned = value.replace(/\s/g, '').toUpperCase();
-  return PICKUP_NUMBER_PATTERNS.some(pattern => pattern.test(cleaned));
+  return REFERENCE_NUMBER_PATTERNS.some(pattern => pattern.test(cleaned));
 };
 
 // Format phone number as user types
@@ -102,7 +102,7 @@ export default function DriverCheckInForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [pickupError, setPickupError] = useState<string | null>(null);
+  const [referenceError, setReferenceError] = useState<string | null>(null); // Changed from pickupError
 
   const handleInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -119,22 +119,22 @@ export default function DriverCheckInForm() {
       [name]: processedValue
     }));
 
-    // Validate pickup number in real-time
-    if (name === 'pickupNumber') {
-      if (value && !validatePickupNumber(value)) {
-        setPickupError(
+    // Validate reference number in real-time
+    if (name === 'referenceNumber') { // Changed from pickupNumber
+      if (value && !validateReferenceNumber(value)) {
+        setReferenceError(
           'Invalid format. Must match: 2xxxxxx, 4xxxxxx, 44xxxxxxxx, ' +
           '8xxxxxxx, TLNA-SO-00xxxx, or xxxxxx'
         );
       } else {
-        setPickupError(null);
+        setReferenceError(null);
       }
     }
   }, []);
 
   const resetForm = useCallback(() => {
     setFormData(INITIAL_FORM_DATA);
-    setPickupError(null);
+    setReferenceError(null); // Changed from pickupError
     setError(null);
   }, []);
 
@@ -144,9 +144,9 @@ export default function DriverCheckInForm() {
     setError(null);
     setSuccess(false);
 
-    // Validate pickup number
-    if (!validatePickupNumber(formData.pickupNumber)) {
-      setError('Invalid pickup number format');
+    // Validate reference number
+    if (!validateReferenceNumber(formData.referenceNumber)) {
+      setError('Invalid reference number format');
       setLoading(false);
       return;
     }
@@ -157,6 +157,20 @@ export default function DriverCheckInForm() {
       setError('Phone number must be 10 digits');
       setLoading(false);
       return;
+    }
+
+    // Validate destination for outbound loads only
+    if (formData.loadType === 'outbound') {
+      if (!formData.destinationCity.trim()) {
+        setError('Destination city is required for outbound pickups');
+        setLoading(false);
+        return;
+      }
+      if (!formData.destinationState) {
+        setError('Destination state is required for outbound pickups');
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -171,10 +185,10 @@ export default function DriverCheckInForm() {
             carrier_name: formData.carrierName.trim(),
             trailer_number: formData.trailerNumber.trim().toUpperCase(),
             trailer_length: formData.trailerLength,
-            pickup_number: formData.pickupNumber.trim().toUpperCase(),
+            pickup_number: formData.referenceNumber.trim().toUpperCase(), // Changed field name
             load_type: formData.loadType,
-            destination_city: formData.destinationCity.trim(),
-            destination_state: formData.destinationState,
+            destination_city: formData.destinationCity.trim() || null, // Allow null for inbound
+            destination_state: formData.destinationState || null, // Allow null for inbound
             check_in_time: checkInTime,
             status: 'pending',
           }
@@ -295,7 +309,6 @@ export default function DriverCheckInForm() {
               value={formData.driverName}
               onChange={handleInputChange}
               required
-              maxLength={100}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="Enter driver name"
             />
@@ -316,9 +329,9 @@ export default function DriverCheckInForm() {
               value={formData.driverPhone}
               onChange={handleInputChange}
               required
-              maxLength={14}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-              placeholder="(555) 123-4567"
+              placeholder="(555) 555-5555"
+              maxLength={14}
             />
           </div>
 
@@ -337,7 +350,6 @@ export default function DriverCheckInForm() {
               value={formData.carrierName}
               onChange={handleInputChange}
               required
-              maxLength={100}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="Enter carrier name"
             />
@@ -358,7 +370,6 @@ export default function DriverCheckInForm() {
               value={formData.trailerNumber}
               onChange={handleInputChange}
               required
-              maxLength={50}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="Enter trailer number"
             />
@@ -380,50 +391,47 @@ export default function DriverCheckInForm() {
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
-              {TRAILER_LENGTHS.map(({ value, label }) => (
-                <option key={value || 'empty'} value={value}>
-                  {label}
+              {TRAILER_LENGTHS.map(length => (
+                <option key={length.value} value={length.value}>
+                  {length.label}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Pickup Number */}
+          {/* Reference Number (formerly Pickup Number) */}
           <div>
             <label 
-              htmlFor="pickupNumber" 
+              htmlFor="referenceNumber" 
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Pickup Number <span className="text-red-500">*</span>
+              Reference Number <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              id="pickupNumber"
-              name="pickupNumber"
-              value={formData.pickupNumber}
+              id="referenceNumber"
+              name="referenceNumber"
+              value={formData.referenceNumber}
               onChange={handleInputChange}
               required
-              maxLength={20}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                pickupError ? 'border-red-500' : 'border-gray-300'
+                referenceError ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder="Enter pickup number"
+              placeholder="Enter reference number"
             />
-            {pickupError && (
-              <p className="mt-1 text-sm text-red-600">{pickupError}</p>
+            {referenceError && (
+              <p className="mt-2 text-sm text-red-600">{referenceError}</p>
             )}
-            <p className="mt-1 text-xs text-gray-500">
-              Formats: 2xxxxxx, 4xxxxxx, 44xxxxxxxx, 8xxxxxxx, TLNA-SO-00xxxx, or xxxxxx
-            </p>
           </div>
 
-          {/* Destination City */}
+          {/* Destination City - Only required for outbound */}
           <div>
             <label 
               htmlFor="destinationCity" 
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Destination City <span className="text-red-500">*</span>
+              Destination City {formData.loadType === 'outbound' && <span className="text-red-500">*</span>}
+              {formData.loadType === 'inbound' && <span className="text-gray-500 text-xs">(Optional)</span>}
             </label>
             <input
               type="text"
@@ -431,27 +439,27 @@ export default function DriverCheckInForm() {
               name="destinationCity"
               value={formData.destinationCity}
               onChange={handleInputChange}
-              required
-              maxLength={100}
+              required={formData.loadType === 'outbound'}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="Enter destination city"
             />
           </div>
 
-          {/* Destination State */}
+          {/* Destination State - Only required for outbound */}
           <div>
             <label 
               htmlFor="destinationState" 
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Destination State <span className="text-red-500">*</span>
+              Destination State {formData.loadType === 'outbound' && <span className="text-red-500">*</span>}
+              {formData.loadType === 'inbound' && <span className="text-gray-500 text-xs">(Optional)</span>}
             </label>
             <select
               id="destinationState"
               name="destinationState"
               value={formData.destinationState}
               onChange={handleInputChange}
-              required
+              required={formData.loadType === 'outbound'}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
               <option value="">Select state</option>
@@ -466,36 +474,10 @@ export default function DriverCheckInForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={loading || !!pickupError}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center"
+            disabled={loading || !!referenceError}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? (
-              <>
-                <svg 
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  fill="none" 
-                  viewBox="0 0 24 24"
-                >
-                  <circle 
-                    className="opacity-25" 
-                    cx="12" 
-                    cy="12" 
-                    r="10" 
-                    stroke="currentColor" 
-                    strokeWidth="4"
-                  />
-                  <path 
-                    className="opacity-75" 
-                    fill="currentColor" 
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Checking In...
-              </>
-            ) : (
-              'Check In'
-            )}
+            {loading ? 'Checking In...' : 'Check In'}
           </button>
         </form>
       </div>
