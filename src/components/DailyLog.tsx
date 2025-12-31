@@ -301,8 +301,6 @@ export default function DailyLog() {
 
     return (
     <div className="min-h-screen bg-gray-50">
-      // Find this section in your code (around where the "Check In" and "Logout" buttons are)
-// Replace it with this updated version:
 
 <div className="bg-white shadow">
   <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
