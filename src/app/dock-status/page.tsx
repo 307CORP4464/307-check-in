@@ -52,6 +52,26 @@ export default function DockStatusPage() {
     };
   }, []);
 
+  const getBlockedDocks = (): Record<string, { reason: string }> => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const stored = localStorage.getItem('blocked_docks');
+      return stored ? JSON.parse(stored) : {};
+    } catch (error) {
+      console.error('Error reading blocked docks:', error);
+      return {};
+    }
+  };
+
+  const saveBlockedDocks = (blockedDocks: Record<string, { reason: string }>) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('blocked_docks', JSON.stringify(blockedDocks));
+    } catch (error) {
+      console.error('Error saving blocked docks:', error);
+    }
+  };
+
   const fetchDockStatuses = async () => {
     try {
       // Fetch all active orders (not completed)
@@ -64,13 +84,13 @@ export default function DockStatusPage() {
 
       if (error) throw error;
 
-      // Fetch manually blocked docks from localStorage or a separate table
+      // Get manually blocked docks
       const blockedDocks = getBlockedDocks();
 
-      // Group by dock number
+      // Create a map for all 70 docks
       const dockMap = new Map<string, DockStatus>();
       
-      // Initialize all docks 1-70
+      // Initialize ALL docks from 1 to 70
       for (let i = 1; i <= 70; i++) {
         const dockNum = i.toString();
         const blockedInfo = blockedDocks[dockNum];
@@ -78,64 +98,57 @@ export default function DockStatusPage() {
         dockMap.set(dockNum, {
           dock_number: dockNum,
           status: blockedInfo ? 'blocked' : 'available',
-          orders: [] as OrderInfo[],
+          orders: [],
           is_manually_blocked: !!blockedInfo,
           blocked_reason: blockedInfo?.reason
         });
       }
 
-      // Process logs and assign to docks
-      logs?.forEach((log) => {
-        if (log.dock_number) {
-          const existingDock = dockMap.get(log.dock_number);
-          
-          const dock: DockStatus = existingDock || {
-            dock_number: log.dock_number,
-            status: 'available',
-            orders: [] as OrderInfo[],
-            is_manually_blocked: false
-          };
+      // Process logs and update dock statuses
+      if (logs && logs.length > 0) {
+        logs.forEach((log) => {
+          if (log.dock_number) {
+            const dock = dockMap.get(log.dock_number);
+            
+            if (dock) {
+              // Only add orders if dock is not manually blocked
+              if (!dock.is_manually_blocked) {
+                dock.orders.push({
+                  id: log.id,
+                  po_number: log.po_number,
+                  driver_name: log.driver_name,
+                  status: log.status,
+                  check_in_time: log.check_in_time
+                });
 
-          // Only add orders if dock is not manually blocked
-          if (!dock.is_manually_blocked) {
-            dock.orders.push({
-              id: log.id,
-              po_number: log.po_number,
-              driver_name: log.driver_name,
-              status: log.status,
-              check_in_time: log.check_in_time
-            });
+                // Update status based on number of orders
+                if (dock.orders.length === 1) {
+                  dock.status = 'in-use';
+                } else if (dock.orders.length > 1) {
+                  dock.status = 'double-booked';
+                }
+              }
 
-            // Update status based on number of orders
-            if (dock.orders.length === 1) {
-              dock.status = 'in-use';
-            } else if (dock.orders.length > 1) {
-              dock.status = 'double-booked';
+              dockMap.set(log.dock_number, dock);
             }
           }
+        });
+      }
 
-          dockMap.set(log.dock_number, dock);
-        }
+      // Convert map to array and sort numerically
+      const docksArray = Array.from(dockMap.values()).sort((a, b) => {
+        const numA = parseInt(a.dock_number);
+        const numB = parseInt(b.dock_number);
+        return numA - numB;
       });
 
-      setDockStatuses(Array.from(dockMap.values()).sort((a, b) => 
-        parseInt(a.dock_number) - parseInt(b.dock_number)
-      ));
+      console.log('Total docks initialized:', docksArray.length); // Debug log
+      setDockStatuses(docksArray);
     } catch (error) {
       console.error('Error fetching dock statuses:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const getBlockedDocks = (): Record<string, { reason: string }> => {
-    if (typeof window === 'undefined') return {};
-    const stored = localStorage.getItem('blocked_docks');
-    return stored ? JSON.parse(stored) : {};
-  };
-
-  const saveBlockedDocks = (blockedDocks: Record<string, { reason: string }>) => {
-    localStorage.setItem('blocked_docks', JSON.stringify(blockedDocks));
   };
 
   const handleBlockDock = (dockNumber: string) => {
@@ -227,7 +240,12 @@ export default function DockStatusPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dock Status Monitor</h1>
-          <p className="mt-2 text-gray-600">Real-time dock availability and assignments (Docks 1-70)</p>
+          <p className="mt-2 text-gray-600">
+            Real-time dock availability and assignments (Docks 1-70)
+          </p>
+          <p className="mt-1 text-sm text-gray-500">
+            Showing {dockStatuses.length} total docks
+          </p>
         </div>
 
         {/* Statistics Cards */}
@@ -334,81 +352,89 @@ export default function DockStatusPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredDocks.map((dock) => (
-                  <tr 
-                    key={dock.dock_number} 
-                    className={
-                      dock.status === 'double-booked' 
-                        ? 'bg-red-50' 
-                        : dock.status === 'blocked'
-                        ? 'bg-gray-50'
-                        : ''
-                    }
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                      Dock {dock.dock_number}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full ${
-                          dock.status === 'available'
-                            ? 'bg-green-100 text-green-800'
-                            : dock.status === 'in-use'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : dock.status === 'double-booked'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        <span>{getStatusIcon(dock.status)}</span>
-                        <span>{dock.status.replace('-', ' ').toUpperCase()}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {dock.is_manually_blocked ? (
-                        <span className="text-gray-500 italic">Blocked</span>
-                      ) : (
-                        <span className="font-semibold">{dock.orders.length}</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {dock.is_manually_blocked ? (
-                        <div className="text-gray-700">
-                          <span className="font-medium">Reason: </span>
-                          {dock.blocked_reason}
-                        </div>
-                      ) : dock.orders.length > 0 ? (
-                        <div className="space-y-1">
-                          {dock.orders.map((order) => (
-                            <div key={order.id} className="text-xs">
-                              <span className="font-medium">PO: {order.po_number}</span> - {order.driver_name}
-                              <span className="ml-2 text-gray-400 capitalize">({order.status})</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">No active orders</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {dock.is_manually_blocked ? (
-                        <button
-                          onClick={() => handleUnblockDock(dock.dock_number)}
-                          className="text-green-600 hover:text-green-800 font-medium"
-                        >
-                          Unblock
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleBlockDock(dock.dock_number)}
-                          className="text-red-600 hover:text-red-800 font-medium"
-                        >
-                          Block Dock
-                        </button>
-                      )}
+                {filteredDocks.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      No docks match the current filter
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredDocks.map((dock) => (
+                    <tr 
+                      key={dock.dock_number} 
+                      className={
+                        dock.status === 'double-booked' 
+                          ? 'bg-red-50' 
+                          : dock.status === 'blocked'
+                          ? 'bg-gray-50'
+                          : ''
+                      }
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                        Dock {dock.dock_number}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full ${
+                            dock.status === 'available'
+                              ? 'bg-green-100 text-green-800'
+                              : dock.status === 'in-use'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : dock.status === 'double-booked'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          <span>{getStatusIcon(dock.status)}</span>
+                          <span>{dock.status.replace('-', ' ').toUpperCase()}</span>
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {dock.is_manually_blocked ? (
+                          <span className="text-gray-500 italic">Blocked</span>
+                        ) : (
+                          <span className="font-semibold">{dock.orders.length}</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {dock.is_manually_blocked ? (
+                          <div className="text-gray-700">
+                            <span className="font-medium">Reason: </span>
+                            {dock.blocked_reason}
+                          </div>
+                        ) : dock.orders.length > 0 ? (
+                          <div className="space-y-1">
+                            {dock.orders.map((order) => (
+                              <div key={order.id} className="text-xs">
+                                <span className="font-medium">PO: {order.po_number}</span> - {order.driver_name}
+                                <span className="ml-2 text-gray-400 capitalize">({order.status})</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">No active orders</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {dock.is_manually_blocked ? (
+                          <button
+                            onClick={() => handleUnblockDock(dock.dock_number)}
+                            className="text-green-600 hover:text-green-800 font-medium"
+                          >
+                            Unblock
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleBlockDock(dock.dock_number)}
+                            className="text-red-600 hover:text-red-800 font-medium"
+                          >
+                            Block Dock
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
