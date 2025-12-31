@@ -257,7 +257,7 @@ export default function DockStatusPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        {/* Custom Header */}
+        {/* Custom Header - LOADING STATE */}
         <header className="bg-white shadow-md border-b-4 border-blue-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -268,12 +268,20 @@ export default function DockStatusPage() {
                   <p className="text-sm text-gray-600">Loading...</p>
                 </div>
               </div>
-              <Link 
-                href="/dashboard"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
-              >
-                ← Back to Dashboard
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link 
+                  href="/logs"
+                  className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium shadow-lg"
+                >
+                  📋 Daily Logs
+                </Link>
+                <Link 
+                  href="/dashboard"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
+                >
+                  ← Dashboard
+                </Link>
+              </div>
             </div>
           </div>
         </header>
@@ -301,22 +309,30 @@ export default function DockStatusPage() {
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {/* Refresh Button */}
               <button
                 onClick={() => initializeDocks()}
-                className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium shadow"
                 title="Refresh Data"
               >
                 🔄 Refresh
               </button>
+              
+              {/* Daily Logs Button */}
+              <Link 
+                href="/logs"
+                className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium shadow-lg"
+              >
+                📋 Daily Logs
+              </Link>
               
               {/* Back to Dashboard Button */}
               <Link 
                 href="/dashboard"
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
               >
-                ← Back to Dashboard
+                ← Dashboard
               </Link>
             </div>
           </div>
