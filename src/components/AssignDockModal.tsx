@@ -60,7 +60,7 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
       // Check for existing orders on this dock
       const { data: existingOrders, error } = await supabase
         .from('daily_log')
-        .select('reference_number, trailer_number, dock_number')
+        .select('reference_number, trailer_number')
         .eq('dock_number', dock)
         .neq('status', 'complete');
 
@@ -106,7 +106,7 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
       const confirmDouble = window.confirm(
         `⚠️ WARNING: Dock ${dockNumber} is already in use!\n\n` +
         `Current orders on this dock:\n` +
-        dockInfo.orders.map(o => `• Ref: ${o.reference_number} - ${o.trailer_number}`).join('\n') +
+        dockInfo.orders.map(o => `• Ref: ${o.reference_number} - Trailer: ${o.trailer_number}`).join('\n') +
         `\n\nAssigning another order will create a DOUBLE BOOKING.\n\n` +
         `Do you want to proceed with double booking this dock?`
       );
@@ -154,7 +154,7 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
         <div className="mb-4 p-3 bg-blue-50 rounded-lg">
           <div className="text-sm text-gray-700">
             <p className="font-medium">Reference #: {logEntry.reference_number}</p>
-            <p>Driver: {logEntry.trailer_number}</p>
+            <p>Trailer #: {logEntry.trailer_number}</p>
           </div>
         </div>
 
@@ -228,7 +228,7 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
                       <div key={idx} className="bg-white bg-opacity-50 p-2 rounded">
                         <span className="font-medium">Ref #: {order.reference_number}</span>
                         <br />
-                        <span>Driver: {order.trailer_number}</span>
+                        <span>Trailer #: {order.trailer_number}</span>
                       </div>
                     ))}
                   </div>
@@ -282,4 +282,3 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
     </div>
   );
 }
-
