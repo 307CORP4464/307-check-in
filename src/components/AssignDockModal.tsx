@@ -154,7 +154,7 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
         <div className="mb-4 p-3 bg-blue-50 rounded-lg">
           <div className="text-sm text-gray-700">
             <p className="font-medium">Reference #: {logEntry.reference_number}</p>
-            <p>Driver: {logEntry.driver_name}</p>
+            <p>Driver: {logEntry.trailer_number}</p>
           </div>
         </div>
 
@@ -228,7 +228,7 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
                       <div key={idx} className="bg-white bg-opacity-50 p-2 rounded">
                         <span className="font-medium">Ref #: {order.reference_number}</span>
                         <br />
-                        <span>Driver: {order.driver_name}</span>
+                        <span>Driver: {order.trailer_number}</span>
                       </div>
                     ))}
                   </div>
