@@ -286,7 +286,6 @@ export default function DailyLog() {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
-  // Calculate stats
   const totalCheckIns = checkIns.length;
   const activeCheckIns = checkIns.filter(c => c.status.toLowerCase() === 'checked_in' || c.status.toLowerCase() === 'pending').length;
   const completedCheckIns = checkIns.filter(c => c.status.toLowerCase() === 'completed' || c.status.toLowerCase() === 'checked_out').length;
@@ -315,16 +314,10 @@ export default function DailyLog() {
             <h1 className="text-2xl font-bold text-gray-900">Daily Log</h1>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">{userEmail}</span>
-              <Link
-                href="/"
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
+              <Link href="/" className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                 Back to Check-in
               </Link>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
-              >
+              <button onClick={handleLogout} className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">
                 Logout
               </button>
             </div>
@@ -333,7 +326,6 @@ export default function DailyLog() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Date Selector */}
         <div className="mb-6">
           <label htmlFor="date-select" className="block text-sm font-medium text-gray-700 mb-2">
             Select Date
@@ -347,7 +339,6 @@ export default function DailyLog() {
           />
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-sm text-gray-600">Total Check-ins</div>
@@ -363,7 +354,6 @@ export default function DailyLog() {
           </div>
         </div>
 
-        {/* Check-ins Table */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -389,95 +379,35 @@ export default function DailyLog() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {checkIns.map((checkIn) => (
                   <tr key={checkIn.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatTimeInIndianapolis(checkIn.check_in_time, true)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.driver_name || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatPhoneNumber(checkIn.driver_phone)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.carrier_name || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.trailer_number || 'N/A'}
-                      {checkIn.trailer_length && ` (${checkIn.trailer_length})`}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.load_type ? checkIn.load_type.charAt(0).toUpperCase() + checkIn.load_type.slice(1) : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.reference_number || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.dock_number || 'N/A'}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${getAppointmentTimeColor(checkIn.check_in_time, checkIn.appointment_time)}`}>
-                      {formatAppointmentTime(checkIn.appointment_time)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.start_time ? formatTimeInIndianapolis(checkIn.start_time) : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.end_time ? formatTimeInIndianapolis(checkIn.end_time) : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {calculateDetention(checkIn)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.destination_city && checkIn.destination_state
-                        ? `${checkIn.destination_city}, ${checkIn.destination_state}`
-                        : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(checkIn.status)}`}>
-                        {getStatusLabel(checkIn.status)}
-                      </span>
-                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatTimeInIndianapolis(checkIn.check_in_time, true)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{checkIn.driver_name || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatPhoneNumber(checkIn.driver_phone)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{checkIn.carrier_name || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{checkIn.trailer_number || 'N/A'}{checkIn.trailer_length && ` (${checkIn.trailer_length})`}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{checkIn.load_type ? checkIn.load_type.charAt(0).toUpperCase() + checkIn.load_type.slice(1) : 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{checkIn.reference_number || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{checkIn.dock_number || 'N/A'}</td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${getAppointmentTimeColor(checkIn.check_in_time, checkIn.appointment_time)}`}>{formatAppointmentTime(checkIn.appointment_time)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{checkIn.start_time ? formatTimeInIndianapolis(checkIn.start_time) : '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{checkIn.end_time ? formatTimeInIndianapolis(checkIn.end_time) : '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{calculateDetention(checkIn)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{checkIn.destination_city && checkIn.destination_state ? `${checkIn.destination_city}, ${checkIn.destination_state}` : 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(checkIn.status)}`}>{getStatusLabel(checkIn.status)}</span></td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(checkIn)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(checkIn)}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        Update Status
-                      </button>
+                      <button onClick={() => handleEdit(checkIn)} className="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
+                      <button onClick={() => handleStatusChange(checkIn)} className="text-green-600 hover:text-green-900">Update Status</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {checkIns.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                No check-ins found for this date.
-              </div>
-            )}
+            {checkIns.length === 0 && <div className="text-center py-8 text-gray-500">No check-ins found for this date.</div>}
           </div>
         </div>
       </div>
 
-      {selectedForStatusChange && (
-        <StatusChangeModal
-          checkIn={selectedForStatusChange}
-          onClose={() => setSelectedForStatusChange(null)}
-          onSuccess={handleStatusChangeSuccess}
-        />
-      )}
-
-      {selectedForEdit && (
-        <EditCheckInModal
-          checkIn={selectedForEdit}
-          onClose={() => setSelectedForEdit(null)}
-          onSuccess={handleEditSuccess}
-        />
-      )}
+      {selectedForStatusChange && <StatusChangeModal checkIn={selectedForStatusChange} onClose={() => setSelectedForStatusChange(null)} onSuccess={handleStatusChangeSuccess} />}
+      {selectedForEdit && <EditCheckInModal checkIn={selectedForEdit} onClose={() => setSelectedForEdit(null)} onSuccess={handleEditSuccess} />}
     </div>
   );
 }
