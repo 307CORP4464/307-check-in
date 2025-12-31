@@ -325,7 +325,18 @@ export default function CSRDashboard() {
         </div>
       </div>
 
-      {/* Assign Dock Modal */}
+     {/* Assign Dock Modal */}
+      {selectedForDock && (
+        <AssignDockModal
+          isOpen={!!selectedForDock}
+          logEntry={selectedForDock}
+          onClose={() => setSelectedForDock(null)}
+          onSuccess={handleDockAssignSuccess}
+  />
+)}
+
+
+      {/* Edit Modal */}
       {selectedForEdit && (
   <EditCheckInModal
     checkIn={selectedForEdit}
@@ -333,17 +344,6 @@ export default function CSRDashboard() {
     onSuccess={handleEditSuccess}
   />
 )}
-
-
-      {/* Edit Modal */}
-      {selectedForEdit && (
-        <EditCheckInModal
-          isOpen={!!selectedForEdit}
-          checkIn={selectedForEdit}
-          onClose={() => setSelectedForEdit(null)}
-          onSuccess={handleEditSuccess}
-        />
-      )}
     </div>
   );
 }
