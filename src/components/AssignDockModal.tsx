@@ -106,7 +106,7 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
       const confirmDouble = window.confirm(
         `⚠️ WARNING: Dock ${dockNumber} is already in use!\n\n` +
         `Current orders on this dock:\n` +
-        dockInfo.orders.map(o => `• Ref: ${o.reference_number} - ${o.driver_name}`).join('\n') +
+        dockInfo.orders.map(o => `• Ref: ${o.reference_number} - ${o.trailer_number}`).join('\n') +
         `\n\nAssigning another order will create a DOUBLE BOOKING.\n\n` +
         `Do you want to proceed with double booking this dock?`
       );
