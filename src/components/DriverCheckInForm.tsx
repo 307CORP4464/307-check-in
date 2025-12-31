@@ -65,6 +65,7 @@ const REFERENCE_NUMBER_PATTERNS = [
   /^44\d{8}$/,          // 44xxxxxxxx
   /^8\d{7}$/,           // 8xxxxxxx
   /^TLNA-SO-00\d{4}$/, // TLNA-SO-00xxxx
+  /^TLNA-SO-00\d{5}$/, // TLNA-SO-00xxxxx
   /^\d{6}$/             // xxxxxx
 ];
 
@@ -124,7 +125,7 @@ export default function DriverCheckInForm() {
       if (value && !validateReferenceNumber(value)) {
         setReferenceError(
           'Invalid format. Must match: 2xxxxxx, 4xxxxxx, 44xxxxxxxx, ' +
-          '8xxxxxxx, TLNA-SO-00xxxx, or xxxxxx'
+          '8xxxxxxx, TLNA-SO-00xxxx, TLNA-SO-00xxxxx or xxxxxx'
         );
       } else {
         setReferenceError(null);
