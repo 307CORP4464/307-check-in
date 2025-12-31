@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { CheckIn } from '@/types';
 
-interface AssignDockModalProps {
+interface AssignDockModal {
   isOpen: boolean;
   onClose: () => void;
   logEntry: CheckIn;
