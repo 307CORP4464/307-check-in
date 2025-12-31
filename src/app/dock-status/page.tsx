@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import DashboardHeader from '@/components/DashboardHeader';
+import Link from 'next/link';
 
 interface OrderInfo {
   id: string;
@@ -29,6 +29,16 @@ export default function DockStatusPage() {
   const [selectedDock, setSelectedDock] = useState<string | null>(null);
   const [blockReason, setBlockReason] = useState('');
   const [filter, setFilter] = useState<'all' | 'available' | 'in-use' | 'double-booked' | 'blocked'>('all');
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    // Update time every second
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     initializeDocks();
@@ -215,6 +225,24 @@ export default function DockStatusPage() {
     }
   };
 
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: true 
+    });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric'
+    });
+  };
+
   const filteredDocks = filter === 'all' 
     ? dockStatuses 
     : dockStatuses.filter(dock => dock.status === filter);
@@ -229,7 +257,27 @@ export default function DockStatusPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <DashboardHeader />
+        {/* Custom Header */}
+        <header className="bg-white shadow-md border-b-4 border-blue-600">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="text-3xl font-bold text-blue-600">🚚</div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
+                  <p className="text-sm text-gray-600">Loading...</p>
+                </div>
+              </div>
+              <Link 
+                href="/dashboard"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
+              >
+                ← Back to Dashboard
+              </Link>
+            </div>
+          </div>
+        </header>
+        
         <div className="flex items-center justify-center h-96">
           <div className="text-gray-600">Loading dock statuses...</div>
         </div>
@@ -239,37 +287,70 @@ export default function DockStatusPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
+      {/* Custom Header */}
+      <header className="bg-white shadow-md border-b-4 border-blue-600 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl font-bold text-blue-600">🚚</div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
+                <p className="text-sm text-gray-600">
+                  {formatDate(currentTime)} • {formatTime(currentTime)}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {/* Refresh Button */}
+              <button
+                onClick={() => initializeDocks()}
+                className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                title="Refresh Data"
+              >
+                🔄 Refresh
+              </button>
+              
+              {/* Back to Dashboard Button */}
+              <Link 
+                href="/dashboard"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg"
+              >
+                ← Back to Dashboard
+              </Link>
+            </div>
+          </div>
+
+          {/* Quick Stats Bar */}
+          <div className="mt-4 grid grid-cols-4 gap-3">
+            <div className="bg-green-50 rounded-lg p-3 border-l-4 border-green-500">
+              <div className="text-xl font-bold text-green-700">{stats.available}</div>
+              <div className="text-xs text-green-600 font-medium">Available</div>
+            </div>
+            <div className="bg-yellow-50 rounded-lg p-3 border-l-4 border-yellow-500">
+              <div className="text-xl font-bold text-yellow-700">{stats.inUse}</div>
+              <div className="text-xs text-yellow-600 font-medium">In Use</div>
+            </div>
+            <div className="bg-red-50 rounded-lg p-3 border-l-4 border-red-500">
+              <div className="text-xl font-bold text-red-700">{stats.doubleBooked}</div>
+              <div className="text-xs text-red-600 font-medium">Double Booked</div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-3 border-l-4 border-gray-500">
+              <div className="text-xl font-bold text-gray-700">{stats.blocked}</div>
+              <div className="text-xs text-gray-600 font-medium">Blocked</div>
+            </div>
+          </div>
+        </div>
+      </header>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dock Status Monitor</h1>
-          <p className="mt-2 text-gray-600">
+        <div className="mb-6">
+          <p className="text-gray-600">
             Real-time dock availability and assignments (Docks 1-70)
           </p>
           <p className="mt-1 text-sm text-gray-500">
-            Showing {dockStatuses.length} total docks
+            Showing {dockStatuses.length} total docks • Last updated: {formatTime(currentTime)}
           </p>
-        </div>
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-            <div className="text-2xl font-bold text-gray-900">{stats.available}</div>
-            <div className="text-sm text-gray-600">Available</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-yellow-500">
-            <div className="text-2xl font-bold text-gray-900">{stats.inUse}</div>
-            <div className="text-sm text-gray-600">In Use</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
-            <div className="text-2xl font-bold text-gray-900">{stats.doubleBooked}</div>
-            <div className="text-sm text-gray-600">Double Booked</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500">
-            <div className="text-2xl font-bold text-gray-900">{stats.blocked}</div>
-            <div className="text-sm text-gray-600">Blocked</div>
-          </div>
         </div>
 
         {/* Filter Buttons */}
@@ -278,7 +359,7 @@ export default function DockStatusPage() {
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'all'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-blue-600 text-white shadow-lg'
                 : 'bg-white text-gray-700 hover:bg-gray-100 shadow'
             }`}
           >
@@ -288,48 +369,48 @@ export default function DockStatusPage() {
             onClick={() => setFilter('available')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'available'
-                ? 'bg-green-600 text-white'
+                ? 'bg-green-600 text-white shadow-lg'
                 : 'bg-white text-gray-700 hover:bg-gray-100 shadow'
             }`}
           >
-            Available ({stats.available})
+            ✓ Available ({stats.available})
           </button>
           <button
             onClick={() => setFilter('in-use')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'in-use'
-                ? 'bg-yellow-600 text-white'
+                ? 'bg-yellow-600 text-white shadow-lg'
                 : 'bg-white text-gray-700 hover:bg-gray-100 shadow'
             }`}
           >
-            In Use ({stats.inUse})
+            ● In Use ({stats.inUse})
           </button>
           <button
             onClick={() => setFilter('double-booked')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'double-booked'
-                ? 'bg-red-600 text-white'
+                ? 'bg-red-600 text-white shadow-lg'
                 : 'bg-white text-gray-700 hover:bg-gray-100 shadow'
             }`}
           >
-            Double Booked ({stats.doubleBooked})
+            ⚠ Double Booked ({stats.doubleBooked})
           </button>
           <button
             onClick={() => setFilter('blocked')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'blocked'
-                ? 'bg-gray-600 text-white'
+                ? 'bg-gray-600 text-white shadow-lg'
                 : 'bg-white text-gray-700 hover:bg-gray-100 shadow'
             }`}
           >
-            Blocked ({stats.blocked})
+            🚫 Blocked ({stats.blocked})
           </button>
         </div>
 
         {/* Complete Dock List Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 border-b border-blue-800">
+            <h2 className="text-xl font-semibold text-white">
               Complete Dock Status List
             </h2>
           </div>
@@ -415,16 +496,16 @@ export default function DockStatusPage() {
                         {dock.is_manually_blocked ? (
                           <button
                             onClick={() => handleUnblockDock(dock.dock_number)}
-                            className="text-green-600 hover:text-green-800 font-medium"
+                            className="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 font-medium transition-colors"
                           >
-                            Unblock
+                            ✓ Unblock
                           </button>
                         ) : (
                           <button
                             onClick={() => handleBlockDock(dock.dock_number)}
-                            className="text-red-600 hover:text-red-800 font-medium"
+                            className="inline-flex items-center px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 font-medium transition-colors"
                           >
-                            Block Dock
+                            🚫 Block
                           </button>
                         )}
                       </td>
