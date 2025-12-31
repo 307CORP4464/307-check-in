@@ -28,7 +28,7 @@ export default function EditCheckInModal({ checkIn, onClose, onSuccess }: EditCh
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-
+  
   const [formData, setFormData] = useState({
     driver_name: checkIn.driver_name || '',
     driver_phone: checkIn.driver_phone || '',
@@ -44,6 +44,14 @@ export default function EditCheckInModal({ checkIn, onClose, onSuccess }: EditCh
     notes: checkIn.notes || '',
   });
 
+  const US_STATES = [
+  'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+  'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+  'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+  'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+  'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+] as const;
+  
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
