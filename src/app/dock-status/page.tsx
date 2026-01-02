@@ -32,6 +32,7 @@ export default function DockStatusPage() {
   const [filter, setFilter] = useState<'all' | 'available' | 'in-use' | 'double-booked' | 'blocked'>('all');
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  
   useEffect(() => {
     // Update time every second
     const timer = setInterval(() => {
@@ -42,28 +43,37 @@ export default function DockStatusPage() {
   }, []);
 
   useEffect(() => {
-    initializeDocks();
-    
-    // Listen for dock-status updates (replace with your real channel/table if needed)
-    const channel = supabase
-      .channel('dock-status-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'docks' // listen for changes on docks table
-        },
-        () => {
-          initializeDocks();
-        }
-      )
-      .subscribe();
+  initializeDocks();
+  
+  // Listen for check_ins changes (key fix)
+  const channel = supabase
+    .channel('dock-status-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'check_ins' // Changed from 'docks'
+      },
+      () => {
+        initializeDocks();
+      }
+    )
+    .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  // Also listen for custom events
+  const handleDockChange = () => initializeDocks();
+  if (typeof window !== 'undefined') {
+    window.addEventListener('dock-assignment-changed', handleDockChange);
+  }
+
+  return () => {
+    supabase.removeChannel(channel);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('dock-assignment-changed', handleDockChange);
+    }
+  };
+}, []);
 
   const initializeDocks = async () => {
     setLoading(true);
