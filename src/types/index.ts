@@ -4,6 +4,7 @@ export interface CheckIn {
   reference_number: string;
   carrier_name: string;
   trailer_number: string;
+  trailer_length: string;
   destination_city: string;
   destination_state: string;
   driver_name: string;
