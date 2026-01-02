@@ -1,57 +1,343 @@
 'use client';
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 
-interface CheckIn {
-  id: string;
-  check_in_time: string;
-  check_out_time?: string | null;
-  status: string;
-  driver_name?: string;
-  driver_phone?: string;
-  carrier_name?: string;
-  trailer_number?: string;
-  trailer_length?: string;
-  load_type?: 'inbound' | 'outbound';
-  reference_number?: string;
-  dock_number?: string;
-  appointment_time?: string | null;
-  start_time?: string | null;
-  end_time?: string | null;
-  destination_city?: string;
-  destination_state?: string;
-  notes?: string;
-}
-
-export interface AssignDockModalProps {
-  isOpen: boolean;
+interface AssignDockModalProps {
+  checkIn: {
+    id: string;
+    driver_name?: string;
+    company?: string;
+    dock_number?: string;
+    appointment_time?: string | null;
+    carrier_name?: string;
+    reference_number?: string;
+    driver_phone?: string;
+    trailer_number?: string;
+    trailer_length?: string;
+    destination_city?: string;
+    destination_state?: string;
+    check_in_time?: string | null;
+  };
   onClose: () => void;
-  logEntry: CheckIn;
   onSuccess: () => void;
 }
 
-interface DockInfo {
-  dock_number: string;
-  status: 'available' | 'in-use' | 'blocked';
-  orders: Array<{
-    reference_number: string;
-    trailer_number: string;
-  }>;
-}
+export default function AssignDockModal({ checkIn, onClose, onSuccess }: AssignDockModalProps) {
+  const [dockNumber, setDockNumber] = useState(checkIn.dock_number || '');
+  const [appointmentTime, setAppointmentTime] = useState(checkIn.appointment_time || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }: AssignDockModalProps) {
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [dockNumber, setDockNumber] = useState<string>('');
-  const [appointmentTime, setAppointmentTime] = useState<string>(''); // receipt-like value
-  const [loading, setLoading] = useState(false);
-  const [dockInfo, setDockInfo] = useState<DockInfo | null>(null);
-  const [showWarning, setShowWarning] = useState(false);
-  const [checkingDock, setCheckingDock] = useState(false);
+  const dockOptions = [
+    'Ramp',
+    ...Array.from({ length: 70 }, (_, i) => (i + 1).toString())
+  ];
+
+  const appointmentOptions = [
+    { value: '0800', label: '08:00 AM' },
+    { value: '0900', label: '09:00 AM' },
+    { value: '0930', label: '09:30 AM' },
+    { value: '1000', label: '10:00 AM' },
+    { value: '1030', label: '10:30 AM' },
+    { value: '1100', label: '11:00 AM' },
+    { value: '1230', label: '12:30 PM' },
+    { value: '1300', label: '01:00 PM' },
+    { value: '1330', label: '01:30 PM' },
+    { value: '1400', label: '02:00 PM' },
+    { value: '1430', label: '02:30 PM' },
+    { value: '1500', label: '03:00 PM' },
+    { value: '1550', label: '03:30 PM' },
+    { value: 'work_in', label: 'Work In' },
+    { value: 'paid_to_load', label: 'Paid to Load' },
+    { value: 'paid_charge_customer', label: 'Paid - Charge Customer' },
+    { value: 'LTL', label: 'LTL' }
+  ];
+
+  const formatAppointmentTime = (time: string) => {
+    const option = appointmentOptions.find(opt => opt.value === time);
+    return option ? option.label : time;
+  };
+
+  const formatCheckInTime = (t?: string | null) => {
+    if (!t) return '';
+    try {
+      const d = new Date(t);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return t;
+    }
+  };
+
+  const isOnTime = (): boolean | null => {
+    const { appointment_time, check_in_time } = checkIn;
+    if (!appointment_time || !check_in_time) return null;
+    const appt = new Date(appointment_time).getTime();
+    const checkInTimestamp = new Date(check_in_time).getTime();
+    return checkInTimestamp <= appt;
+  };
+
+  const printReceipt = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Please allow popups to print the receipt');
+      return;
+    }
+
+    const currentDate = new Date().toLocaleString();
+    const dockDisplay = dockNumber === 'Ramp' ? 'Ramp' : `Dock ${dockNumber}`;
+    const onTimeFlag = isOnTime();
+    const appointmentStatus = onTimeFlag === null ? '' : onTimeFlag ? 'MADE' : 'MISSED';
+
+    const receiptHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Load Assignment Receipt</title>
+          <style>
+            @media print {
+              body { margin: 0; }
+              .no-print { display: none; }
+            }
+            body {
+              font-family: 'Arial', monospace;
+              padding: 20px;
+              max-width: 420px;
+              margin: 0 auto;
+            }
+            .receipt-header {
+              text-align: center;
+              border-bottom: 2px dashed #000;
+              padding-bottom: 12px;
+              margin-bottom: 12px;
+            }
+            .receipt-header h1 {
+              margin: 0;
+              font-size: 20px;
+            }
+            .section {
+              margin: 8px 0;
+              padding: 6px 0;
+              border-bottom: 1px dashed #bbb;
+            }
+            .section:last-child { border-bottom: none; }
+
+            .row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 14px;
+              margin: 6px 0;
+            }
+
+            .label {
+              font-weight: bold;
+              text-transform: uppercase;
+              font-size: 12px;
+              color: #333;
+            }
+
+            .value {
+              text-align: right;
+            }
+
+            .pickup-box {
+              background-color: #ffeb3b;
+              padding: 12px;
+              margin: 10px 0 6px;
+              border: 2px solid #000;
+              text-align: center;
+            }
+
+            .pickup-box .reference-number {
+              font-size: 18px;
+              font-weight: bold;
+              margin-bottom: 4px;
+            }
+
+            .pickup-box .dock-number {
+              font-size: 16px;
+              font-weight: bold;
+            }
+
+            .appointment-status {
+              display: inline-block;
+              padding: 4px 8px;
+              font-weight: bold;
+              border-radius: 4px;
+            }
+
+            .appointment-status.made {
+              background-color: #4CAF50;
+              color: white;
+            }
+
+            .appointment-status.missed {
+              background-color: #f44336;
+              color: white;
+            }
+
+            .bold {
+              font-weight: bold;
+            }
+
+            .footer {
+              text-align: center;
+              margin-top: 14px;
+              font-size: 12px;
+            }
+
+            .print-button {
+              display: block;
+              margin: 12px auto 0;
+              padding: 8px 20px;
+              background-color: #4CAF50;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              font-size: 14px;
+              cursor: pointer;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-header">
+            <h1>Load Assignment Receipt</h1>
+            <div>${currentDate}</div>
+          </div>
+
+          <div class="pickup-box">
+            <div class="reference-number">Pickup #: ${checkIn.reference_number ?? 'N/A'}</div>
+            <div class="dock-number">${dockDisplay}</div>
+          </div>
+
+          ${appointmentStatus ? `
+          <div class="section">
+            <div class="row">
+              <span class="label">Appointment Status</span>
+              <span class="value">
+                <span class="appointment-status ${appointmentStatus.toLowerCase()}">${appointmentStatus}</span>
+              </span>
+            </div>
+          </div>
+          ` : ''}
+
+      <div class="section">
+            ${checkIn.destination_city ? `
+            <div class="row">
+              <span class="label">Destination City</span>
+              <span class="value">${checkIn.destination_city}</span>
+            </div>
+            ` : ''}
+             ${checkIn.destination_state ? `
+            <div class="row">
+              <span class="label">Destination State</span>
+              <span class="value">${checkIn.destination_state}</span>
+            </div>
+            ` : ''}
+          </span>
+        </div>
+       </div>
+
+          <div class="section">
+            ${checkIn.carrier_name ? `
+            <div class="row">
+              <span class="label">Carrier</span>
+              <span class="value">${checkIn.carrier_name}</span>
+            </div>
+            ` : ''}
+            ${checkIn.driver_name ? `
+            <div class="row">
+              <span class="label">Driver</span>
+              <span class="value">${checkIn.driver_name}</span>
+            </div>
+            ` : ''}
+            ${checkIn.driver_phone ? `
+            <div class="row">
+              <span class="label">Driver Phone</span>
+              <span class="value">${checkIn.driver_phone}</span>
+            </div>
+            ` : ''}
+            ${checkIn.trailer_number ? `
+            <div class="row">
+              <span class="label">Trailer Number</span>
+              <span class="value">${checkIn.trailer_number}</span>
+            </div>
+            ` : ''}
+            ${checkIn.trailer_length ? `
+            <div class="row">
+              <span class="label">Trailer Length</span>
+              <span class="value">${checkIn.trailer_length}</span>
+            </div>
+            ` : ''}
+          </div>
+
+          <div class="section">
+            <div class="row">
+              <span class="label">Appointment Time</span>
+              <span class="value">${formatAppointmentTime(appointmentTime)}</span>
+            </div>
+            <div class="row">
+              <span class="label">Check-in Time</span>
+              <span class="value">${formatCheckInTime(checkIn.check_in_time)}</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            <!-- Intentionally left blank per updated requirements -->
+          </div>
+
+          <button class="print-button no-print" onclick="window.print()">Print Receipt</button>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(receiptHTML);
+    printWindow.document.close();
+
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    if (!appointmentTime) {
+      setError('Please select an appointment time');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error: updateError } = await supabase
+        .from('check_ins')
+        .update({
+          dock_number: dockNumber,
+          appointment_time: appointmentTime || null,
+          status: 'checked_in',
+          start_time: new Date().toISOString(),
+        })
+        .eq('id', checkIn.id);
+
+      if (updateError) throw updateError;
+
+      printReceipt();
+      onSuccess();
+      onClose();
+    } catch (err) {
+      console.error('Error assigning dock:', err);
+      setError(err instanceof Error ? err.message : 'Failed to assign dock');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   // prefill appointment if exists
   useEffect(() => {
