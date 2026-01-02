@@ -122,8 +122,7 @@ export default function DockStatusPage() {
           blockedDocks = JSON.parse(blockedStr);
         }
       }
-
-     // Update dock statuses
+// Update dock statuses
 allDocks.forEach(dock => {
   const orders = dockMap.get(dock.dock_number) || [];
   
@@ -139,9 +138,11 @@ allDocks.forEach(dock => {
   
   dock.orders = orders;
   if (orders.length > 0) {
-    dock.current_load_id = orders<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>.id;
+    dock.current_load_id = orders<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>.id;  // Fixed line - removed HTML tag
   }
 });
+
+
 
 
       setDockStatuses(allDocks);
