@@ -127,12 +127,7 @@ export default function CSRDashboard() {
         .eq('status', 'pending')
         .order('check_in_time', { ascending: false });
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
-      
-      console.log('Fetched check-ins:', data);
+      if (error) throw error;
       setCheckIns(data || []);
     } catch (err) {
       console.error('Fetch error:', err);
@@ -204,6 +199,7 @@ export default function CSRDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -212,7 +208,9 @@ export default function CSRDashboard() {
               {userEmail && (
                 <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
               )}
-              <p className="text-xs text-gray-500">Current time: {formatTimeInIndianapolis(new Date().toISOString())}</p>
+              <p className="text-xs text-gray-500">
+                Current time: {formatTimeInIndianapolis(new Date().toISOString())}
+              </p>
             </div>
             <div className="flex gap-3">
               <Link
@@ -238,7 +236,9 @@ export default function CSRDashboard() {
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="max-w-[1600px] mx-auto p-4">
+        {/* Stats Card */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-gray-600 text-sm font-medium">Pending Check-ins</h3>
@@ -246,12 +246,14 @@ export default function CSRDashboard() {
           </div>
         </div>
 
+        {/* Error Message */}
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
           </div>
         )}
 
+        {/* Check-ins Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-4 border-b">
             <h2 className="text-xl font-bold">Pending Check-Ins</h2>
@@ -346,7 +348,7 @@ export default function CSRDashboard() {
                               onClick={() => handleAssignDock(ci)}
                               className="text-green-600 hover:text-green-900"
                             >
-                              Assign
+                              Assign Dock
                             </button>
                           </div>
                         </td>
@@ -360,6 +362,7 @@ export default function CSRDashboard() {
         </div>
       </div>
 
+      {/* Modals */}
       {selectedForDock && (
         <AssignDockModal
           isOpen={!!selectedForDock}
