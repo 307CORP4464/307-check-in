@@ -389,7 +389,7 @@ export default function DockStatusPage() {
                 <div className="mb-3 space-y-2">
                   {dock.orders.map((order, idx) => (
                     <div key={order.id} className="p-2 bg-white rounded text-xs">
-                      <div className="font-semibold text-gray-700">PO: {order.po_number}</div>
+                      <div className="font-semibold text-gray-700">Ref: {order.refere3nce_number}</div>
                       <div className="text-gray-600">{order.driver_name}</div>
                       <div className="text-gray-500 text-[10px]">
                         {formatCheckInTime(order.check_in_time)}
