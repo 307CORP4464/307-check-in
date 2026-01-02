@@ -352,4 +352,3 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
     </div>
   );
 }
-
