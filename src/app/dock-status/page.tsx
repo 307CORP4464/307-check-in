@@ -33,7 +33,6 @@ export default function DockStatusPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    // Update time every second
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -44,7 +43,6 @@ export default function DockStatusPage() {
   useEffect(() => {
     initializeDocks();
     
-    // Listen for check_ins table changes
     const channel = supabase
       .channel('dock-status-changes')
       .on(
@@ -60,7 +58,6 @@ export default function DockStatusPage() {
       )
       .subscribe();
 
-    // Listen for custom events
     const handleDockChange = () => initializeDocks();
     if (typeof window !== 'undefined') {
       window.addEventListener('dock-assignment-changed', handleDockChange);
@@ -78,7 +75,6 @@ export default function DockStatusPage() {
     setLoading(true);
     
     try {
-      // Initialize all docks
       const allDocks: DockStatus[] = [];
       for (let i = 1; i <= TOTAL_DOCKS; i++) {
         allDocks.push({
@@ -91,14 +87,12 @@ export default function DockStatusPage() {
         });
       }
 
-      // Fetch active check-ins (not completed/checked_out)
       const { data: checkIns } = await supabase
         .from('check_ins')
         .select('*')
         .in('status', ['checked_in', 'pending'])
         .not('dock_number', 'is', null);
 
-      // Map check-ins to docks
       const dockMap = new Map<string, OrderInfo[]>();
       checkIns?.forEach(checkIn => {
         if (checkIn.dock_number && checkIn.dock_number !== 'Ramp') {
@@ -114,7 +108,6 @@ export default function DockStatusPage() {
         }
       });
 
-      // Get blocked docks from localStorage
       let blockedDocks: Record<string, { reason: string }> = {};
       if (typeof window !== 'undefined') {
         const blockedStr = localStorage.getItem('blocked_docks');
@@ -123,26 +116,25 @@ export default function DockStatusPage() {
         }
       }
 
-// Update dock statuses
-allDocks.forEach(dock => {
-  const orders = dockMap.get(dock.dock_number) || [];
-  
-  if (blockedDocks[dock.dock_number]) {
-    dock.status = 'blocked';
-    dock.is_manually_blocked = true;
-    dock.blocked_reason = blockedDocks[dock.dock_number].reason;
-  } else if (orders.length > 1) {
-    dock.status = 'double-booked';
-  } else if (orders.length === 1) {
-    dock.status = 'in-use';
-  }
-  
-  dock.orders = orders;
-  if (orders.length > 0) {
-    dock.current_load_id = orders<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>.id;
-  }
-});
-      
+      allDocks.forEach(dock => {
+        const orders = dockMap.get(dock.dock_number) || [];
+        
+        if (blockedDocks[dock.dock_number]) {
+          dock.status = 'blocked';
+          dock.is_manually_blocked = true;
+          dock.blocked_reason = blockedDocks[dock.dock_number].reason;
+        } else if (orders.length > 1) {
+          dock.status = 'double-booked';
+        } else if (orders.length === 1) {
+          dock.status = 'in-use';
+        }
+        
+        dock.orders = orders;
+        if (orders.length > 0) {
+          dock.current_load_id = orders<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>.id;
+        }
+      });
+
       setDockStatuses(allDocks);
     } catch (error) {
       console.error('Error initializing docks:', error);
@@ -323,138 +315,131 @@ allDocks.forEach(dock => {
         </div>
       </header>
 
-      {/* Stats Bar */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="grid grid-cols-4 gap-4">
-            <div className="bg-green-50 p-4 rounded-lg border-2 border-green-200">
-              <div className="text-green-600 text-sm font-semibold">Available</div>
-              <div className="text-2xl font-bold text-green-800">{stats.available}</div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-green-50 rounded-lg border-2 border-green-200">
+              <div className="text-3xl font-bold text-green-700">{stats.available}</div>
+              <div className="text-sm text-green-600 font-medium">Available</div>
             </div>
-            <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200">
-              <div className="text-yellow-600 text-sm font-semibold">In Use</div>
-              <div className="text-2xl font-bold text-yellow-800">{stats.inUse}</div>
+            <div className="text-center p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200">
+              <div className="text-3xl font-bold text-yellow-700">{stats.inUse}</div>
+              <div className="text-sm text-yellow-600 font-medium">In Use</div>
             </div>
-            <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200">
-              <div className="text-red-600 text-sm font-semibold">Double Booked</div>
-              <div className="text-2xl font-bold text-red-800">{stats.doubleBooked}</div>
+            <div className="text-center p-4 bg-red-50 rounded-lg border-2 border-red-200">
+              <div className="text-3xl font-bold text-red-700">{stats.doubleBooked}</div>
+              <div className="text-sm text-red-600 font-medium">Double Booked</div>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
-              <div className="text-gray-600 text-sm font-semibold">Blocked</div>
-              <div className="text-2xl font-bold text-gray-800">{stats.blocked}</div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
+              <div className="text-3xl font-bold text-gray-700">{stats.blocked}</div>
+              <div className="text-sm text-gray-600 font-medium">Blocked</div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Filter Tabs */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-2 py-3">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              All ({dockStatuses.length})
-            </button>
-            <button
-              onClick={() => setFilter('available')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'available'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Available ({stats.available})
-            </button>
-            <button
-              onClick={() => setFilter('in-use')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'in-use'
-                  ? 'bg-yellow-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              In Use ({stats.inUse})
-            </button>
-            <button
-              onClick={() => setFilter('double-booked')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'double-booked'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Double Booked ({stats.doubleBooked})
-            </button>
-            <button
-              onClick={() => setFilter('blocked')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'blocked'
-                  ? 'bg-gray-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Blocked ({stats.blocked})
-            </button>
-          </div>
+        <div className="mb-6 flex flex-wrap gap-2">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'all'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+            }`}
+          >
+            All Docks
+          </button>
+          <button
+            onClick={() => setFilter('available')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'available'
+                ? 'bg-green-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+            }`}
+          >
+            Available
+          </button>
+          <button
+            onClick={() => setFilter('in-use')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'in-use'
+                ? 'bg-yellow-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+            }`}
+          >
+            In Use
+          </button>
+          <button
+            onClick={() => setFilter('double-booked')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'double-booked'
+                ? 'bg-red-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+            }`}
+          >
+            Double Booked
+          </button>
+          <button
+            onClick={() => setFilter('blocked')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'blocked'
+                ? 'bg-gray-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+            }`}
+          >
+            Blocked
+          </button>
         </div>
-      </div>
 
-      {/* Docks Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-5 md:grid-cols-7 lg:grid-cols-10 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
           {filteredDocks.map((dock) => (
             <div
               key={dock.dock_number}
-              className={`relative p-4 rounded-lg border-2 shadow-sm transition-all hover:shadow-md ${getStatusColor(
+              className={`relative p-4 rounded-lg border-2 shadow-sm hover:shadow-md transition-shadow ${getStatusColor(
                 dock.status
               )}`}
             >
-              <div className="text-center">
-                <div className="text-xl font-bold mb-1">{getStatusIcon(dock.status)}</div>
-                <div className="text-lg font-bold">{dock.dock_number}</div>
-                <div className="text-xs mt-1 capitalize">{dock.status.replace('-', ' ')}</div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-2xl font-bold">#{dock.dock_number}</span>
+                <span className="text-2xl">{getStatusIcon(dock.status)}</span>
+              </div>
+              
+              <div className="text-xs font-semibold uppercase mb-2">
+                {dock.status.replace('-', ' ')}
               </div>
 
-              {/* Orders Info */}
+              {dock.is_manually_blocked && (
+                <div className="mb-2">
+                  <div className="text-xs font-medium text-gray-700 mb-1">Reason:</div>
+                  <div className="text-xs text-gray-600 bg-white bg-opacity-50 p-2 rounded">
+                    {dock.blocked_reason}
+                  </div>
+                </div>
+              )}
+
               {dock.orders.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-gray-300">
+                <div className="space-y-2 mb-3">
                   {dock.orders.map((order, idx) => (
-                    <div key={idx} className="text-xs mb-1">
-                      <div className="font-semibold truncate">{order.po_number}</div>
-                      <div className="truncate">{order.driver_name}</div>
+                    <div key={idx} className="text-xs bg-white bg-opacity-50 p-2 rounded">
+                      <div className="font-semibold truncate">PO: {order.po_number}</div>
+                      <div className="truncate">Driver: {order.driver_name}</div>
                       <div className="text-gray-600">{formatCheckInTime(order.check_in_time)}</div>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Blocked Reason */}
-              {dock.is_manually_blocked && dock.blocked_reason && (
-                <div className="mt-2 pt-2 border-t border-gray-300">
-                  <div className="text-xs font-semibold text-gray-700">Reason:</div>
-                  <div className="text-xs text-gray-600">{dock.blocked_reason}</div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="mt-3 flex gap-1">
+              <div className="flex gap-2">
                 {dock.is_manually_blocked ? (
                   <button
                     onClick={() => handleUnblockDock(dock.dock_number)}
-                    className="w-full px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    className="flex-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors"
                   >
                     Unblock
                   </button>
                 ) : (
                   <button
                     onClick={() => handleBlockDock(dock.dock_number)}
-                    className="w-full px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    className="flex-1 px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded hover:bg-gray-700 transition-colors"
                   >
                     Block
                   </button>
@@ -465,39 +450,38 @@ allDocks.forEach(dock => {
         </div>
       </main>
 
-      {/* Block Dock Modal */}
       {showBlockModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Block Dock {selectedDock}</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Block Dock #{selectedDock}</h2>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reason for Blocking
+                Reason for blocking:
               </label>
               <textarea
                 value={blockReason}
                 onChange={(e) => setBlockReason(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={3}
                 placeholder="Enter reason..."
               />
             </div>
             <div className="flex gap-3">
               <button
-                onClick={submitBlockDock}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-              >
-                Block Dock
-              </button>
-              <button
                 onClick={() => {
                   setShowBlockModal(false);
                   setSelectedDock(null);
                   setBlockReason('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
               >
                 Cancel
+              </button>
+              <button
+                onClick={submitBlockDock}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Block Dock
               </button>
             </div>
           </div>
@@ -506,4 +490,3 @@ allDocks.forEach(dock => {
     </div>
   );
 }
-
