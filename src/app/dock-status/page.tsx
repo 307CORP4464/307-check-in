@@ -123,26 +123,25 @@ export default function DockStatusPage() {
         }
       }
 
-      // Update dock statuses
-      allDocks.forEach(dock => {
-        const orders = dockMap.get(dock.dock_number) || [];
-        
-        if (blockedDocks[dock.dock_number]) {
-          dock.status = 'blocked';
-          dock.is_manually_blocked = true;
-          dock.blocked_reason = blockedDocks[dock.dock_number].reason;
-        } else if (orders.length > 1) {
-          dock.status = 'double-booked';
-        } else if (orders.length === 1) {
-          dock.status = 'in-use';
-        }
-        
-        dock.orders = orders;
-        if (orders.length > 0) {
-         dock.current_load_id = orders<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>.id;
-
-        }
-      });
+     // Update dock statuses
+allDocks.forEach(dock => {
+  const orders = dockMap.get(dock.dock_number) || [];
+  
+  if (blockedDocks[dock.dock_number]) {
+    dock.status = 'blocked';
+    dock.is_manually_blocked = true;
+    dock.blocked_reason = blockedDocks[dock.dock_number].reason;
+  } else if (orders.length > 1) {
+    dock.status = 'double-booked';
+  } else if (orders.length === 1) {
+    dock.status = 'in-use';
+  }
+  
+  dock.orders = orders;
+  if (orders.length > 0) {
+    dock.current_load_id = orders<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>.id;  // THIS LINE - make sure there's no HTML
+  }
+});
 
       setDockStatuses(allDocks);
     } catch (error) {
