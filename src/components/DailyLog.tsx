@@ -9,7 +9,148 @@ import EditCheckInModal from './EditCheckInModal';
 
 const TIMEZONE = 'America/Indiana/Indianapolis';
 
-// ... (keep all the helper functions the same until the component)
+const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
+  try {
+    const utcDate = new Date(isoString);
+    
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: TIMEZONE,
+      hour12: false,
+      ...(includeDate && {
+        month: '2-digit',
+        day: '2-digit',
+      }),
+      hour: '2-digit',
+      minute: '2-digit',
+    };
+    
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    return formatter.format(utcDate);
+  } catch (e) {
+    console.error('Time formatting error:', e);
+    return '-';
+  }
+};
+
+const formatPhoneNumber = (phone: string | undefined): string => {
+  if (!phone) return 'N/A';
+  
+  const cleaned = phone.replace(/\D/g, '');
+  
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 3)})-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  }
+  
+  return phone;
+};
+
+const formatAppointmentTime = (appointmentTime: string | null | undefined): string => {
+  if (!appointmentTime) return 'N/A';
+  
+  if (appointmentTime === 'work_in') return 'Work In';
+  if (appointmentTime === 'paid_to_load') return 'Paid - No Appt';
+  if (appointmentTime === 'paid_charge_customer') return 'Paid - Charge Customer';
+  if (appointmentTime === 'ltl') return 'LTL';
+  
+  if (appointmentTime.length === 4 && /^\d{4}$/.test(appointmentTime)) {
+    const hours = appointmentTime.substring(0, 2);
+    const minutes = appointmentTime.substring(2, 4);
+    return `${hours}:${minutes}`;
+  }
+  
+  return appointmentTime;
+};
+
+const isOnTime = (checkInTime: string, appointmentTime: string | null | undefined): boolean => {
+  if (!appointmentTime || 
+      appointmentTime === 'work_in' || 
+      appointmentTime === 'paid_to_load' || 
+      appointmentTime === 'paid_charge_customer' ||
+      appointmentTime === 'ltl') {
+    return false;
+  }
+
+  if (appointmentTime.length === 4 && /^\d{4}$/.test(appointmentTime)) {
+    const appointmentHour = parseInt(appointmentTime.substring(0, 2));
+    const appointmentMinute = parseInt(appointmentTime.substring(2, 4));
+    
+    const checkInDate = new Date(checkInTime);
+    
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: TIMEZONE,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false
+    });
+    
+    const timeString = formatter.format(checkInDate);
+    const [checkInHour, checkInMinute] = timeString.split(':').map(Number);
+    
+    const appointmentTotalMinutes = appointmentHour * 60 + appointmentMinute;
+    const checkInTotalMinutes = checkInHour * 60 + checkInMinute;
+    
+    const difference = checkInTotalMinutes - appointmentTotalMinutes;
+    return difference <= 0;
+  }
+  
+  return false;
+};
+
+const calculateDetention = (checkIn: CheckIn): string => {
+  if (!checkIn.appointment_time || !checkIn.end_time) {
+    return '-';
+  }
+
+  if (!isOnTime(checkIn.check_in_time, checkIn.appointment_time)) {
+    return '-';
+  }
+
+  if (checkIn.appointment_time === 'work_in' || 
+      checkIn.appointment_time === 'paid_to_load' || 
+      checkIn.appointment_time === 'paid_charge_customer' ||
+      checkIn.appointment_time === 'ltl') {
+    return '-';
+  }
+
+  const endTime = new Date(checkIn.end_time);
+  const standardMinutes = 120;
+  let detentionMinutes = 0;
+
+  if (checkIn.appointment_time.length === 4 && /^\d{4}$/.test(checkIn.appointment_time)) {
+    const appointmentHour = parseInt(checkIn.appointment_time.substring(0, 2));
+    const appointmentMinute = parseInt(checkIn.appointment_time.substring(2, 4));
+    
+    const checkInDate = new Date(checkIn.check_in_time);
+    
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: TIMEZONE,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    
+    const parts = formatter.formatToParts(checkInDate);
+    const year = parseInt(parts.find(p => p.type === 'year')?.value || '0');
+    const month = parseInt(parts.find(p => p.type === 'month')?.value || '0') - 1;
+    const day = parseInt(parts.find(p => p.type === 'day')?.value || '0');
+    
+    const appointmentDate = new Date(checkInDate);
+    appointmentDate.setFullYear(year, month, day);
+    appointmentDate.setHours(appointmentHour, appointmentMinute, 0, 0);
+    
+    const timeSinceAppointmentMs = endTime.getTime() - appointmentDate.getTime();
+    const minutesSinceAppointment = Math.floor(timeSinceAppointmentMs / (1000 * 60));
+    
+    detentionMinutes = Math.max(0, minutesSinceAppointment - standardMinutes);
+  }
+  
+  if (detentionMinutes === 0) {
+    return '-';
+  }
+  
+  return `${detentionMinutes} min`;
+};
+
 
 interface CheckIn {
   id: string;
