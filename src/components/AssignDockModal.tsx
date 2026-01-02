@@ -59,7 +59,7 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
 
       // Check for existing orders on this dock
       const { data: existingOrders, error } = await supabase
-        .from('daily_log')
+        .from('check-ins')
         .select('reference_number, trailer_number')
         .eq('dock_number', dock)
         .neq('status', 'complete');
