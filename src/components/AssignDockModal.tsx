@@ -260,15 +260,22 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
             </div>
           )}
 
+{/* Action Buttons */}
           <div className="flex gap-3">
             <button
               type="submit"
-              disabled={loading || (dockInfo?.status === 'blocked')}
+              disabled={loading || dockInfo?.status === 'blocked'}
               className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                dockInfo?.status === 'blocked' ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                dockInfo?.status === 'blocked'
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : showWarning && dockInfo?.status === 'in-use'
+                  ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
               }`}
             >
-              {loading ? 'Assigning...' : 'Assign Dock'}
+              {loading ? 'Assigning...' : 
+               showWarning && dockInfo?.status === 'in-use' ? 'Confirm Double Book' : 
+               'Assign Dock'}
             </button>
             <button
               type="button"
@@ -281,9 +288,14 @@ export default function AssignDockModal({ isOpen, onClose, logEntry, onSuccess }
           </div>
         </form>
 
+        {/* Help Text */}
         <div className="mt-4 pt-4 border-t border-gray-200">
           <p className="text-xs text-gray-500">
-            Tip: Dock Status real-time availability is shown on the Dock Status page.
+            💡 <span className="font-medium">Tip:</span> Check the{' '}
+            <a href="/dock-status" target="_blank" className="text-blue-600 hover:underline">
+              Dock Status page
+            </a>{' '}
+            to see all available docks in real-time.
           </p>
         </div>
       </div>
