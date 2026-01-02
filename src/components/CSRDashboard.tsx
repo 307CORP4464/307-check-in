@@ -283,7 +283,7 @@ export default function CSRDashboard() {
                               ? 'bg-green-100 text-green-800' 
                               : 'bg-orange-100 text-orange-800'
                           }`}>
-                            {ci.load_type || 'N/A'}
+                            {ci.load_type}
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
