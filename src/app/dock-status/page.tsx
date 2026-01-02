@@ -128,11 +128,7 @@ export default function DockStatusPage() {
         } else if (orders.length === 1) {
           dock.status = 'in-use';
         }
-        
-        dock.orders = orders;
-        if (orders.length > 0) {
-          dock.current_load_id = orders<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>.id;
-        }
+      
       });
 
       setDockStatuses(allDocks);
