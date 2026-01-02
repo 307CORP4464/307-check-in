@@ -346,7 +346,7 @@ export default function CSRDashboard() {
                               onClick={() => handleAssignDock(ci)}
                               className="text-green-600 hover:text-green-900"
                             >
-                              Assign Dock
+                              Assign
                             </button>
                           </div>
                         </td>
