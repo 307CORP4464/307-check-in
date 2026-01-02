@@ -20,7 +20,7 @@ interface AssignDockModalProps {
   };
   onClose: () => void;
   onSuccess: () => void;
-  isOpen: boolean; // Add this prop
+  isOpen: boolean;
 }
 
 interface DockInfo {
@@ -89,6 +89,104 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
     const appt = new Date(appointment_time).getTime();
     const checkInTimestamp = new Date(check_in_time).getTime();
     return checkInTimestamp <= appt;
+  };
+
+  useEffect(() => {
+    if (dockNumber && dockNumber !== 'Ramp') {
+      checkDockStatus(dockNumber);
+    } else {
+      setDockInfo(null);
+      setShowWarning(false);
+    }
+  }, [dockNumber]);
+
+  const checkDockStatus = async (dock: string) => {
+    setCheckingDock(true);
+    try {
+      // Check if dock is blocked
+      if (typeof window !== 'undefined') {
+        const blockedStr = localStorage.getItem('blocked_docks');
+        if (blockedStr) {
+          const blocked = JSON.parse(blockedStr);
+          if (blocked[dock]) {
+            setDockInfo({ dock_number: dock, status: 'blocked', orders: [] });
+            setShowWarning(true);
+            setCheckingDock(false);
+            return;
+          }
+        }
+      }
+
+      // Check if dock is in use
+      const { data: existingOrders, error } = await supabase
+        .from('check_ins')
+        .select('reference_number, trailer_number')
+        .eq('dock_number', dock)
+        .in('status', ['checked_in', 'pending'])
+        .neq('id', checkIn.id);
+
+      if (error) throw error;
+
+      if (existingOrders && existingOrders.length > 0) {
+        setDockInfo({
+          dock_number: dock,
+          status: 'in-use',
+          orders: existingOrders
+        });
+        setShowWarning(true);
+      } else {
+        setDockInfo({
+          dock_number: dock,
+          status: 'available',
+          orders: []
+        });
+        setShowWarning(false);
+      }
+    } catch (err) {
+      console.error('Error checking dock status:', err);
+      setDockInfo(null);
+      setShowWarning(false);
+    } finally {
+      setCheckingDock(false);
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!dockNumber || !appointmentTime) {
+      setError('Please select both dock number and appointment time');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error: updateError } = await supabase
+        .from('check_ins')
+        .update({
+          dock_number: dockNumber,
+          appointment_time: appointmentTime,
+          status: 'checked_in'
+        })
+        .eq('id', checkIn.id);
+
+      if (updateError) throw updateError;
+
+      // Trigger custom event for dock status update
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('dock-assignment-changed', {
+          detail: { dockNumber, checkInId: checkIn.id }
+        }));
+      }
+
+      printReceipt();
+      onSuccess();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to assign dock');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const printReceipt = () => {
@@ -281,216 +379,172 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
     }, 250);
   };
 
-  const checkDockStatus = async (dock: string) => {
-    setCheckingDock(true);
-    try {
-      if (typeof window !== 'undefined') {
-        const blockedStr = localStorage.getItem('blocked_docks');
-        if (blockedStr) {
-          const blocked = JSON.parse(blockedStr);
-          if (blocked[dock]) {
-            setDockInfo({ dock_number: dock, status: 'blocked', orders: [] });
-            setShowWarning(true);
-            setCheckingDock(false);
-            return;
-          }
-        }
-      }
-
-      const { data: existingOrders, error } = await supabase
-        .from('check_ins')
-        .select('reference_number, trailer_number')
-        .eq('dock_number', dock)
-        .neq('status', 'complete');
-
-      if (error) throw error;
-
-      if (existingOrders && existingOrders.length > 0) {
-        setDockInfo({ dock_number: dock, status: 'in-use', orders: existingOrders });
-        setShowWarning(true);
-      } else {
-        setDockInfo({ dock_number: dock, status: 'available', orders: [] });
-        setShowWarning(false);
-      }
-    } catch (err) {
-      console.error('Error checking dock status:', err);
-    } finally {
-      setCheckingDock(false);
-    }
-  };
-
-// In AssignDockModal, after successful assignment
-const handleAssign = async () => {
-  setLoading(true);
-  setError(null);
-
-  try {
-    const { error: updateError } = await supabase
-      .from('check_ins')
-      .update({
-        dock_number: dockNumber,
-        appointment_time: appointmentTime,
-        status: 'checked_in'
-      })
-      .eq('id', checkIn.id);
-
-    if (updateError) throw updateError;
-
-    // Trigger custom event for dock status update
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('dock-assignment-changed', {
-        detail: { dockNumber, checkInId: checkIn.id }
-      }));
-    }
-
-    printReceipt();
-    onSuccess();
-    onClose();
-  } catch (err) {
-    setError(err instanceof Error ? err.message : 'Failed to assign dock');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  useEffect(() => {
-    if (checkIn.appointment_time) {
-      setAppointmentTime(checkIn.appointment_time);
-    }
-  }, [checkIn.appointment_time]);
-
-  useEffect(() => {
-    if (dockNumber && dockNumber.length > 0) {
-      checkDockStatus(dockNumber);
-    } else {
-      setDockInfo(null);
-      setShowWarning(false);
-    }
-  }, [dockNumber]);
-
-  // Early return INSIDE the component function
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Assign Dock</h3>
-
-        <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-          <div className="text-sm text-gray-700">
-            <p className="font-medium">Reference #: {checkIn.reference_number}</p>
-            <p>Trailer #: {checkIn.trailer_number}</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Dock Number *</label>
-            <input
-              type="text"
-              value={dockNumber}
-              onChange={(e) => setDockNumber(e.target.value)}
-              placeholder="Enter dock number"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-              autoFocus
-            />
-            {checkingDock && <p className="mt-1 text-xs text-gray-500">Checking dock status...</p>}
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Appointment Time</label>
-            <select
-              value={appointmentTime}
-              onChange={(e) => setAppointmentTime(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Assign Dock</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <option value="">Select...</option>
-              <option value="work_in">Work In</option>
-              <option value="paid_to_load">Paid - No Appt</option>
-              <option value="paid_charge_customer">Paid - Charge Customer</option>
-              <option value="LTL">LTL</option>
-              <option value="0800">08:00</option>
-              <option value="0900">09:00</option>
-              <option value="0930">09:30</option>
-              <option value="1000">10:00</option>
-              <option value="1030">10:30</option>
-              <option value="1100">11:00</option>
-              <option value="1230">12:30</option>
-              <option value="1300">13:00</option>
-              <option value="1330">13:30</option>
-              <option value="1400">14:00</option>
-              <option value="1430">14:30</option>
-              <option value="1500">15:00</option>
-              <option value="1530">15:30</option>
-            </select>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
-          {dockInfo && !checkingDock && (
-            <div className={`mb-4 p-3 rounded-lg border-2 ${
-              dockInfo.status === 'available'
-                ? 'bg-green-50 border-green-300'
-                : dockInfo.status === 'blocked'
-                ? 'bg-gray-50 border-gray-400'
-                : 'bg-yellow-50 border-yellow-300'
-            }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">{dockInfo.status === 'available' ? '✓' : dockInfo.status === 'blocked' ? '🚫' : '⚠'}</span>
-                <span className={`font-semibold ${
-                  dockInfo.status === 'available' ? 'text-green-800' :
-                  dockInfo.status === 'blocked' ? 'text-gray-800' :
-                  'text-yellow-800'
-                }`}>
-                  Dock {dockInfo.dock_number} - {dockInfo.status.toUpperCase().replace('-', ' ')}
-                </span>
-              </div>
-
-              {dockInfo.status === 'available' && (
-                <p className="text-sm text-green-700">This dock is available for assignment.</p>
+          {/* Check-in Details */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-2">Load Details</h3>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {checkIn.reference_number && (
+                <div>
+                  <span className="text-gray-600">PO Number:</span>
+                  <span className="ml-2 font-medium">{checkIn.reference_number}</span>
+                </div>
               )}
-              {dockInfo.status === 'blocked' && (
-                <p className="text-sm text-gray-700">This dock is blocked.</p>
+              {checkIn.driver_name && (
+                <div>
+                  <span className="text-gray-600">Driver:</span>
+                  <span className="ml-2 font-medium">{checkIn.driver_name}</span>
+                </div>
               )}
-              {dockInfo.status === 'in-use' && dockInfo.orders.length > 0 && (
-                <div className="text-sm text-yellow-800">
-                  <p className="font-medium mb-1">Current orders on this dock:</p>
-                  <ul className="list-disc pl-5">
-                    {dockInfo.orders.map((order, idx) => (
-                      <li key={idx}>
-                        Ref: {order.reference_number} - Trailer: {order.trailer_number}
-                      </li>
-                    ))}
-                  </ul>
+              {checkIn.carrier_name && (
+                <div>
+                  <span className="text-gray-600">Carrier:</span>
+                  <span className="ml-2 font-medium">{checkIn.carrier_name}</span>
+                </div>
+              )}
+              {checkIn.trailer_number && (
+                <div>
+                  <span className="text-gray-600">Trailer:</span>
+                  <span className="ml-2 font-medium">{checkIn.trailer_number}</span>
                 </div>
               )}
             </div>
-          )}
+          </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm">{error}</p>
             </div>
           )}
 
-          <div className="flex gap-3 mt-6">
+          {/* Dock Selection */}
+          <div className="space-y-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dock Number *
+              </label>
+              <select
+                value={dockNumber}
+                onChange={(e) => setDockNumber(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                <option value="">Select Dock</option>
+                {dockOptions.map((dock) => (
+                  <option key={dock} value={dock}>
+                    {dock === 'Ramp' ? 'Ramp' : `Dock ${dock}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dock Status Indicator */}
+            {checkingDock && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm">Checking dock status...</p>
+              </div>
+            )}
+
+            {dockInfo && !checkingDock && (
+              <div className={`p-3 border rounded-lg ${
+                dockInfo.status === 'available' ? 'bg-green-50 border-green-200' :
+                dockInfo.status === 'blocked' ? 'bg-gray-50 border-gray-200' :
+                'bg-yellow-50 border-yellow-200'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-sm">
+                    {dockInfo.status === 'available' ? '✓ Dock Available' :
+                     dockInfo.status === 'blocked' ? '🚫 Dock Blocked' :
+                     '⚠ Dock In Use'}
+                  </span>
+                </div>
+                {dockInfo.orders.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <p className="text-xs font-medium text-gray-700">Current Orders:</p>
+                    {dockInfo.orders.map((order, idx) => (
+                      <p key={idx} className="text-xs text-gray-600">
+                        • PO: {order.reference_number || 'N/A'} | Trailer: {order.trailer_number || 'N/A'}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Appointment Time */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Appointment Time *
+              </label>
+              <select
+                value={appointmentTime}
+                onChange={(e) => setAppointmentTime(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
+              >
+                <option value="">Select Time</option>
+                {appointmentOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Warning for in-use docks */}
+          {showWarning && dockInfo?.status === 'in-use' && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800 text-sm font-medium">
+                ⚠ Warning: This dock is currently in use. Assigning this load will create a double-booking.
+              </p>
+            </div>
+          )}
+
+          {/* Warning for blocked docks */}
+          {showWarning && dockInfo?.status === 'blocked' && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm font-medium">
+                🚫 Warning: This dock is currently blocked and unavailable.
+              </p>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
             <button
-              type="button"
+              onClick={handleAssign}
+              disabled={loading || !dockNumber || !appointmentTime || checkingDock || (dockInfo?.status === 'blocked')}
+              className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+            >
+              {loading ? 'Assigning...' : 'Assign & Print Receipt'}
+            </button>
+            <button
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
               disabled={loading}
+              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              disabled={loading}
-            >
-              {loading ? 'Assigning...' : 'Assign Dock'}
-            </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
