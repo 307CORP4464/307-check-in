@@ -14,7 +14,7 @@ interface FormData {
   loadType: 'inbound' | 'outbound';
   destinationCity: string;
   destinationState: string;
-  smsConsent: boolean; // Added for SMS consent
+  smsConsent: boolean;
 }
 
 const INITIAL_FORM_DATA: FormData = {
@@ -27,7 +27,7 @@ const INITIAL_FORM_DATA: FormData = {
   loadType: 'inbound',
   destinationCity: '',
   destinationState: '',
-  smsConsent: false, // Added
+  smsConsent: false,
 };
 
 const US_STATES = [
@@ -48,7 +48,6 @@ const TRAILER_LENGTHS = [
   { value: '53', label: '53 ft' },
 ] as const;
 
-// Utility function to get Supabase client
 const getSupabaseClient = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -60,7 +59,6 @@ const getSupabaseClient = () => {
   return createBrowserClient(url, key);
 };
 
-// Validation patterns for reference numbers
 const REFERENCE_NUMBER_PATTERNS = [
   /^2\d{6}$/,
   /^4\d{6}$/,
@@ -76,7 +74,6 @@ const validateReferenceNumber = (value: string): boolean => {
   return REFERENCE_NUMBER_PATTERNS.some(pattern => pattern.test(cleaned));
 };
 
-// Format phone number as user types
 const formatPhoneNumber = (value: string): string => {
   const cleaned = value.replace(/\D/g, '');
   const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
@@ -111,7 +108,6 @@ export default function DriverCheckInForm() {
   ) => {
     const { name, value, type } = e.target;
     
-    // Handle checkbox separately
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({
@@ -121,7 +117,6 @@ export default function DriverCheckInForm() {
       return;
     }
     
-    // Format phone number as user types
     const processedValue = name === 'driverPhone' 
       ? formatPhoneNumber(value) 
       : value;
@@ -131,7 +126,6 @@ export default function DriverCheckInForm() {
       [name]: processedValue
     }));
 
-    // Validate reference number in real-time
     if (name === 'referenceNumber') {
       if (value && !validateReferenceNumber(value)) {
         setReferenceError(
@@ -156,21 +150,18 @@ export default function DriverCheckInForm() {
     setError(null);
     setSuccess(false);
 
-    // Validate SMS consent
     if (!formData.smsConsent) {
       setError('You must consent to receive text messages to check in');
       setLoading(false);
       return;
     }
 
-    // Validate reference number
     if (!validateReferenceNumber(formData.referenceNumber)) {
       setError('Invalid reference number format');
       setLoading(false);
       return;
     }
 
-    // Validate phone number (should have 10 digits)
     const phoneDigits = formData.driverPhone.replace(/\D/g, '');
     if (phoneDigits.length !== 10) {
       setError('Phone number must be 10 digits');
@@ -178,7 +169,6 @@ export default function DriverCheckInForm() {
       return;
     }
 
-    // Validate destination for outbound loads only
     if (formData.loadType === 'outbound') {
       if (!formData.destinationCity.trim()) {
         setError('Destination city is required for outbound pickups');
@@ -210,7 +200,7 @@ export default function DriverCheckInForm() {
             destination_state: formData.destinationState || null,
             check_in_time: checkInTime,
             status: 'pending',
-            sms_consent: formData.smsConsent, // Added
+            sms_consent: formData.smsConsent,
           }
         ])
         .select();
@@ -220,7 +210,6 @@ export default function DriverCheckInForm() {
       setSuccess(true);
       resetForm();
 
-      // Auto-hide success message after 5 seconds
       setTimeout(() => {
         setSuccess(false);
       }, 5000);
@@ -293,10 +282,202 @@ export default function DriverCheckInForm() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Your existing form fields go here - I'm showing where to add the SMS section */}
-          {/* Load Type, Driver Name, Phone, etc... */}
-          
-          {/* ... rest of your existing form fields ... */}
+          {/* Load Type */}
+          <div>
+            <label 
+              htmlFor="loadType" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Load Type <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="loadType"
+              name="loadType"
+              value={formData.loadType}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="inbound">Inbound (Delivery)</option>
+              <option value="outbound">Outbound (Pickup)</option>
+            </select>
+          </div>
+
+          {/* Driver Name */}
+          <div>
+            <label 
+              htmlFor="driverName" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Driver Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="driverName"
+              name="driverName"
+              value={formData.driverName}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter driver name"
+              required
+            />
+          </div>
+
+          {/* Driver Phone */}
+          <div>
+            <label 
+              htmlFor="driverPhone" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Driver Phone <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              id="driverPhone"
+              name="driverPhone"
+              value={formData.driverPhone}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="(555) 555-5555"
+              required
+            />
+          </div>
+
+          {/* Carrier Name */}
+          <div>
+            <label 
+              htmlFor="carrierName" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Carrier Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="carrierName"
+              name="carrierName"
+              value={formData.carrierName}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter carrier name"
+              required
+            />
+          </div>
+
+          {/* Trailer Number */}
+          <div>
+            <label 
+              htmlFor="trailerNumber" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Trailer Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="trailerNumber"
+              name="trailerNumber"
+              value={formData.trailerNumber}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Enter trailer number"
+              required
+            />
+          </div>
+
+          {/* Trailer Length */}
+          <div>
+            <label 
+              htmlFor="trailerLength" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Trailer Length <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="trailerLength"
+              name="trailerLength"
+              value={formData.trailerLength}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              {TRAILER_LENGTHS.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Reference Number */}
+          <div>
+            <label 
+              htmlFor="referenceNumber" 
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Reference Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="referenceNumber"
+              name="referenceNumber"
+              value={formData.referenceNumber}
+              onChange={handleInputChange}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                referenceError ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="e.g., 2123456, TLNA-SO-012345"
+              required
+            />
+            {referenceError && (
+              <p className="mt-1 text-sm text-red-600">{referenceError}</p>
+            )}
+          </div>
+
+          {/* Destination (Outbound Only) */}
+          {formData.loadType === 'outbound' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label 
+                  htmlFor="destinationCity" 
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Destination City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="destinationCity"
+                  name="destinationCity"
+                  value={formData.destinationCity}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter city"
+                  required={formData.loadType === 'outbound'}
+                />
+              </div>
+              <div>
+                <label 
+                  htmlFor="destinationState" 
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Destination State <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="destinationState"
+                  name="destinationState"
+                  value={formData.destinationState}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required={formData.loadType === 'outbound'}
+                >
+                  <option value="">Select state</option>
+                  {US_STATES.map(state => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
 
           {/* TEXT MESSAGING CONSENT & LIABILITY SECTION */}
           <div className="border-t-2 border-gray-200 pt-6 mt-8">
@@ -379,3 +560,4 @@ export default function DriverCheckInForm() {
     </div>
   );
 }
+
