@@ -18,7 +18,7 @@ export default function AppointmentUpload({ onUploadComplete }: { onUploadComple
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
-      const worksheet = workbook.Sheets[workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       const appointments: AppointmentInput[] = [];
