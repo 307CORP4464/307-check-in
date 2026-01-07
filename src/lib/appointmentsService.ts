@@ -131,4 +131,8 @@ export async function bulkCreateAppointments(appointments: AppointmentInput[]): 
   if (error) throw error;
   return data?.length || 0;
 }
+export function formatAppointmentTime(timeSlot: string): string {
+  if (timeSlot === 'Work In') return 'Work In';
+  return `${timeSlot.substring(0, 2)}:${timeSlot.substring(2)}`;
+}
 
