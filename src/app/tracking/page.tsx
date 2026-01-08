@@ -319,7 +319,7 @@ export default function Tracking() {
           }
         });
 
-        const mostUsedDock = Object.entries(dockCounts).sort((a, b) => b[1] - a[1])[0];
+        const mostUsedDock = Object.entries(dockCounts).sort((a, b) => b<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a> - a<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>)<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>;
 
         return {
           date,
@@ -330,8 +330,8 @@ export default function Tracking() {
           onTimePercentage,
           detentionLoads,
           halfHourBreakdown,
-          mostUsedDock: mostUsedDock ? mostUsedDock[0] : 'N/A',
-          dockUsageCount: mostUsedDock ? mostUsedDock[1] : 0
+          mostUsedDock: mostUsedDock ? mostUsedDock<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a> : 'N/A',
+          dockUsageCount: mostUsedDock ? mostUsedDock<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a> : 0
         };
       });
 
@@ -346,32 +346,41 @@ export default function Tracking() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - Matching Dashboard */}
+      {/* Header - Matching CSRDashboard */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-800">307 Check-In Tracking</h1>
-              <nav className="flex space-x-2">
-                <Link
-                  href="/dashboard"
-                  className="px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/tracking"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
-                >
-                  Tracking
-                </Link>
-              </nav>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Tracking Dashboard</h1>
+              {userEmail && (
+                <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                Current time: {formatTimeInIndianapolis(new Date().toISOString())}
+              </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{userEmail}</span>
+            <div className="flex gap-3">
+              <Link
+                href="/dashboard"
+                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/appointments"
+                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+              >
+                Appointments
+              </Link>
+              <Link
+                href="/dock-status"
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+              >
+                Dock Status
+              </Link>
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
               >
                 Logout
               </button>
@@ -558,4 +567,3 @@ export default function Tracking() {
     </div>
   );
 }
-
