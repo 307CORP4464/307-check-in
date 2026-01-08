@@ -319,7 +319,7 @@ export default function Tracking() {
           }
         });
 
-        const mostUsedDock = Object.entries(dockCounts).sort((a, b) => b<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a> - a<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>)<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>;
+        const mostUsedDock = Object.entries(dockCounts).sort((a, b) => b[1] - a[1])[0];
 
         return {
           date,
@@ -330,8 +330,8 @@ export default function Tracking() {
           onTimePercentage,
           detentionLoads,
           halfHourBreakdown,
-          mostUsedDock: mostUsedDock ? mostUsedDock<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a> : 'N/A',
-          dockUsageCount: mostUsedDock ? mostUsedDock<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a> : 0
+          mostUsedDock: mostUsedDock ? mostUsedDock[0] : 'N/A',
+          dockUsageCount: mostUsedDock ? mostUsedDock[1] : 0
         };
       });
 
