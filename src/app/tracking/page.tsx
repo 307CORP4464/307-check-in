@@ -152,6 +152,7 @@ export default function Tracking() {
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
   
   const getCurrentDateInIndianapolis = () => {
     const now = new Date();
@@ -176,6 +177,8 @@ export default function Tracking() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
+      } else {
+        setUserEmail(user.email || '');
       }
     };
     checkUser();
@@ -184,6 +187,16 @@ export default function Tracking() {
   useEffect(() => {
     fetchTrackingData();
   }, [startDate, endDate, supabase]);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push('/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
 
   const fetchTrackingData = async () => {
     try {
@@ -284,6 +297,7 @@ export default function Tracking() {
 
         let mostUsedDock = 'N/A';
         let dockUsageCount = 0;
+        
         Object.entries(dockCounts).forEach(([dock, count]) => {
           if (count > dockUsageCount) {
             mostUsedDock = dock;
@@ -305,6 +319,8 @@ export default function Tracking() {
         };
       });
 
+      // Sort by date descending
+      stats.sort((a, b) => b.date.localeCompare(a.date));
       setDailyStats(stats);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -313,251 +329,206 @@ export default function Tracking() {
     }
   };
 
-  const exportToCSV = () => {
-    const csvRows = [];
-    
-    // Header
-    csvRows.push([
-      'Date',
-      'Total Check-Ins',
-      'Inbound',
-      'Outbound',
-      'On-Time Count',
-      'On-Time %',
-      'Most Used Dock',
-      'Dock Usage Count',
-      'Detention Loads'
-    ].join(','));
-
-    // Data rows
-    dailyStats.forEach(stat => {
-      csvRows.push([
-        stat.date,
-        stat.totalCheckedIn,
-        stat.totalInbound,
-        stat.totalOutbound,
-        stat.onTimeCount,
-        `${stat.onTimePercentage}%`,
-        stat.mostUsedDock,
-        stat.dockUsageCount,
-        stat.detentionLoads.length
-      ].join(','));
-    });
-
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tracking-report-${startDate}-to-${endDate}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl">Loading tracking data...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold text-gray-800">Daily Tracking Report</h1>
-          <Link 
-		href="/appointments" 
-                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
->
-                Appointments
-              </Link>  
-
-<Link
-                href="/dock-status"
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+    <div className="min-h-screen bg-gray-50">
+      {/* Header matching daily log format */}
+      <div className="bg-white shadow-sm border-b sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl font-bold text-gray-900">Load Tracking</h1>
+              {userEmail && (
+                <span className="text-sm text-gray-500">
+                  {userEmail}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center space-x-3">
+              <Link 
+                href="/"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
               >
-                Dock Status
-              </Link>    
-
-<Link
-                href="/dashboard"
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
-              >
-                Dashboard
+                Check-In
               </Link>
-<Link
-                href="/logs"
-                className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium"
+              <Link 
+                href="/daily-log"
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium text-sm"
               >
-                Daily Logs
-              </Link>
-<Link
-                href="/tracking"
-                className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium"
-              >
-                Tracking
+                Daily Log
               </Link>
               <button
                 onClick={handleLogout}
-                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium text-sm"
               >
                 Logout
               </button>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Date Range Selection */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Date Range Selector */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Select Date Range</h2>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Start Date
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 End Date
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            <button
-              onClick={exportToCSV}
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
-            >
-              Export to CSV
-            </button>
           </div>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        )}
+
+        {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+
+        {/* Stats Display */}
+        {!loading && !error && dailyStats.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <p className="text-gray-500">No data available for the selected date range.</p>
+          </div>
+        )}
+
+        {!loading && !error && dailyStats.length > 0 && (
+          <div className="space-y-6">
+            {dailyStats.map((stats) => (
+              <div key={stats.date} className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="bg-blue-600 text-white px-6 py-4">
+                  <h2 className="text-xl font-bold">
+                    {new Date(stats.date + 'T00:00:00').toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </h2>
+                </div>
+
+                <div className="p-6">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="text-sm text-gray-600 mb-1">Total Check-Ins</div>
+                      <div className="text-3xl font-bold text-blue-600">{stats.totalCheckedIn}</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4">
+                      <div className="text-sm text-gray-600 mb-1">Inbound</div>
+                      <div className="text-3xl font-bold text-green-600">{stats.totalInbound}</div>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-4">
+                      <div className="text-sm text-gray-600 mb-1">Outbound</div>
+                      <div className="text-3xl font-bold text-purple-600">{stats.totalOutbound}</div>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-4">
+                      <div className="text-sm text-gray-600 mb-1">On-Time %</div>
+                      <div className="text-3xl font-bold text-yellow-600">{stats.onTimePercentage}%</div>
+                    </div>
+                  </div>
+
+                  {/* Most Used Dock */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-2">Most Used Dock</h3>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="text-2xl font-bold text-gray-800">
+                        {stats.mostUsedDock}
+                        <span className="text-sm font-normal text-gray-600 ml-2">
+                          ({stats.dockUsageCount} loads)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Half-Hour Breakdown */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-3">Check-Ins by Time</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                      {Object.entries(stats.halfHourBreakdown)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([time, count]) => (
+                          <div key={time} className="bg-gray-50 rounded p-3 text-center">
+                            <div className="text-xs text-gray-600 mb-1">{time}</div>
+                            <div className="text-lg font-bold text-gray-800">{count}</div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* Detention Loads */}
+                  {stats.detentionLoads.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 text-red-600">
+                        Detention Loads ({stats.detentionLoads.length})
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Driver
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Carrier
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Pickup #
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Detention Time
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {stats.detentionLoads.map((load, idx) => (
+                              <tr key={idx} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 text-sm text-gray-900">{load.driver_name}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{load.carrier_name}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{load.pickup_number}</td>
+                                <td className="px-4 py-3 text-sm font-semibold text-red-600">
+                                  {load.detention_time}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
-
-      {/* Daily Stats Cards */}
-      {dailyStats.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-          No data available for the selected date range.
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {dailyStats.map((stat) => (
-            <div key={stat.date} className="bg-white rounded-lg shadow overflow-hidden">
-              {/* Date Header */}
-              <div className="bg-blue-600 text-white px-6 py-4">
-                <h2 className="text-2xl font-bold">
-                  {new Date(stat.date).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </h2>
-              </div>
-
-              {/* Summary Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600">{stat.totalCheckedIn}</div>
-                  <div className="text-sm text-gray-600">Total Check-Ins</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-green-600">{stat.totalInbound}</div>
-                  <div className="text-sm text-gray-600">Inbound</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-600">{stat.totalOutbound}</div>
-                  <div className="text-sm text-gray-600">Outbound</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-orange-600">
-                    {stat.onTimePercentage}%
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    On-Time ({stat.onTimeCount})
-                  </div>
-                </div>
-              </div>
-
-              {/* Dock Usage */}
-              <div className="p-6 border-b">
-                <h3 className="text-lg font-semibold mb-3">Most Used Dock</h3>
-                <div className="bg-gray-50 rounded p-4">
-                  <div className="text-2xl font-bold text-gray-800">
-                    Dock {stat.mostUsedDock}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Used {stat.dockUsageCount} times
-                  </div>
-                </div>
-              </div>
-
-              {/* Half-Hour Breakdown */}
-              <div className="p-6 border-b">
-                <h3 className="text-lg font-semibold mb-3">Check-Ins by Half-Hour</h3>
-                <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                  {Object.entries(stat.halfHourBreakdown)
-                    .sort(([a], [b]) => a.localeCompare(b))
-                    .map(([time, count]) => (
-                      <div key={time} className="bg-gray-50 rounded p-2 text-center">
-                        <div className="text-xs text-gray-600">{time}</div>
-                        <div className="text-lg font-bold text-blue-600">{count}</div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* Detention Loads */}
-              {stat.detentionLoads.length > 0 && (
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold mb-3 text-red-600">
-                    Detention Loads ({stat.detentionLoads.length})
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Driver</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Carrier</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">PU #</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Detention Time</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {stat.detentionLoads.map((load, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50">
-                            <td className="px-4 py-2 text-sm">{load.driver_name}</td>
-                            <td className="px-4 py-2 text-sm">{load.carrier_name}</td>
-                            <td className="px-4 py-2 text-sm">{load.pickup_number}</td>
-                            <td className="px-4 py-2 text-sm font-semibold text-red-600">
-                              {load.detention_time}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
