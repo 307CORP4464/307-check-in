@@ -319,9 +319,9 @@ export default function Tracking() {
           }
         });
 
-        const mostUsedDockEntry = Object.entries(dockUsage).sort((a, b) => b<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a> - a<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>)<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>;
-        const mostUsedDock = mostUsedDockEntry ? mostUsedDockEntry<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a> : 'N/A';
-        const dockUsageCount = mostUsedDockEntry ? mostUsedDockEntry<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a> : 0;
+        const mostUsedDockEntry = Object.entries(dockUsage).sort((a, b) => b[1]- a[1])[0];
+        const mostUsedDock = mostUsedDockEntry ? mostUsedDockEntry[0] : 'N/A';
+        const dockUsageCount = mostUsedDockEntry ? mostUsedDockEntry[1] : 0;
 
         return {
           date,
