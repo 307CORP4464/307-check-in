@@ -332,4 +332,75 @@ export default function AppointmentsPage() {
                     {slotAppts.length === 0 ? (
                       <p className="text-gray-500 text-center py-8">No appointments scheduled</p>
                     ) : (
-                      // Your existing appointment rendering code continues here...
+                      <div className="space-y-4">
+                        {slotAppts.map(apt => (
+                          <div key={apt.id} className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <span className="text-sm font-medium text-gray-600">Carrier:</span>
+                                    <p className="text-lg font-semibold">{apt.carrier_name || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium text-gray-600">Sales Order:</span>
+                                    <p className="text-lg font-semibold">{apt.sales_order_number || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium text-gray-600">Delivery:</span>
+                                    <p className="text-lg font-semibold">{apt.delivery || 'N/A'}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium text-gray-600">Source:</span>
+                                    <p className="text-lg">
+                                      <span className={`px-2 py-1 rounded text-sm ${
+                                        apt.source === 'manual' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                                      }`}>
+                                        {apt.source === 'manual' ? 'Manual' : 'Upload'}
+                                      </span>
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex gap-2 ml-4">
+                                <button
+                                  onClick={() => handleEdit(apt)}
+                                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(apt.id)}
+                                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Modal */}
+      <AppointmentModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingAppointment(null);
+        }}
+        onSave={handleSave}
+        appointment={editingAppointment}
+        selectedDate={selectedDate}
+      />
+    </div>
+  );
+}
+
