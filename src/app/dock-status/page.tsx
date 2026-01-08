@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface OrderInfo {
   id: string;
@@ -24,6 +25,7 @@ interface DockStatus {
 const TOTAL_DOCKS = 70;
 
 export default function DockStatusPage() {
+  const router = useRouter();
   const [dockStatuses, setDockStatuses] = useState<DockStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBlockModal, setShowBlockModal] = useState(false);
@@ -118,6 +120,7 @@ export default function DockStatusPage() {
 
       allDocks.forEach(dock => {
         const orders = dockMap.get(dock.dock_number) || [];
+        dock.orders = orders;
         
         if (blockedDocks[dock.dock_number]) {
           dock.status = 'blocked';
@@ -128,7 +131,6 @@ export default function DockStatusPage() {
         } else if (orders.length === 1) {
           dock.status = 'in-use';
         }
-      
       });
 
       setDockStatuses(allDocks);
@@ -180,6 +182,15 @@ export default function DockStatusPage() {
       initializeDocks();
     } catch (error) {
       console.error('Error blocking dock:', error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
     }
   };
 
@@ -271,28 +282,81 @@ export default function DockStatusPage() {
               </div>
               <div className="flex items-center gap-3">
                 <Link 
-		href="/appointments" 
+                  href="/appointments" 
+                  className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
+                  Appointments
+                </Link>  
+                <Link
+                  href="/dock-status"
+                  className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">
+                  Dock Status
+                </Link>    
+                <Link
+                  href="/dashboard"
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium">
+                  Dashboard
+                </Link>
+                <Link
+                  href="/logs"
+                  className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium">
+                  Daily Logs
+                </Link>
+                <Link
+                  href="/tracking"
+                  className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium">
+                  Tracking
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-gray-600">Loading dock statuses...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-md border-b-4 border-blue-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl font-bold text-blue-600">🚚</div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
+                <p className="text-sm text-gray-600">{formatDate(currentTime)} • {formatTime(currentTime)}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link 
+                href="/appointments" 
                 className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
                 Appointments
               </Link>  
-
-<Link
+              <Link
                 href="/dock-status"
                 className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">
                 Dock Status
               </Link>    
-
-<Link
+              <Link
                 href="/dashboard"
                 className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium">
                 Dashboard
               </Link>
-<Link
+              <Link
                 href="/logs"
                 className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium">
                 Daily Logs
               </Link>
-<Link
+              <Link
                 href="/tracking"
                 className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium">
                 Tracking
@@ -306,68 +370,57 @@ export default function DockStatusPage() {
             </div>
           </div>
         </div>
-      </div>
-        </header>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-gray-600">Loading dock statuses...</div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-md border-b-4 border-blue-600 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="text-3xl font-bold text-blue-600">🚚</div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
-                <p className="text-sm text-gray-600">{formatDate(currentTime)} • {formatTime(currentTime)}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link href="/logs" className="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium shadow-lg">
-                📋 Daily Logs
-              </Link>
-              <Link href="/dashboard" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg">
-                ← Dashboard
-              </Link>
-            </div>
-          </div>
-        </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 bg-white rounded-lg shadow-md p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-green-50 rounded-lg border-2 border-green-200">
-              <div className="text-3xl font-bold text-green-700">{stats.available}</div>
-              <div className="text-sm text-green-600 font-medium">Available</div>
+      {/* Stats Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-600">Available</p>
+                <p className="text-3xl font-bold text-green-700">{stats.available}</p>
+              </div>
+              <div className="text-4xl">✓</div>
             </div>
-            <div className="text-center p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200">
-              <div className="text-3xl font-bold text-yellow-700">{stats.inUse}</div>
-              <div className="text-sm text-yellow-600 font-medium">In Use</div>
+          </div>
+          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-yellow-600">In Use</p>
+                <p className="text-3xl font-bold text-yellow-700">{stats.inUse}</p>
+              </div>
+              <div className="text-4xl">●</div>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg border-2 border-red-200">
-              <div className="text-3xl font-bold text-red-700">{stats.doubleBooked}</div>
-              <div className="text-sm text-red-600 font-medium">Double Booked</div>
+          </div>
+          <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-600">Double Booked</p>
+                <p className="text-3xl font-bold text-red-700">{stats.doubleBooked}</p>
+              </div>
+              <div className="text-4xl">⚠</div>
             </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
-              <div className="text-3xl font-bold text-gray-700">{stats.blocked}</div>
-              <div className="text-sm text-gray-600 font-medium">Blocked</div>
+          </div>
+          <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Blocked</p>
+                <p className="text-3xl font-bold text-gray-700">{stats.blocked}</p>
+              </div>
+              <div className="text-4xl">🚫</div>
             </div>
           </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2">
+        {/* Filter Buttons */}
+        <div className="flex gap-2 mb-6 flex-wrap">
           <button
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              filter === 'all' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
             }`}
           >
             All Docks
@@ -375,9 +428,9 @@ export default function DockStatusPage() {
           <button
             onClick={() => setFilter('available')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'available'
-                ? 'bg-green-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              filter === 'available' 
+                ? 'bg-green-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
             }`}
           >
             Available
@@ -385,9 +438,9 @@ export default function DockStatusPage() {
           <button
             onClick={() => setFilter('in-use')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'in-use'
-                ? 'bg-yellow-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              filter === 'in-use' 
+                ? 'bg-yellow-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
             }`}
           >
             In Use
@@ -395,9 +448,9 @@ export default function DockStatusPage() {
           <button
             onClick={() => setFilter('double-booked')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'double-booked'
-                ? 'bg-red-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              filter === 'double-booked' 
+                ? 'bg-red-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
             }`}
           >
             Double Booked
@@ -405,65 +458,59 @@ export default function DockStatusPage() {
           <button
             onClick={() => setFilter('blocked')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'blocked'
-                ? 'bg-gray-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+              filter === 'blocked' 
+                ? 'bg-gray-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
             }`}
           >
             Blocked
           </button>
         </div>
 
+        {/* Dock Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
           {filteredDocks.map((dock) => (
             <div
               key={dock.dock_number}
-              className={`relative p-4 rounded-lg border-2 shadow-sm hover:shadow-md transition-shadow ${getStatusColor(
-                dock.status
-              )}`}
+              className={`border-2 rounded-lg p-4 transition-all hover:shadow-lg ${getStatusColor(dock.status)}`}
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold">#{dock.dock_number}</span>
+                <span className="text-xl font-bold">Dock {dock.dock_number}</span>
                 <span className="text-2xl">{getStatusIcon(dock.status)}</span>
               </div>
+              <div className="text-sm font-medium mb-2 capitalize">{dock.status.replace('-', ' ')}</div>
               
-              <div className="text-xs font-semibold uppercase mb-2">
-                {dock.status.replace('-', ' ')}
-              </div>
-
-              {dock.is_manually_blocked && (
-                <div className="mb-2">
-                  <div className="text-xs font-medium text-gray-700 mb-1">Reason:</div>
-                  <div className="text-xs text-gray-600 bg-white bg-opacity-50 p-2 rounded">
-                    {dock.blocked_reason}
-                  </div>
-                </div>
-              )}
-
               {dock.orders.length > 0 && (
-                <div className="space-y-2 mb-3">
-                  {dock.orders.map((order, idx) => (
-                    <div key={idx} className="text-xs bg-white bg-opacity-50 p-2 rounded">
-                      <div className="font-semibold truncate">PO: {order.po_number}</div>
-                      <div className="truncate">Driver: {order.driver_name}</div>
-                      <div className="text-gray-600">{formatCheckInTime(order.check_in_time)}</div>
+                <div className="mt-2 space-y-1 text-xs">
+                  {dock.orders.map((order) => (
+                    <div key={order.id} className="bg-white bg-opacity-50 rounded p-1">
+                      <div className="font-medium">PO: {order.po_number}</div>
+                      <div>Driver: {order.driver_name}</div>
+                      <div>In: {formatCheckInTime(order.check_in_time)}</div>
                     </div>
                   ))}
                 </div>
               )}
 
-              <div className="flex gap-2">
-                {dock.is_manually_blocked ? (
+              {dock.is_manually_blocked && dock.blocked_reason && (
+                <div className="mt-2 text-xs bg-white bg-opacity-50 rounded p-1">
+                  <div className="font-medium">Blocked:</div>
+                  <div>{dock.blocked_reason}</div>
+                </div>
+              )}
+
+              <div className="mt-3 space-y-1">
+                {dock.status === 'blocked' ? (
                   <button
                     onClick={() => handleUnblockDock(dock.dock_number)}
-                    className="flex-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors"
+                    className="w-full bg-green-500 hover:bg-green-600 text-white text-xs py-1 px-2 rounded transition-colors"
                   >
                     Unblock
                   </button>
                 ) : (
                   <button
                     onClick={() => handleBlockDock(dock.dock_number)}
-                    className="flex-1 px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded hover:bg-gray-700 transition-colors"
+                    className="w-full bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-2 rounded transition-colors"
                   >
                     Block
                   </button>
@@ -472,12 +519,13 @@ export default function DockStatusPage() {
             </div>
           ))}
         </div>
-      </main>
+      </div>
 
+      {/* Block Modal */}
       {showBlockModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Block Dock #{selectedDock}</h2>
+            <h2 className="text-2xl font-bold mb-4">Block Dock {selectedDock}</h2>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Reason for blocking:
@@ -485,27 +533,27 @@ export default function DockStatusPage() {
               <textarea
                 value={blockReason}
                 onChange={(e) => setBlockReason(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={3}
                 placeholder="Enter reason..."
               />
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
+              <button
+                onClick={submitBlockDock}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+              >
+                Block Dock
+              </button>
               <button
                 onClick={() => {
                   setShowBlockModal(false);
                   setSelectedDock(null);
                   setBlockReason('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
               >
                 Cancel
-              </button>
-              <button
-                onClick={submitBlockDock}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-              >
-                Block Dock
               </button>
             </div>
           </div>
@@ -514,3 +562,4 @@ export default function DockStatusPage() {
     </div>
   );
 }
+
