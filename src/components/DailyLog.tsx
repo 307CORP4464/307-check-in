@@ -346,13 +346,13 @@ export default function DailyLog() {
             <div className="flex gap-3">
               <Link
                 href="/dashboard"
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
               >
                 Dashboard
               </Link>
               <Link
                 href="/tracking"
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
+                className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium"
               >
                 Tracking
               </Link>
