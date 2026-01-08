@@ -319,7 +319,7 @@ export default function Tracking() {
           }
         });
 
-        const mostUsedDockEntry = Object.entries(dockUsage).sort((a, b) => b[1]- a[1])[0];
+        const mostUsedDockEntry = Object.entries(dockUsage).sort((a, b) => b[1] -[1] - a[1])[0];
         const mostUsedDock = mostUsedDockEntry ? mostUsedDockEntry[0] : 'N/A';
         const dockUsageCount = mostUsedDockEntry ? mostUsedDockEntry[1] : 0;
 
@@ -495,7 +495,7 @@ export default function Tracking() {
                       <div className="bg-gray-50 rounded-lg p-4">
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                           {Object.entries(stats.halfHourBreakdown)
-                            .sort((a, b) => a<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>.localeCompare(b<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>))
+                            .sort((a, b) => a[0].localeCompare(b[0])
                             .map(([time, count]) => (
                               <div key={time} className="bg-white rounded border border-gray-200 p-3 text-center shadow-sm">
                                 <p className="text-xs font-medium text-gray-600 mb-1">{time}</p>
@@ -554,3 +554,4 @@ export default function Tracking() {
     </div>
   );
 }
+
