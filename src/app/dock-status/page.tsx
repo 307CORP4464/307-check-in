@@ -5,6 +5,31 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+const TIMEZONE = 'America/Indiana/Indianapolis';
+
+const formatTimeInIndianapolis = (isoString: string): string => {
+  try {
+    const date = new Date(isoString);
+    
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+    
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: TIMEZONE,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    };
+    
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    return formatter.format(date);
+  } catch (e) {
+    console.error('Time formatting error:', e, isoString);
+    return isoString;
+  }
+};
+
 interface OrderInfo {
   id: string;
   po_number: string;
@@ -32,14 +57,16 @@ export default function DockStatusPage() {
   const [selectedDock, setSelectedDock] = useState<string | null>(null);
   const [blockReason, setBlockReason] = useState('');
   const [filter, setFilter] = useState<'all' | 'available' | 'in-use' | 'double-booked' | 'blocked'>('all');
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email || '');
+      }
+    };
+    getUser();
   }, []);
 
   useEffect(() => {
@@ -197,15 +224,15 @@ export default function DockStatusPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'available':
-        return 'bg-green-100 text-green-800 border-green-300';
+        return 'bg-green-50 border-green-400 text-green-800';
       case 'in-use':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+        return 'bg-yellow-50 border-yellow-400 text-yellow-800';
       case 'double-booked':
-        return 'bg-red-100 text-red-800 border-red-300';
+        return 'bg-red-50 border-red-400 text-red-800';
       case 'blocked':
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        return 'bg-gray-50 border-gray-400 text-gray-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        return 'bg-gray-50 border-gray-400 text-gray-800';
     }
   };
 
@@ -224,35 +251,8 @@ export default function DockStatusPage() {
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit',
-      hour12: true 
-    });
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long',
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric'
-    });
-  };
-
   const formatCheckInTime = (isoString: string) => {
-    try {
-      const date = new Date(isoString);
-      return date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-      });
-    } catch {
-      return 'N/A';
-    }
+    return formatTimeInIndianapolis(isoString);
   };
 
   const filteredDocks = useMemo(() => {
@@ -269,87 +269,37 @@ export default function DockStatusPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow-md border-b-4 border-blue-600">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="text-3xl font-bold text-blue-600">🚚</div>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
-                  <p className="text-sm text-gray-600">Loading...</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Link 
-                  href="/appointments" 
-                  className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
-                  Appointments
-                </Link>  
-                <Link
-                  href="/dock-status"
-                  className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">
-                  Dock Status
-                </Link>    
-                <Link
-                  href="/dashboard"
-                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium">
-                  Dashboard
-                </Link>
-                <Link
-                  href="/logs"
-                  className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium">
-                  Daily Logs
-                </Link>
-                <Link
-                  href="/tracking"
-                  className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium">
-                  Tracking
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-gray-600">Loading dock statuses...</div>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-md border-b-4 border-blue-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="text-3xl font-bold text-blue-600">🚚</div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
-                <p className="text-sm text-gray-600">{formatDate(currentTime)} • {formatTime(currentTime)}</p>
-              </div>
+      {/* Header - Matching Dashboard */}
+      <div className="bg-white border-b shadow-sm">
+        <div className="max-w-[1600px] mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
+              {userEmail && (
+                <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                Current time: {formatTimeInIndianapolis(new Date().toISOString())}
+              </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex gap-3">
+              <Link 
+                href="/" 
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">
+                Dashboard
+              </Link>
               <Link 
                 href="/appointments" 
                 className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
                 Appointments
-              </Link>  
-              <Link
-                href="/dock-status"
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">
-                Dock Status
-              </Link>    
-              <Link
-                href="/dashboard"
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium">
-                Dashboard
               </Link>
               <Link
                 href="/logs"
@@ -363,158 +313,160 @@ export default function DockStatusPage() {
               </Link>
               <button
                 onClick={handleLogout}
-                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
-              >
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium">
                 Logout
               </button>
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Stats Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+      {/* Main Content */}
+      <div className="max-w-[1600px] mx-auto px-4 py-6">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-600">Available</p>
-                <p className="text-3xl font-bold text-green-700">{stats.available}</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Available Docks</p>
+                <p className="text-3xl font-bold text-green-600">{stats.available}</p>
               </div>
-              <div className="text-4xl">✓</div>
+              <div className="text-4xl text-green-500">✓</div>
             </div>
           </div>
-          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
+
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-yellow-600">In Use</p>
-                <p className="text-3xl font-bold text-yellow-700">{stats.inUse}</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">In Use</p>
+                <p className="text-3xl font-bold text-yellow-600">{stats.inUse}</p>
               </div>
-              <div className="text-4xl">●</div>
+              <div className="text-4xl text-yellow-500">●</div>
             </div>
           </div>
-          <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-red-600">Double Booked</p>
-                <p className="text-3xl font-bold text-red-700">{stats.doubleBooked}</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Double Booked</p>
+                <p className="text-3xl font-bold text-red-600">{stats.doubleBooked}</p>
               </div>
-              <div className="text-4xl">⚠</div>
+              <div className="text-4xl text-red-500">⚠</div>
             </div>
           </div>
-          <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-4">
+
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-gray-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Blocked</p>
-                <p className="text-3xl font-bold text-gray-700">{stats.blocked}</p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Blocked</p>
+                <p className="text-3xl font-bold text-gray-600">{stats.blocked}</p>
               </div>
-              <div className="text-4xl">🚫</div>
+              <div className="text-4xl text-gray-500">🚫</div>
             </div>
           </div>
         </div>
 
         {/* Filter Buttons */}
-        <div className="flex gap-2 mb-6 flex-wrap">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'all' 
-                ? 'bg-blue-600 text-white' 
-                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            All Docks
-          </button>
-          <button
-            onClick={() => setFilter('available')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'available' 
-                ? 'bg-green-600 text-white' 
-                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            Available
-          </button>
-          <button
-            onClick={() => setFilter('in-use')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'in-use' 
-                ? 'bg-yellow-600 text-white' 
-                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            In Use
-          </button>
-          <button
-            onClick={() => setFilter('double-booked')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'double-booked' 
-                ? 'bg-red-600 text-white' 
-                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            Double Booked
-          </button>
-          <button
-            onClick={() => setFilter('blocked')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === 'blocked' 
-                ? 'bg-gray-600 text-white' 
-                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            Blocked
-          </button>
+        <div className="bg-white rounded-lg shadow p-4 mb-6">
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                filter === 'all'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}>
+              All Docks ({dockStatuses.length})
+            </button>
+            <button
+              onClick={() => setFilter('available')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                filter === 'available'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}>
+              Available ({stats.available})
+            </button>
+            <button
+              onClick={() => setFilter('in-use')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                filter === 'in-use'
+                  ? 'bg-yellow-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}>
+              In Use ({stats.inUse})
+            </button>
+            <button
+              onClick={() => setFilter('double-booked')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                filter === 'double-booked'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}>
+              Double Booked ({stats.doubleBooked})
+            </button>
+            <button
+              onClick={() => setFilter('blocked')}
+              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                filter === 'blocked'
+                  ? 'bg-gray-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}>
+              Blocked ({stats.blocked})
+            </button>
+          </div>
         </div>
 
-        {/* Dock Grid */}
+        {/* Docks Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
-          {filteredDocks.map((dock) => (
+          {filteredDocks.map(dock => (
             <div
               key={dock.dock_number}
-              className={`border-2 rounded-lg p-4 transition-all hover:shadow-lg ${getStatusColor(dock.status)}`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xl font-bold">Dock {dock.dock_number}</span>
-                <span className="text-2xl">{getStatusIcon(dock.status)}</span>
-              </div>
-              <div className="text-sm font-medium mb-2 capitalize">{dock.status.replace('-', ' ')}</div>
-              
-              {dock.orders.length > 0 && (
-                <div className="mt-2 space-y-1 text-xs">
-                  {dock.orders.map((order) => (
-                    <div key={order.id} className="bg-white bg-opacity-50 rounded p-1">
-                      <div className="font-medium">PO: {order.po_number}</div>
-                      <div>Driver: {order.driver_name}</div>
-                      <div>In: {formatCheckInTime(order.check_in_time)}</div>
-                    </div>
-                  ))}
+              className={`rounded-lg border-2 shadow-sm hover:shadow-md transition-shadow ${getStatusColor(dock.status)}`}>
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-2xl font-bold">#{dock.dock_number}</span>
+                  <span className="text-2xl">{getStatusIcon(dock.status)}</span>
                 </div>
-              )}
-
-              {dock.is_manually_blocked && dock.blocked_reason && (
-                <div className="mt-2 text-xs bg-white bg-opacity-50 rounded p-1">
-                  <div className="font-medium">Blocked:</div>
-                  <div>{dock.blocked_reason}</div>
+                
+                <div className="text-xs font-semibold uppercase mb-3">
+                  {dock.status.replace('-', ' ')}
                 </div>
-              )}
 
-              <div className="mt-3 space-y-1">
-                {dock.status === 'blocked' ? (
-                  <button
-                    onClick={() => handleUnblockDock(dock.dock_number)}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white text-xs py-1 px-2 rounded transition-colors"
-                  >
-                    Unblock
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleBlockDock(dock.dock_number)}
-                    className="w-full bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-2 rounded transition-colors"
-                  >
-                    Block
-                  </button>
+                {dock.orders.length > 0 && (
+                  <div className="space-y-2 mb-3">
+                    {dock.orders.map((order, idx) => (
+                      <div key={idx} className="text-xs bg-white bg-opacity-60 p-2 rounded">
+                        <p className="font-semibold truncate">PO: {order.po_number}</p>
+                        <p className="truncate">{order.driver_name}</p>
+                        <p className="text-gray-600">{formatCheckInTime(order.check_in_time)}</p>
+                      </div>
+                    ))}
+                  </div>
                 )}
+
+                {dock.is_manually_blocked && dock.blocked_reason && (
+                  <div className="text-xs bg-white bg-opacity-60 p-2 rounded mb-3">
+                    <p className="font-semibold">Reason:</p>
+                    <p className="text-gray-700">{dock.blocked_reason}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  {dock.status === 'blocked' ? (
+                    <button
+                      onClick={() => handleUnblockDock(dock.dock_number)}
+                      className="flex-1 bg-green-500 text-white text-xs py-2 px-3 rounded hover:bg-green-600 transition-colors font-medium">
+                      Unblock
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleBlockDock(dock.dock_number)}
+                      className="flex-1 bg-gray-500 text-white text-xs py-2 px-3 rounded hover:bg-gray-600 transition-colors font-medium">
+                      Block
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -523,37 +475,35 @@ export default function DockStatusPage() {
 
       {/* Block Modal */}
       {showBlockModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">Block Dock {selectedDock}</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reason for blocking:
-              </label>
-              <textarea
-                value={blockReason}
-                onChange={(e) => setBlockReason(e.target.value)}
-                className="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                rows={3}
-                placeholder="Enter reason..."
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={submitBlockDock}
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-              >
-                Block Dock
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">
+              Block Dock #{selectedDock}
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Please provide a reason for blocking this dock:
+            </p>
+            <textarea
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={4}
+              placeholder="Enter reason for blocking..."
+            />
+            <div className="flex gap-3">
               <button
                 onClick={() => {
                   setShowBlockModal(false);
                   setSelectedDock(null);
                   setBlockReason('');
                 }}
-                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
-              >
+                className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors font-medium">
                 Cancel
+              </button>
+              <button
+                onClick={submitBlockDock}
+                className="flex-1 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors font-medium">
+                Block Dock
               </button>
             </div>
           </div>
