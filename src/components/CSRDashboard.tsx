@@ -179,26 +179,61 @@ export default function CSRDashboard() {
     }
   };
 
-  const fetchCheckIns = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { data, error } = await supabase
-        .from('check_ins')
-        .select('*')
-        .eq('status', 'pending')
-        .order('check_in_time', { ascending: false });
+const fetchCheckIns = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    
+    // Fetch check-ins
+    const { data: checkInsData, error: checkInsError } = await supabase
+      .from('check_ins')
+      .select('*')
+      .eq('status', 'pending')
+      .order('check_in_time', { ascending: false });
 
-      if (error) throw error;
-      setCheckIns(data || []);
-    } catch (err) {
-      console.error('Fetch error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
+    if (checkInsError) throw checkInsError;
+
+    // Get all reference numbers that exist
+    const referenceNumbers = checkInsData
+      ?.map(ci => ci.reference_number)
+      .filter(ref => ref && ref.trim() !== '') || [];
+
+    let appointmentsMap = new Map();
+
+    // Fetch appointments if we have reference numbers
+    if (referenceNumbers.length > 0) {
+      const { data: appointmentsData, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('sales_order, appointment_time')
+        .in('sales_order', referenceNumbers);
+
+      if (appointmentsError) {
+        console.error('Error fetching appointments:', appointmentsError);
+      } else if (appointmentsData) {
+        // Create a map for quick lookup
+        appointmentsData.forEach(apt => {
+          if (apt.sales_order) {
+            appointmentsMap.set(apt.sales_order, apt.appointment_time);
+          }
+        });
+      }
     }
-  };
+
+    // Merge appointment data with check-ins
+    const enrichedCheckIns = checkInsData?.map(checkIn => ({
+      ...checkIn,
+      appointment_time: appointmentsMap.get(checkIn.reference_number) || checkIn.appointment_time || null
+    })) || [];
+
+    setCheckIns(enrichedCheckIns);
+  } catch (err) {
+    console.error('Fetch error:', err);
+    setError(err instanceof Error ? err.message : 'An error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleLogout = async () => {
     try {
