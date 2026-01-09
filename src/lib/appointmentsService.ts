@@ -27,7 +27,7 @@ export async function createAppointment(input: AppointmentInput): Promise<Appoin
       scheduled_time: input.time,
       sales_order: salesOrder,           // ✅ Fixed
       delivery: delivery,
-      source: input.source || 'manual'
+      source: input.source === 'excel' ? 'excel' : 'manual'
     }])
     .select()
     .single();
@@ -78,11 +78,11 @@ export async function checkDuplicateAppointment(
   const query = supabase
     .from('appointments')
     .select('id')
-    .eq('scheduled_date', scheduled_date)    // ✅ Fixed
-    .eq('scheduled_time', scheduled_time);   // ✅ Fixed
+    .eq('scheduled_date', scheduled_date)    
+    .eq('scheduled_time', scheduled_time);   
 
   if (salesOrder) {
-    query.eq('sales_order', salesOrder);     // ✅ Fixed
+    query.eq('sales_order', salesOrder);     
   }
   if (delivery) {
     query.eq('delivery', delivery);
