@@ -5,7 +5,7 @@ export async function getAppointmentsByDate(date: string): Promise<Appointment[]
   const { data, error } = await supabase
     .from('appointments')
     .select('*')
-    .eq('date', date)
+    .eq('scheduled_date', someDate)
     .order('time', { ascending: true });
 
   if (error) throw error;
