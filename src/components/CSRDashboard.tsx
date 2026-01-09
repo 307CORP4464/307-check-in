@@ -92,8 +92,9 @@ interface CheckIn {
 
 interface Appointment {
   id: string;
-  reference_number?: string;
-  appointment_time?: string;
+  sales_order?: string;
+  delivery?: string;
+  scheduled_time?: string;
   appointment_date?: string;
   carrier_name?: string;
   load_type?: string;
@@ -152,126 +153,94 @@ export default function CSRDashboard() {
     };
   }, [supabase]);
 
-  const fetchCheckIns = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    
-    // Fetch check-ins
-    const { data: checkInsData, error: checkInsError } = await supabase
-      .from('check_ins')
-      .select('*')
-      .eq('status', 'pending')
-      .order('check_in_time', { ascending: false });
+  const fetchAppointments = async () => {
+    try {
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
+      const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
 
-    if (checkInsError) throw checkInsError;
-
-    // Get all reference numbers that exist
-    const referenceNumbers = checkInsData
-      ?.map(ci => ci.reference_number)
-      .filter(ref => ref && ref.trim() !== '') || [];
-
-    let appointmentsMap = new Map();
-
-    // Fetch appointments if we have reference numbers
-    if (referenceNumbers.length > 0) {
-      // Query appointments where reference_number matches EITHER sales_order OR delivery
-      const { data: appointmentsData, error: appointmentsError } = await supabase
+      const { data, error } = await supabase
         .from('appointments')
-        .select('sales_order, delivery, scheduled_time')
-        .or(`sales_order.in.(${referenceNumbers.join(',')}),delivery.in.(${referenceNumbers.join(',')})`);
+        .select('*')
+        .gte('appointment_date', startOfDay)
+        .lte('appointment_date', endOfDay);
 
-      if (appointmentsError) {
-        console.error('Error fetching appointments:', appointmentsError);
-      } else if (appointmentsData) {
-        // Create a map for quick lookup - map BOTH sales_order and delivery to scheduled_time
-        appointmentsData.forEach(apt => {
-          if (apt.sales_order) {
-            appointmentsMap.set(apt.sales_order, apt.scheduled_time);
-          }
-          if (apt.delivery) {
-            appointmentsMap.set(apt.delivery, apt.scheduled_time);
-          }
-        });
-      }
-    }
-
-    // Merge appointment data with check-ins
-    const enrichedCheckIns = checkInsData?.map(checkIn => ({
-      ...checkIn,
-      appointment_time: appointmentsMap.get(checkIn.reference_number) || checkIn.appointment_time || null
-    })) || [];
-
-    setCheckIns(enrichedCheckIns);
-  } catch (err) {
-    console.error('Fetch error:', err);
-    setError(err instanceof Error ? err.message : 'An error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
+      if (error) throw error;
+      
+      // Create a map of reference_number to appointment - map both sales_order AND delivery
+      const appointmentMap = new Map<string, Appointment>();
+      data?.forEach(apt => {
+        if (apt.sales_order) {
+          appointmentMap.set(apt.sales_order, apt);
+        }
+        if (apt.delivery) {
+          appointmentMap.set(apt.delivery, apt);
+        }
+      });
       setAppointments(appointmentMap);
     } catch (err) {
       console.error('Fetch appointments error:', err);
     }
   };
 
-const fetchCheckIns = async () => {
-  try {
-    setLoading(true);
-    setError(null);
-    
-    // Fetch check-ins
-    const { data: checkInsData, error: checkInsError } = await supabase
-      .from('check_ins')
-      .select('*')
-      .eq('status', 'pending')
-      .order('check_in_time', { ascending: false });
+  const fetchCheckIns = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch check-ins
+      const { data: checkInsData, error: checkInsError } = await supabase
+        .from('check_ins')
+        .select('*')
+        .eq('status', 'pending')
+        .order('check_in_time', { ascending: false });
 
-    if (checkInsError) throw checkInsError;
+      if (checkInsError) throw checkInsError;
 
-    // Get all reference numbers that exist
-    const referenceNumbers = checkInsData
-      ?.map(ci => ci.reference_number)
-      .filter(ref => ref && ref.trim() !== '') || [];
+      // Get all reference numbers that exist
+      const referenceNumbers = checkInsData
+        ?.map(ci => ci.reference_number)
+        .filter(ref => ref && ref.trim() !== '') || [];
 
-    let appointmentsMap = new Map();
+      let appointmentsMap = new Map();
 
-    // Fetch appointments if we have reference numbers
-    if (referenceNumbers.length > 0) {
-      const { data: appointmentsData, error: appointmentsError } = await supabase
-        .from('appointments')
-        .select('sales_order, appointment_time')
-        .in('sales_order', referenceNumbers);
+      // Fetch appointments if we have reference numbers
+      if (referenceNumbers.length > 0) {
+        // Query appointments where reference_number matches EITHER sales_order OR delivery
+        const { data: appointmentsData, error: appointmentsError } = await supabase
+          .from('appointments')
+          .select('sales_order, delivery, scheduled_time')
+          .or(`sales_order.in.(${referenceNumbers.join(',')}),delivery.in.(${referenceNumbers.join(',')})`);
 
-      if (appointmentsError) {
-        console.error('Error fetching appointments:', appointmentsError);
-      } else if (appointmentsData) {
-        // Create a map for quick lookup
-        appointmentsData.forEach(apt => {
-          if (apt.sales_order) {
-            appointmentsMap.set(apt.sales_order, apt.appointment_time);
-          }
-        });
+        if (appointmentsError) {
+          console.error('Error fetching appointments:', appointmentsError);
+        } else if (appointmentsData) {
+          // Create a map for quick lookup - map BOTH sales_order and delivery to scheduled_time
+          appointmentsData.forEach(apt => {
+            if (apt.sales_order) {
+              appointmentsMap.set(apt.sales_order, apt.scheduled_time);
+            }
+            if (apt.delivery) {
+              appointmentsMap.set(apt.delivery, apt.scheduled_time);
+            }
+          });
+        }
       }
+
+      // Merge appointment data with check-ins
+      const enrichedCheckIns = checkInsData?.map(checkIn => ({
+        ...checkIn,
+        appointment_time: appointmentsMap.get(checkIn.reference_number) || checkIn.appointment_time || null
+      })) || [];
+
+      setCheckIns(enrichedCheckIns);
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
     }
-
-    // Merge appointment data with check-ins
-    const enrichedCheckIns = checkInsData?.map(checkIn => ({
-      ...checkIn,
-      appointment_time: appointmentsMap.get(checkIn.reference_number) || checkIn.appointment_time || null
-    })) || [];
-
-    setCheckIns(enrichedCheckIns);
-  } catch (err) {
-    console.error('Fetch error:', err);
-    setError(err instanceof Error ? err.message : 'An error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const handleLogout = async () => {
     try {
@@ -325,14 +294,6 @@ const fetchCheckIns = async () => {
     return 'text-red-600';
   };
 
-  const getAppointmentForCheckIn = (checkIn: CheckIn): string => {
-    if (checkIn.reference_number && appointments.has(checkIn.reference_number)) {
-      const apt = appointments.get(checkIn.reference_number);
-      return formatAppointmentTime(apt?.appointment_time);
-    }
-    return 'N/A';
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -358,36 +319,38 @@ const fetchCheckIns = async () => {
             </div>
             <div className="flex gap-3">
               <Link 
-		href="/appointments" 
+                href="/appointments" 
                 className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
                 Appointments
               </Link>  
 
-<Link
+              <Link
                 href="/dock-status"
                 className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">
                 Dock Status
               </Link>    
 
-<Link
+              <Link
                 href="/dashboard"
                 className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium">
                 Dashboard
               </Link>
-<Link
+              
+              <Link
                 href="/logs"
                 className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium">
                 Daily Logs
               </Link>
-<Link
+              
+              <Link
                 href="/tracking"
                 className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium">
                 Tracking
               </Link>
+              
               <button
                 onClick={handleLogout}
-                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
-              >
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium">
                 Logout
               </button>
             </div>
@@ -396,64 +359,59 @@ const fetchCheckIns = async () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto p-4">
-        {/* Stats Card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-600 text-sm font-medium">Pending Check-ins</h3>
-            <p className="text-3xl font-bold mt-2 text-orange-600">{checkIns.length}</p>
-          </div>
-        </div>
-
-        {/* Error Message */}
+      <div className="max-w-[1600px] mx-auto px-4 py-6">
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            Error: {error}
           </div>
         )}
 
-        {/* Check-ins Table */}
+        {/* Pending Check-ins Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="p-4 border-b">
-            <h2 className="text-xl font-bold">Pending Check-Ins</h2>
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">Pending Check-Ins</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {checkIns.length} driver{checkIns.length !== 1 ? 's' : ''} waiting
+            </p>
           </div>
-          
+
           {checkIns.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              <div className="text-6xl mb-4">✓</div>
-              <p className="text-xl">No pending check-ins</p>
-              <p className="text-sm mt-2">All check-ins have been processed</p>
+              No pending check-ins at this time
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Check-In Time
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Check-in Time
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Appointment
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reference Number
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Driver Info
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trailer
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Destination
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Wait Time
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Driver Info
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Carrier
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Trailer
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Load Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Reference #
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Appointment
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Destination
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -461,8 +419,27 @@ const fetchCheckIns = async () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {checkIns.map((checkIn) => (
                     <tr key={checkIn.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatTimeInIndianapolis(checkIn.check_in_time)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`text-sm font-semibold ${getWaitTimeColor(checkIn)}`}>
+                          {calculateWaitTime(checkIn)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{checkIn.driver_name || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{formatPhoneNumber(checkIn.driver_phone)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {checkIn.carrier_name || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{checkIn.trailer_number || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{checkIn.trailer_length || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           checkIn.load_type === 'inbound' 
                             ? 'bg-blue-100 text-blue-800' 
                             : 'bg-green-100 text-green-800'
@@ -470,47 +447,29 @@ const fetchCheckIns = async () => {
                           {checkIn.load_type || 'N/A'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        {formatTimeInIndianapolis(checkIn.check_in_time)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">
-                        {getAppointmentForCheckIn(checkIn)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {checkIn.reference_number || 'N/A'}
                       </td>
-                      <td className="px-4 py-3 text-sm">
-                        <div>{checkIn.driver_name || 'N/A'}</div>
-                        <div className="text-gray-500 text-xs">{formatPhoneNumber(checkIn.driver_phone)}</div>
-                        <div className="text-gray-500 text-xs">{checkIn.carrier_name || 'N/A'}</div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                        {formatAppointmentTime(checkIn.appointment_time)}
                       </td>
-                      <td className="px-4 py-3 text-sm">
-                        <div>{checkIn.trailer_number || 'N/A'}</div>
-                        <div className="text-gray-500 text-xs">{checkIn.trailer_length || 'N/A'}</div>
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {checkIn.destination_city && checkIn.destination_state
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {checkIn.destination_city && checkIn.destination_state 
                           ? `${checkIn.destination_city}, ${checkIn.destination_state}`
-                          : 'N/A'}
+                          : 'N/A'
+                        }
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        <span className={`font-semibold ${getWaitTimeColor(checkIn)}`}>
-                          {calculateWaitTime(checkIn)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
-                        <div className="flex gap-2 justify-center">
-                          <button
-                            onClick={() => handleAssignDock(checkIn)}
-                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors text-xs"
-                          >
-                            Assign Dock
-                          </button>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex gap-2 justify-end">
                           <button
                             onClick={() => handleEdit(checkIn)}
-                            className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition-colors text-xs"
-                          >
+                            className="text-blue-600 hover:text-blue-900 font-medium">
                             Edit
+                          </button>
+                          <button
+                            onClick={() => handleAssignDock(checkIn)}
+                            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors font-medium">
+                            Assign Dock
                           </button>
                         </div>
                       </td>
@@ -529,7 +488,6 @@ const fetchCheckIns = async () => {
           checkIn={selectedForDock}
           onClose={() => setSelectedForDock(null)}
           onSuccess={handleDockAssignSuccess}
-          isOpen={!!selectedForDock}
         />
       )}
 
@@ -538,7 +496,6 @@ const fetchCheckIns = async () => {
           checkIn={selectedForEdit}
           onClose={() => setSelectedForEdit(null)}
           onSuccess={handleEditSuccess}
-          isOpen={!!selectedForEdit}
         />
       )}
     </div>
