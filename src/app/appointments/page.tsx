@@ -46,7 +46,7 @@ export default function AppointmentsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -93,7 +93,7 @@ export default function AppointmentsPage() {
   const changeDateByDays = (days: number) => {
     const currentDate = new Date(selectedDate);
     currentDate.setDate(currentDate.getDate() + days);
-    setSelectedDate(currentDate.toISOString().split('T')[0]);
+    setSelectedDate(currentDate.toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>);
   };
 
   // Filter appointments based on search query
@@ -108,7 +108,7 @@ export default function AppointmentsPage() {
   });
 
   const groupedAppointments = TIME_SLOTS.reduce((acc, slot) => {
-    acc[slot] = filteredAppointments.filter(apt => apt.scheduled_time === slot);
+    acc[slot] = filteredAppointments.filter(apt => apt.time === slot);
     return acc;
   }, {} as Record<string, Appointment[]>);
 
@@ -283,7 +283,7 @@ export default function AppointmentsPage() {
             {searchQuery && (
               <button
                 onClick={clearSearch}
-                className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
               >
                 Clear
               </button>
