@@ -428,8 +428,8 @@ export default function CSRDashboard() {
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         {formatTimeInIndianapolis(checkIn.check_in_time)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">
-                        {getAppointmentForCheckIn(checkIn)}
+                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                        {formatAppointmentTime(checkIn.appointment_time)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                         {checkIn.reference_number || 'N/A'}
