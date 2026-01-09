@@ -25,12 +25,14 @@ export default function AppointmentUpload({ onUploadComplete }: AppointmentUploa
 
       if (parsedAppointments.length === 0) {
         setMessage('No appointments found in file');
+        setUploading(false);
         return;
       }
 
       let created = 0;
       let duplicates = 0;
       let overridden = 0;
+      let skipped = 0;
 
       for (const apt of parsedAppointments) {
         // Check for duplicates
@@ -59,6 +61,8 @@ export default function AppointmentUpload({ onUploadComplete }: AppointmentUploa
             await createAppointment({ ...apt, source: 'upload' });
             overridden++;
             created++;
+          } else {
+            skipped++;
           }
         } else {
           await createAppointment({ ...apt, source: 'upload' });
@@ -68,7 +72,13 @@ export default function AppointmentUpload({ onUploadComplete }: AppointmentUploa
 
       let resultMessage = `✅ Upload complete: ${created} appointments created`;
       if (duplicates > 0) {
-        resultMessage += `\n⚠️ ${duplicates} duplicates found, ${overridden} overridden`;
+        resultMessage += `\n⚠️ ${duplicates} duplicates found`;
+        if (overridden > 0) {
+          resultMessage += `, ${overridden} overridden`;
+        }
+        if (skipped > 0) {
+          resultMessage += `, ${skipped} skipped`;
+        }
       }
       
       setMessage(resultMessage);
@@ -129,3 +139,4 @@ export default function AppointmentUpload({ onUploadComplete }: AppointmentUploa
     </div>
   );
 }
+
