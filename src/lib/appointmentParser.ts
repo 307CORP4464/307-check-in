@@ -80,29 +80,29 @@ function normalizeTime(time: string): string | null {
   // Format: HHMM (e.g., "0800", "1430")
   match = cleaned.match(/^(\d{2})(\d{2})$/);
   if (match) {
-    const hours = parseInt(match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>);
-    const minutes = parseInt(match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[2]</a>);
+    const hours = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
     if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
-      return `${match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>}:${match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[2]</a>}`;
+      return `${match[1]}:${match[2]}`;
     }
   }
 
   // Format: HH:MM (e.g., "08:00", "14:30")
   match = cleaned.match(/^(\d{1,2}):(\d{2})$/);
   if (match) {
-    const hours = parseInt(match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>);
-    const minutes = parseInt(match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[2]</a>);
+    const hours = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
     if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
-      return `${hours.toString().padStart(2, '0')}:${match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[2]</a>}`;
+      return `${hours.toString().padStart(2, '0')}:${match[2]}`;
     }
   }
 
   // Format: HH:MM AM/PM (e.g., "8:00 AM", "2:30 PM")
   match = cleaned.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
   if (match) {
-    let hours = parseInt(match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[1]</a>);
-    const minutes = match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[2]</a>;
-    const meridiem = match<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[3]</a>;
+    let hours = parseInt(match[1]);
+    const minutes = match[2];
+    const meridiem = match[3];
 
     if (meridiem === 'PM' && hours !== 12) {
       hours += 12;
