@@ -6,6 +6,13 @@ const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const TIME_ORDER = {
+  '06:00': 1, '07:00': 2, '08:00': 3, '09:00': 4, '09:30': 5,
+  '10:00': 6, '10:30': 7, '11:00': 8, '12:30': 9, '13:00': 10,
+  '13:30': 11, '14:00': 12, '14:30': 13, '15:00': 14, '15:30': 15,
+  'Work In': 16
+};
+
 // Check for duplicate appointments
 export const checkDuplicateAppointment = async (
   salesOrder: string,
@@ -13,29 +20,39 @@ export const checkDuplicateAppointment = async (
   date: string,
   excludeId?: number
 ): Promise<Appointment | null> => {
-  let query = supabase
-    .from('appointments')
-    .select('*')
-    .eq('appointment_date', date);
+  try {
+    let query = supabase
+      .from('appointments')
+      .select('*')
+      .eq('appointment_date', date);
 
-  if (salesOrder) {
-    query = query.eq('sales_order', salesOrder);
-  }
-  if (delivery) {
-    query = query.eq('delivery', delivery);
-  }
+    // Build OR condition for sales_order or delivery
+    if (salesOrder && delivery) {
+      query = query.or(`sales_order.eq.${salesOrder},delivery.eq.${delivery}`);
+    } else if (salesOrder) {
+      query = query.eq('sales_order', salesOrder);
+    } else if (delivery) {
+      query = query.eq('delivery', delivery);
+    } else {
+      return null;
+    }
 
-  if (excludeId) {
-    query = query.neq('id', excludeId);
-  }
+    if (excludeId) {
+      query = query.neq('id', excludeId);
+    }
 
-  const { data, error } = await query.single();
-  
-  if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-    console.error('Error checking duplicates:', error);
+    const { data, error } = await query.limit(1).maybeSingle();
+    
+    if (error) {
+      console.error('Error checking duplicates:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in checkDuplicateAppointment:', error);
+    return null;
   }
-  
-  return data || null;
 };
 
 // Get load status from daily logs
@@ -44,25 +61,26 @@ export const getLoadStatusFromLog = async (
   delivery: string
 ): Promise<string | null> => {
   try {
+    if (!salesOrder && !delivery) return null;
+
     let query = supabase
       .from('daily_logs')
       .select('load_status')
       .order('created_at', { ascending: false })
       .limit(1);
 
-    if (salesOrder) {
+    if (salesOrder && delivery) {
+      query = query.or(`sales_order.eq.${salesOrder},delivery_number.eq.${delivery}`);
+    } else if (salesOrder) {
       query = query.eq('sales_order', salesOrder);
-    }
-    if (delivery) {
+    } else if (delivery) {
       query = query.eq('delivery_number', delivery);
     }
 
-    const { data, error } = await query.single();
+    const { data, error } = await query.maybeSingle();
 
     if (error) {
-      if (error.code !== 'PGRST116') {
-        console.error('Error fetching load status:', error);
-      }
+      console.error('Error fetching load status:', error);
       return null;
     }
 
@@ -73,6 +91,7 @@ export const getLoadStatusFromLog = async (
   }
 };
 
+// Create appointment
 export const createAppointment = async (data: AppointmentInput & { source: string }) => {
   const { data: appointment, error } = await supabase
     .from('appointments')
@@ -84,6 +103,7 @@ export const createAppointment = async (data: AppointmentInput & { source: strin
   return appointment;
 };
 
+// Update appointment
 export const updateAppointment = async (id: number, data: AppointmentInput) => {
   const { data: appointment, error } = await supabase
     .from('appointments')
@@ -96,6 +116,7 @@ export const updateAppointment = async (id: number, data: AppointmentInput) => {
   return appointment;
 };
 
+// Delete appointment
 export const deleteAppointment = async (id: number) => {
   const { error } = await supabase
     .from('appointments')
@@ -105,24 +126,7 @@ export const deleteAppointment = async (id: number) => {
   if (error) throw error;
 };
 
-export const getAppointmentsByDate = async (date: string): Promise<Appointment[]> => {
-  const { data, error } = await supabase
-    .from('appointments')
-    .select('*')
-    .eq('appointment_date', date)
-    .order('scheduled_time', { ascending: true });
-
-  if (error) throw error;
-  return data || [];
-};
-
-const TIME_ORDER = {
-  '0800': 1, '0900': 2, '0930': 3, '1000': 4,
-  '1030': 5, '1100': 6, '1230': 7, '1300': 8,
-  '1330': 9, '1400': 10, '1430': 11, '1500': 12,
-  '1530': 13, 'Work In': 14
-};
-
+// Clean old appointments
 export async function cleanOldAppointments() {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -130,17 +134,17 @@ export async function cleanOldAppointments() {
   await supabase
     .from('appointments')
     .delete()
-    .lt('scheduled_date', sevenDaysAgo.toISOString().split('T')[0]);
+    .lt('appointment_date', sevenDaysAgo.toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>);
 }
 
+// Get appointments by date (single definition)
 export async function getAppointmentsByDate(date: string): Promise<Appointment[]> {
   await cleanOldAppointments();
   
   const { data, error } = await supabase
     .from('appointments')
     .select('*')
-    .eq('scheduled_date', date)
-    .order('sales_order', { ascending: true });
+    .eq('appointment_date', date);
   
   if (error) {
     console.error('Error fetching appointments:', error);
@@ -155,98 +159,22 @@ export async function getAppointmentsByDate(date: string): Promise<Appointment[]
   });
 }
 
+// Find appointment by reference
 export async function findAppointmentByReference(reference: string): Promise<Appointment | null> {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>;
   
-  // Try sales order first
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('appointments')
     .select('*')
-    .eq('sales_order', reference)
-    .gte('scheduled_date', today)
-    .order('scheduled_date', { ascending: true })
-    .order('scheduled_time', { ascending: true })
-    .limit(1);
+    .eq('appointment_date', today)
+    .or(`sales_order.eq.${reference},delivery.eq.${reference}`)
+    .maybeSingle();
   
-  if (data && data.length > 0) return data[0];
-  
-  // Try delivery
-  ({ data, error } = await supabase
-    .from('appointments')
-    .select('*')
-    .eq('delivery', reference)
-    .gte('scheduled_date', today)
-    .order('scheduled_date', { ascending: true })
-    .order('scheduled_time', { ascending: true })
-    .limit(1));
-  
-  return data && data.length > 0 ? data[0] : null;
-}
-
-export async function createAppointment(appointmentData: any) {
-  const { data, error } = await supabase
-    .from('appointments')
-    .insert([{ ...appointmentData, source: appointmentData.source || 'manual' }])
-    .select()
-    .single(); 
-  if (error) throw error;
-  return data;
-}
-
-export async function updateAppointment(id: number, appointment: AppointmentInput): Promise<Appointment> {
-  // Check if it's manual
-  const { data: existing } = await supabase
-    .from('appointments')
-    .select('source')
-    .eq('id', id)
-    .single();
-  
-  if (!existing || existing.source !== 'manual') {
-    throw new Error('Cannot update Excel-imported appointments');
+  if (error) {
+    console.error('Error finding appointment:', error);
+    return null;
   }
   
-  const { data, error } = await supabase
-    .from('appointments')
-    .update(appointment)
-    .eq('id', id)
-    .select()
-    .single();
-  
-  if (error) throw error;
   return data;
-}
-
-export async function deleteAppointment(id: number): Promise<void> {
-  // Check if it's manual
-  const { data: existing } = await supabase
-    .from('appointments')
-    .select('source')
-    .eq('id', id)
-    .single();
-  
-  if (!existing || existing.source !== 'manual') {
-    throw new Error('Cannot delete Excel-imported appointments');
-  }
-  
-  const { error } = await supabase
-    .from('appointments')
-    .delete()
-    .eq('id', id);
-  
-  if (error) throw error;
-}
-
-export async function bulkCreateAppointments(appointments: AppointmentInput[]): Promise<number> {
-  const { data, error } = await supabase
-    .from('appointments')
-    .insert(appointments)
-    .select();
-  
-  if (error) throw error;
-  return data?.length || 0;
-}
-export function formatAppointmentTime(timeSlot: string): string {
-  if (timeSlot === 'Work In') return 'Work In';
-  return `${timeSlot.substring(0, 2)}:${timeSlot.substring(2)}`;
 }
 
