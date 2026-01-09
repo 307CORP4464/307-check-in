@@ -39,7 +39,7 @@ export default function AppointmentModal({
         delivery: appointment.delivery || '',
         carrier: appointment.carrier || '',
         notes: appointment.notes || '',
-        source: appointment.source
+        source: appointment.source as 'manual' | 'upload'
       });
     } else {
       setFormData({
