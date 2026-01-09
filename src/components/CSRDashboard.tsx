@@ -152,27 +152,65 @@ export default function CSRDashboard() {
     };
   }, [supabase]);
 
-  const fetchAppointments = async () => {
-    try {
-      const today = new Date();
-      const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-      const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+  const fetchCheckIns = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    
+    // Fetch check-ins
+    const { data: checkInsData, error: checkInsError } = await supabase
+      .from('check_ins')
+      .select('*')
+      .eq('status', 'pending')
+      .order('check_in_time', { ascending: false });
 
-      const { data, error } = await supabase
+    if (checkInsError) throw checkInsError;
+
+    // Get all reference numbers that exist
+    const referenceNumbers = checkInsData
+      ?.map(ci => ci.reference_number)
+      .filter(ref => ref && ref.trim() !== '') || [];
+
+    let appointmentsMap = new Map();
+
+    // Fetch appointments if we have reference numbers
+    if (referenceNumbers.length > 0) {
+      // Query appointments where reference_number matches EITHER sales_order OR delivery
+      const { data: appointmentsData, error: appointmentsError } = await supabase
         .from('appointments')
-        .select('*')
-        .gte('appointment_date', startOfDay)
-        .lte('appointment_date', endOfDay);
+        .select('sales_order, delivery, scheduled_time')
+        .or(`sales_order.in.(${referenceNumbers.join(',')}),delivery.in.(${referenceNumbers.join(',')})`);
 
-      if (error) throw error;
-      
-      // Create a map of reference_number to appointment
-      const appointmentMap = new Map<string, Appointment>();
-      data?.forEach(apt => {
-        if (apt.reference_number) {
-          appointmentMap.set(apt.reference_number, apt);
-        }
-      });
+      if (appointmentsError) {
+        console.error('Error fetching appointments:', appointmentsError);
+      } else if (appointmentsData) {
+        // Create a map for quick lookup - map BOTH sales_order and delivery to scheduled_time
+        appointmentsData.forEach(apt => {
+          if (apt.sales_order) {
+            appointmentsMap.set(apt.sales_order, apt.scheduled_time);
+          }
+          if (apt.delivery) {
+            appointmentsMap.set(apt.delivery, apt.scheduled_time);
+          }
+        });
+      }
+    }
+
+    // Merge appointment data with check-ins
+    const enrichedCheckIns = checkInsData?.map(checkIn => ({
+      ...checkIn,
+      appointment_time: appointmentsMap.get(checkIn.reference_number) || checkIn.appointment_time || null
+    })) || [];
+
+    setCheckIns(enrichedCheckIns);
+  } catch (err) {
+    console.error('Fetch error:', err);
+    setError(err instanceof Error ? err.message : 'An error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
+
       setAppointments(appointmentMap);
     } catch (err) {
       console.error('Fetch appointments error:', err);
