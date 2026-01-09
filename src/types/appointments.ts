@@ -18,8 +18,7 @@ export interface Appointment extends AppointmentInput {
 }
 
 export const TIME_SLOTS = [
-  'Work In', 'Paid - No Appt', 'Paid - Charge Customer', 'LTL',
-  '08:00','09:00', '09:30', '10:00', '10:30', '11:00', '12:30', '13:00', '13:30', '14:00', '14:30','15:00', '15:30'
+  '08:00','09:00', '09:30', '10:00', '10:30', '11:00', '12:30', '13:00', '13:30', '14:00', '14:30','15:00', '15:30', 'Work In'
 ] as const;
 
 
