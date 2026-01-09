@@ -27,7 +27,7 @@ export async function createAppointment(input: AppointmentInput): Promise<Appoin
     .insert([{
       scheduled_date: input.date,
       scheduled_time: input.time,
-      salesOrder: salesOrder,
+      sales_order: sales_order,
       delivery: delivery,
       carrier: input.carrier?.trim() || null,
       notes: input.notes?.trim() || null,
@@ -53,7 +53,7 @@ export async function updateAppointment(
     .update({
       scheduled_date: input.date,
       scheduled_time: input.time,
-      salesOrder: input.salesOrder?.trim() || null,
+      sales_order: input.sales_order?.trim() || null,
       delivery: input.delivery?.trim() || null,
       carrier: input.carrier?.trim() || null,
       notes: input.notes?.trim() || null
@@ -78,7 +78,7 @@ export async function deleteAppointment(id: number): Promise<void> {
 export async function checkDuplicateAppointment(
   scheduled_date: string,
   scheduled_time: string,
-  salesOrder?: string,
+  sales_order?: string,
   delivery?: string
 ): Promise<boolean> {
   const query = supabase
@@ -88,7 +88,7 @@ export async function checkDuplicateAppointment(
     .eq('scheduled_time', scheduled_time);
 
   if (salesOrder) {
-    query.eq('salesOrder', salesOrder);
+    query.eq('sales_order', salesOrder);
   }
   if (delivery) {
     query.eq('delivery', delivery);
