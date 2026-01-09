@@ -386,13 +386,17 @@ export default function AppointmentsPage() {
         )}
       </div>
 
-      <AppointmentModal
+     <AppointmentModal
   isOpen={modalOpen}
-  onClose={() => setModalOpen(false)}
+  onClose={() => {
+    setModalOpen(false);
+    setEditingAppointment(null);
+  }}
   onSave={handleSave}
   appointment={editingAppointment}
-  defaultDate={selectedDate} // This sets the initial date but allows changes
+  initialDate={selectedDate}  // Changed from defaultDate to initialDate
 />
+
 
     </div>
   );
