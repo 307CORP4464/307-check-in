@@ -14,7 +14,7 @@ export interface AppointmentInput {
   scheduled_time: string;
   sales_order: string;
   delivery: string;
-  source?: 'excel' | 'manual';
+  source?: 'excel' | 'manual' | 'upload';
 }
 
 export const TIME_SLOTS = [
