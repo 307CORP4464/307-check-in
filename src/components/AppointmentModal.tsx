@@ -9,7 +9,8 @@ interface AppointmentModalProps {
   onClose: () => void;
   onSave: (data: AppointmentInput) => Promise<void>;
   appointment?: Appointment | null;
-  selectedDate: string;
+  selectedDate?: string; // Made optional since it's now called defaultDate
+  defaultDate?: string; // Added this prop
 }
 
 export default function AppointmentModal({
@@ -17,10 +18,14 @@ export default function AppointmentModal({
   onClose,
   onSave,
   appointment,
-  selectedDate
+  selectedDate,
+  defaultDate
 }: AppointmentModalProps) {
+  // Use defaultDate if provided, otherwise fall back to selectedDate
+  const initialDate = defaultDate || selectedDate || new Date().toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>;
+
   const [formData, setFormData] = useState<AppointmentInput>({
-    appointment_date: selectedDate,
+    appointment_date: initialDate,
     scheduled_time: '06:00',
     sales_order: '',
     delivery: '',
@@ -44,8 +49,10 @@ export default function AppointmentModal({
         notes: appointment.notes || ''
       });
     } else {
+      // Use defaultDate or selectedDate for new appointments
+      const dateToUse = defaultDate || selectedDate || new Date().toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>;
       setFormData({
-        appointment_date: selectedDate,
+        appointment_date: dateToUse,
         scheduled_time: '06:00',
         sales_order: '',
         delivery: '',
@@ -55,7 +62,7 @@ export default function AppointmentModal({
     }
     setLoadStatus(null);
     setDuplicateWarning(null);
-  }, [appointment, selectedDate, isOpen]);
+  }, [appointment, selectedDate, defaultDate, isOpen]);
 
   // Fetch load status when sales order or delivery changes
   useEffect(() => {
@@ -269,4 +276,3 @@ export default function AppointmentModal({
     </div>
   );
 }
-
