@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
         // Add the source property required by createAppointment
         await createAppointment({ 
           ...appointmentData as AppointmentInput,
-          source: 'excel' 
+          source: 'upload' 
         });
         results.success++;
       } catch (error) {
