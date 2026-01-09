@@ -14,7 +14,7 @@ export interface Appointment {
   delivery: string;
   carrier?: string;
   notes?: string;
-  source: 'manual' | 'upload';
+  source: 'manual' | 'upload' | 'excel';
   createdAt?: string;
   updatedAt?: string;
 }
