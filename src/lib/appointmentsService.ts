@@ -161,7 +161,7 @@ export async function getAppointmentsByDate(date: string): Promise<Appointment[]
 
 // Find appointment by reference
 export async function findAppointmentByReference(reference: string): Promise<Appointment | null> {
-  const today = new Date().toISOString().split('T')[0]>;
+  const today = new Date().toISOString().split('T')[0];
   
   const { data, error } = await supabase
     .from('appointments')
