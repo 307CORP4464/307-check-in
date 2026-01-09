@@ -88,14 +88,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
     }
   };
 
-  const isOnTime = (): boolean | null => {
-    const { appointment_time, check_in_time } = checkIn;
-    if (!appointment_time || !check_in_time) return null;
-    const appt = new Date(appointment_time).getTime();
-    const checkInTimestamp = new Date(check_in_time).getTime();
-    return checkInTimestamp <= appt;
-  };
-
   useEffect(() => {
     if (dockNumber && dockNumber !== 'Ramp') {
       checkDockStatus(dockNumber);
@@ -242,8 +234,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
 
     const currentDate = new Date().toLocaleString();
     const dockDisplay = dockNumber === 'Ramp' ? 'Ramp' : `Dock ${dockNumber}`;
-    const onTimeFlag = isOnTime();
-    const appointmentStatus = onTimeFlag === null ? '' : onTimeFlag ? 'MADE' : 'MISSED';
 
     const receiptHTML = `
       <!DOCTYPE html>
@@ -308,45 +298,31 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
               font-size: 16px;
               font-weight: bold;
             }
-            .appointment-status {
-              display: inline-block;
-              padding: 4px 8px;
-              font-weight: bold;
-              border-radius: 4px;
-            }
-            .appointment-status.made {
-              background-color: #4CAF50;
-              color: white;
-            }
-            .appointment-status.missed {
-              background-color: #f44336;
-              color: white;
-            }
             .print-button {
               display: block;
-              margin: 12px auto 0;
-              padding: 8px 20px;
+              margin: 20px auto;
+              padding: 12px 24px;
               background-color: #4CAF50;
               color: white;
               border: none;
               border-radius: 4px;
-              font-size: 14px;
+              font-size: 16px;
               cursor: pointer;
+            }
+            .print-button:hover {
+              background-color: #45a049;
             }
           </style>
         </head>
         <body>
           <div class="receipt-header">
             <h1>Load Assignment Receipt</h1>
-            <div>${currentDate}</div>
+            <p style="margin: 4px 0; font-size: 12px;">${currentDate}</p>
           </div>
-          <div class="pickup-box">
-            <div class="reference-number">Reference #: ${checkIn.reference_number ?? 'N/A'}</div>
+          <div class="reference-box">
+            <div class="reference-number">Reference #: ${checkIn.reference_number || 'N/A'}</div>
             <div class="dock-number">${dockDisplay}</div>
           </div>
-            </div>
-          </div>
-          ` : ''}
           <div class="section">
             ${checkIn.destination_city ? `
             <div class="row">
@@ -374,7 +350,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
             ` : ''}
             <div class="row">
               <span class="label">Appointment Time</span>
-              <span class="value">${formatAppointmentTime(appointmentTime)}</span>
+              <span class="value">${formatAppointmentTime(checkIn.appointment_time || appointmentTime)}</span>
             </div>
             ${checkIn.check_in_time ? `
             <div class="row">
@@ -390,170 +366,135 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
 
     printWindow.document.write(receiptHTML);
     printWindow.document.close();
+    setTimeout(() => {
+      printWindow.print();
+    }, 250);
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-4">Assign Dock</h2>
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h2 className="text-xl font-bold mb-4">Assign Dock</h2>
         
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
             {error}
           </div>
         )}
 
         {smsStatus && (
-          <div className={`px-4 py-3 rounded mb-4 ${
-            smsStatus.includes('success') || smsStatus.includes('✓')
-              ? 'bg-green-100 border border-green-400 text-green-700'
-              : 'bg-yellow-100 border border-yellow-400 text-yellow-700'
-          }`}>
+          <div className={`mb-4 p-3 rounded ${smsStatus.includes('successfully') ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-yellow-100 border border-yellow-400 text-yellow-700'}`}>
             {smsStatus}
           </div>
         )}
 
         <div className="space-y-4">
-          {/* Driver Information */}
-          <div className="bg-gray-50 p-3 rounded">
-            <p className="text-sm text-gray-600">
-              <span className="font-semibold">Driver:</span> {checkIn.driver_name || 'N/A'}
-            </p>
-            <p className="text-sm text-gray-600">
-              <span className="font-semibold">Company:</span> {checkIn.company || 'N/A'}
-            </p>
-            <p className="text-sm text-gray-600">
-              <span className="font-semibold">Reference:</span> {checkIn.reference_number || 'N/A'}
-            </p>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Reference Number
+            </label>
+            <input
+              type="text"
+              value={checkIn.reference_number || ''}
+              disabled
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+            />
           </div>
 
-          {/* Dock Number Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Dock Number <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Dock Number *
             </label>
             <select
               value={dockNumber}
               onChange={(e) => setDockNumber(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               disabled={loading}
             >
               <option value="">Select Dock</option>
-              {dockOptions.map((dock) => (
-                <option key={dock} value={dock}>
-                  {dock === 'Ramp' ? 'Ramp' : `Dock ${dock}`}
-                </option>
+              {dockOptions.map(dock => (
+                <option key={dock} value={dock}>{dock === 'Ramp' ? 'Ramp' : `Dock ${dock}`}</option>
               ))}
             </select>
+            {checkingDock && (
+              <p className="text-sm text-gray-500 mt-1">Checking dock status...</p>
+            )}
+            {showWarning && dockInfo && (
+              <div className={`mt-2 p-2 rounded text-sm ${
+                dockInfo.status === 'blocked' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+              }`}>
+                {dockInfo.status === 'blocked' ? (
+                  <span>⚠️ This dock is currently blocked</span>
+                ) : (
+                  <span>⚠️ This dock is in use by {dockInfo.orders.length} order(s)</span>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Dock Status Warning */}
-          {checkingDock && (
-            <div className="bg-blue-100 text-blue-700 px-4 py-2 rounded flex items-center">
-              <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-              </svg>
-              Checking dock status...
-            </div>
-          )}
-
-          {showWarning && dockInfo && (
-            <div className={`px-4 py-3 rounded border ${
-              dockInfo.status === 'blocked'
-                ? 'bg-red-100 border-red-400 text-red-700'
-                : 'bg-yellow-100 border-yellow-400 text-yellow-700'
-            }`}>
-              <p className="font-bold flex items-center">
-                <span className="text-xl mr-2">⚠️</span>
-                {dockInfo.status === 'blocked' 
-                  ? 'Dock is Blocked'
-                  : 'Dock Currently In Use'}
-              </p>
-              {dockInfo.orders.length > 0 && (
-                <ul className="mt-2 text-sm space-y-1">
-                  {dockInfo.orders.map((order, idx) => (
-                    <li key={idx} className="ml-4">
-                      • Ref: {order.reference_number || 'N/A'} | Trailer: {order.trailer_number || 'N/A'}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* Appointment Time Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Appointment Time <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Appointment Time *
             </label>
             <select
               value={appointmentTime}
               onChange={(e) => setAppointmentTime(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               disabled={loading}
             >
               <option value="">Select Time</option>
-              {appointmentOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+              {appointmentOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </div>
 
-          {/* Phone Number Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Driver Phone Number
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Driver Phone (for SMS)
             </label>
             <input
               type="tel"
               value={driverPhone}
               onChange={(e) => setDriverPhone(e.target.value)}
               placeholder="+1234567890"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               disabled={loading}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Format: +1234567890 (include country code)
-            </p>
           </div>
 
-          {/* SMS Checkbox */}
-          <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded">
+          <div className="flex items-center">
             <input
               type="checkbox"
               id="sendSMS"
               checked={sendSMS}
               onChange={(e) => setSendSMS(e.target.checked)}
-              disabled={loading || !driverPhone}
-              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              disabled={loading}
             />
-            <label htmlFor="sendSMS" className="text-sm text-gray-700 cursor-pointer select-none">
+            <label htmlFor="sendSMS" className="ml-2 block text-sm text-gray-700">
               Send SMS notification to driver
             </label>
           </div>
+        </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3 mt-6 pt-4 border-t">
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAssign}
-              disabled={loading || !dockNumber || !appointmentTime}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Assigning...' : 'Assign Dock'}
-            </button>
-          </div>
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAssign}
+            disabled={loading || !dockNumber || !appointmentTime}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Assigning...' : 'Assign & Print'}
+          </button>
         </div>
       </div>
     </div>
