@@ -16,14 +16,13 @@ export default function AppointmentModal({
   onClose,
   onSave,
   appointment,
-  initialDate = new Date().toISOString().split('T')[0]
+  initialDate = new Date().toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>
 }: AppointmentModalProps) {
   const [formData, setFormData] = useState<AppointmentInput>({
     date: initialDate,
     time: '06:00',
     salesOrder: '',
     delivery: '',
-    carrier: '',
     notes: '',
     source: 'manual'
   });
@@ -37,7 +36,6 @@ export default function AppointmentModal({
         time: appointment.scheduled_time,
         salesOrder: appointment.sales_order || '',
         delivery: appointment.delivery || '',
-        carrier: appointment.carrier || '',
         notes: appointment.notes || '',
         source: appointment.source as 'manual' | 'upload'
       });
@@ -47,7 +45,6 @@ export default function AppointmentModal({
         time: '06:00',
         salesOrder: '',
         delivery: '',
-        carrier: '',
         notes: '',
         source: 'manual'
       });
@@ -158,17 +155,6 @@ export default function AppointmentModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Carrier</label>
-              <input
-                type="text"
-                value={formData.carrier || ''}
-                onChange={(e) => setFormData({ ...formData, carrier: e.target.value })}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter carrier name"
-              />
-            </div>
-
-            <div>
               <label className="block text-sm font-medium mb-1">Notes</label>
               <textarea
                 value={formData.notes || ''}
@@ -202,3 +188,4 @@ export default function AppointmentModal({
     </div>
   );
 }
+
