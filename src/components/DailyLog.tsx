@@ -88,7 +88,7 @@ const fetchCheckInsForDate = async () => {
     // ADD THIS DEBUG LOG
     console.log('Fetched check-ins:', data);
     if (data && data.length > 0) {
-      console.log('First check-in appointment_time:', data<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>.appointment_time);
+      console.log('First check-in appointment_time:', data[0].appointment_time);
     }
     
     setCheckIns(data || []);
