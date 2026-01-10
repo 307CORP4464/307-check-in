@@ -26,9 +26,9 @@ export interface Appointment {
 export interface AppointmentInput {
   date: string;
   time: string;
-  salesOrder?: string;
-  delivery?: string;
-  carrier?: string;
-  notes?: string;
-  source?: AppointmentSource;  // ✅ Use the shared type
+  salesOrder: string;
+  delivery: string;
+  source: 'manual' | 'upload';
+  notes?: string;  // Make it optional
+  carrier?: string; // Make it optional
 }
