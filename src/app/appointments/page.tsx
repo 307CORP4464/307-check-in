@@ -40,7 +40,6 @@ const formatTimeInIndianapolis = (isoString: string): string => {
   }
 };
 
-// Status badge color function matching DailyLog
 const getStatusBadgeColor = (status: string): string => {
   const statusLower = status.toLowerCase();
   if (statusLower === 'completed' || statusLower === 'checked_out') return 'bg-gray-500 text-white';
@@ -53,7 +52,6 @@ const getStatusBadgeColor = (status: string): string => {
   return 'bg-gray-500 text-white';
 };
 
-// Status label function
 const getStatusLabel = (status: string): string => {
   if (status === 'checked_in') return 'Check In';
   if (status === 'checked_out') return 'Completed';
@@ -75,7 +73,7 @@ export default function AppointmentsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [checkInStatuses, setCheckInStatuses] = useState<Map<string, CheckInStatus>>(new Map());
   const [loading, setLoading] = useState(false);
@@ -103,6 +101,7 @@ export default function AppointmentsPage() {
     setLoading(true);
     try {
       const data = await getAppointmentsByDate(selectedDate);
+      console.log('Loaded appointments:', data); // Debug
       setAppointments(data);
     } catch (error) {
       console.error('Error loading appointments:', error);
@@ -154,10 +153,9 @@ export default function AppointmentsPage() {
   const changeDateByDays = (days: number) => {
     const currentDate = new Date(selectedDate);
     currentDate.setDate(currentDate.getDate() + days);
-    setSelectedDate(currentDate.toISOString().split('T')[0]);
+    setSelectedDate(currentDate.toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>);
   };
 
-  // Filter appointments based on search query
   const filteredAppointments = appointments.filter(apt => {
     if (!searchQuery.trim()) return true;
     
@@ -212,7 +210,6 @@ export default function AppointmentsPage() {
     setSearchQuery('');
   };
 
-  // Helper function to get status for an appointment
   const getAppointmentStatus = (appointment: Appointment): CheckInStatus | undefined => {
     const refNumber = appointment.sales_order || appointment.delivery;
     return refNumber ? checkInStatuses.get(refNumber) : undefined;
@@ -220,7 +217,7 @@ export default function AppointmentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - Matching Dashboard */}
+      {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -240,35 +237,30 @@ export default function AppointmentsPage() {
               >
                 Appointments
               </Link>  
-
               <Link
                 href="/dock-status"
                 className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
               >
                 Dock Status
               </Link>    
-
               <Link
                 href="/dashboard"
                 className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
               >
                 Dashboard
               </Link>
-              
               <Link
                 href="/logs"
                 className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium"
               >
                 Daily Logs
               </Link>
-              
               <Link
                 href="/tracking"
                 className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium"
               >
                 Tracking
               </Link>
-              
               <button
                 onClick={handleLogout}
                 className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
@@ -296,7 +288,7 @@ export default function AppointmentsPage() {
               <button
                 onClick={() => changeDateByDays(-1)}
                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium"
-                title="Previous Day">
+              >
                 ← Prev
               </button>
               <input
@@ -308,7 +300,7 @@ export default function AppointmentsPage() {
               <button
                 onClick={() => changeDateByDays(1)}
                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium"
-                title="Next Day">
+              >
                 Next →
               </button>
             </div>
@@ -317,7 +309,8 @@ export default function AppointmentsPage() {
                 setEditingAppointment(null);
                 setModalOpen(true);
               }}
-              className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors font-medium">
+              className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors font-medium"
+            >
               + Add Manual Appointment
             </button>
           </div>
@@ -335,7 +328,7 @@ export default function AppointmentsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Enter Sales Order or Delivery number..."
-                className="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
               <svg 
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -404,11 +397,9 @@ export default function AppointmentsPage() {
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-3">
-                                {/* Sales Order or Delivery as Title */}
                                 <h4 className="text-lg font-semibold text-gray-900">
                                   {appointment.sales_order || appointment.delivery || 'N/A'}
                                 </h4>
-                                {/* Status Badge */}
                                 {status && (
                                   <span
                                     className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(
@@ -420,7 +411,6 @@ export default function AppointmentsPage() {
                                 )}
                               </div>
 
-                              {/* Appointment Details */}
                               <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                                 {appointment.sales_order && (
                                   <div>
@@ -440,25 +430,16 @@ export default function AppointmentsPage() {
                                 )}
                                 {status?.check_in_time && (
                                   <div>
-                                    <span className="text-gray-600">Check In Time:</span>
+                                    <span className="text-gray-600">Check In:</span>
                                     <span className="ml-2 font-medium text-gray-900">
                                       {formatTimeInIndianapolis(status.check_in_time)}
                                     </span>
                                   </div>
                                 )}
                               </div>
-
-                              {/* Notes */}
-                              {appointment.notes && (
-                                <div className="mt-3 text-sm">
-                                  <span className="text-gray-600 font-medium">Notes:</span>
-                                  <p className="mt-1 text-gray-900">{appointment.notes}</p>
-                                </div>
-                              )}
                             </div>
 
-                            {/* Action Buttons */}
-                            <div className="flex gap-2 ml-4">
+                            <div className="flex gap-2">
                               <button
                                 onClick={() => handleEdit(appointment)}
                                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-sm font-medium"
@@ -473,20 +454,6 @@ export default function AppointmentsPage() {
                               </button>
                             </div>
                           </div>
-
-                          {/* Source and Created At */}
-                          <div className="flex items-center gap-4 text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100">
-                            <span className={`px-2 py-1 rounded ${
-                              appointment.source === 'upload' 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : 'bg-green-100 text-green-800'
-                            }`}>
-                              {appointment.source === 'upload' ? 'Uploaded' : 'Manual'}
-                            </span>
-                            <span>
-                              Created: {new Date(appointment.created_at).toLocaleString()}
-                            </span>
-                          </div>
                         </div>
                       );
                     })}
@@ -494,20 +461,26 @@ export default function AppointmentsPage() {
                 </div>
               );
             })}
+
+            {filteredAppointments.length === 0 && (
+              <div className="bg-white rounded-lg shadow p-12 text-center">
+                <p className="text-gray-500 text-lg">No appointments found for this date.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
-{/* Modal */}
-<AppointmentModal
-  isOpen={modalOpen}
-  onClose={() => {
-    setModalOpen(false);
-    setEditingAppointment(null);
-  }}
-  onSave={handleSave}
-  appointment={editingAppointment}
-/>
-      
+
+      <AppointmentModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingAppointment(null);
+        }}
+        onSave={handleSave}
+        appointment={editingAppointment}
+        initialDate={selectedDate}
+      />
     </div>
   );
 }
