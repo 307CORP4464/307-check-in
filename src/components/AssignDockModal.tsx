@@ -31,7 +31,6 @@ interface DockInfo {
 
 export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }: AssignDockModalProps) {
   const [dockNumber, setDockNumber] = useState(checkIn.dock_number || '');
-  const [appointmentTime, setAppointmentTime] = useState(checkIn.appointment_time || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dockInfo, setDockInfo] = useState<DockInfo | null>(null);
@@ -88,11 +87,10 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
     }
   };
 
-  // Sync state when modal opens with new checkIn data
+  // Sync state when modal opens
   useEffect(() => {
     if (isOpen) {
       setDockNumber(checkIn.dock_number || '');
-      setAppointmentTime(checkIn.appointment_time || '');
       setDriverPhone(checkIn.driver_phone || '');
       setError(null);
       setSmsStatus(null);
@@ -172,7 +170,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
           dockNumber: dock,
           driverName: checkIn.driver_name,
           referenceNumber: checkIn.reference_number,
-          appointmentTime: formatAppointmentTime(appointmentTime),
+          appointmentTime: checkIn.appointment_time ? formatAppointmentTime(checkIn.appointment_time) : 'N/A',
         }),
       });
 
@@ -193,8 +191,8 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
   };
 
   const handleAssign = async () => {
-    if (!dockNumber || !appointmentTime) {
-      setError('Please select both dock number and appointment time');
+    if (!dockNumber) {
+      setError('Please select a dock number');
       return;
     }
 
@@ -207,7 +205,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
         .from('check_ins')
         .update({
           dock_number: dockNumber,
-          appointment_time: appointmentTime,
           status: 'checked_in',
           driver_phone: driverPhone,
         })
@@ -360,10 +357,12 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
               <span class="value">${checkIn.driver_name}</span>
             </div>
             ` : ''}
+            ${checkIn.appointment_time ? `
             <div class="row">
               <span class="label">Appointment Time</span>
-              <span class="value">${formatAppointmentTime(appointmentTime)}</span>
+              <span class="value">${formatAppointmentTime(checkIn.appointment_time)}</span>
             </div>
+            ` : ''}
             ${checkIn.check_in_time ? `
             <div class="row">
               <span class="label">Check-In Time</span>
@@ -415,6 +414,20 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
             />
           </div>
 
+          {checkIn.appointment_time && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Appointment Time
+              </label>
+              <input
+                type="text"
+                value={formatAppointmentTime(checkIn.appointment_time)}
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Dock Number *
@@ -444,23 +457,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
                 )}
               </div>
             )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Appointment Time *
-            </label>
-            <select
-              value={appointmentTime}
-              onChange={(e) => setAppointmentTime(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              disabled={loading}
-            >
-              <option value="">Select Time</option>
-              {appointmentOptions.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
           </div>
 
           <div>
@@ -502,7 +498,7 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
           </button>
           <button
             onClick={handleAssign}
-            disabled={loading || !dockNumber || !appointmentTime}
+            disabled={loading || !dockNumber}
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Assigning...' : 'Assign & Print'}
