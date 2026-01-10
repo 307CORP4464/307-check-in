@@ -201,12 +201,14 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
     setSmsStatus(null);
 
     try {
+      // THIS IS THE FIX - Include appointment_time in the update
       const { error: updateError } = await supabase
         .from('check_ins')
         .update({
           dock_number: dockNumber,
           status: 'checked_in',
           driver_phone: driverPhone,
+          appointment_time: checkIn.appointment_time, // <-- ADD THIS LINE
         })
         .eq('id', checkIn.id);
 
@@ -328,48 +330,45 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
             <h1>Load Assignment Receipt</h1>
             <p style="margin: 4px 0; font-size: 12px;">${currentDate}</p>
           </div>
+          
           <div class="reference-box">
-            <div class="reference-number">Reference #: ${checkIn.reference_number || 'N/A'}</div>
+            <div class="reference-number">Ref: ${checkIn.reference_number || 'N/A'}</div>
             <div class="dock-number">${dockDisplay}</div>
           </div>
+
           <div class="section">
-            ${checkIn.destination_city ? `
             <div class="row">
-              <span class="label">Destination City</span>
-              <span class="value">${checkIn.destination_city}${checkIn.destination_state ? `, ${checkIn.destination_state}` : ''}</span>
+              <span class="label">Driver:</span>
+              <span class="value">${checkIn.driver_name || 'N/A'}</span>
             </div>
-            ` : ''}
-            ${checkIn.carrier_name ? `
             <div class="row">
-              <span class="label">Carrier</span>
-              <span class="value">${checkIn.carrier_name}</span>
+              <span class="label">Carrier:</span>
+              <span class="value">${checkIn.carrier_name || 'N/A'}</span>
             </div>
-            ` : ''}
-            ${checkIn.trailer_number ? `
             <div class="row">
-              <span class="label">Trailer Number</span>
-              <span class="value">${checkIn.trailer_number}</span>
+              <span class="label">Trailer:</span>
+              <span class="value">${checkIn.trailer_number || 'N/A'}</span>
             </div>
-            ` : ''}
-            ${checkIn.driver_name ? `
+          </div>
+
+          <div class="section">
             <div class="row">
-              <span class="label">Driver Name</span>
-              <span class="value">${checkIn.driver_name}</span>
+              <span class="label">Appointment:</span>
+              <span class="value">${checkIn.appointment_time ? formatAppointmentTime(checkIn.appointment_time) : 'N/A'}</span>
             </div>
-            ` : ''}
-            ${checkIn.appointment_time ? `
             <div class="row">
-              <span class="label">Appointment Time</span>
-              <span class="value">${formatAppointmentTime(checkIn.appointment_time)}</span>
-            </div>
-            ` : ''}
-            ${checkIn.check_in_time ? `
-            <div class="row">
-              <span class="label">Check-In Time</span>
+              <span class="label">Check-In:</span>
               <span class="value">${formatCheckInTime(checkIn.check_in_time)}</span>
             </div>
-            ` : ''}
           </div>
+
+          <div class="section">
+            <div class="row">
+              <span class="label">Destination:</span>
+              <span class="value">${checkIn.destination_city || ''} ${checkIn.destination_state || ''}</span>
+            </div>
+          </div>
+
           <button class="print-button no-print" onclick="window.print()">Print Receipt</button>
         </body>
       </html>
@@ -377,9 +376,6 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
 
     printWindow.document.write(receiptHTML);
     printWindow.document.close();
-    setTimeout(() => {
-      printWindow.print();
-    }, 250);
   };
 
   if (!isOpen) return null;
@@ -387,121 +383,98 @@ export default function AssignDockModal({ checkIn, onClose, onSuccess, isOpen }:
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h2 className="text-xl font-bold mb-4">Assign Dock</h2>
+        <h2 className="text-2xl font-bold mb-4">Assign Dock</h2>
         
+        <div className="mb-4 p-3 bg-gray-50 rounded">
+          <p className="text-sm"><strong>Ref #:</strong> {checkIn.reference_number}</p>
+          <p className="text-sm"><strong>Driver:</strong> {checkIn.driver_name}</p>
+          <p className="text-sm"><strong>Carrier:</strong> {checkIn.carrier_name}</p>
+          <p className="text-sm"><strong>Appointment:</strong> {checkIn.appointment_time ? formatAppointmentTime(checkIn.appointment_time) : 'N/A'}</p>
+        </div>
+
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
             {error}
           </div>
         )}
 
         {smsStatus && (
-          <div className={`mb-4 p-3 rounded ${smsStatus.includes('successfully') ? 'bg-green-100 border border-green-400 text-green-700' : 'bg-yellow-100 border border-yellow-400 text-yellow-700'}`}>
+          <div className={`mb-4 p-3 rounded ${smsStatus.includes('success') ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
             {smsStatus}
           </div>
         )}
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Reference Number
-            </label>
-            <input
-              type="text"
-              value={checkIn.reference_number || ''}
-              disabled
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-            />
-          </div>
-
-          {checkIn.appointment_time && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Appointment Time
-              </label>
-              <input
-                type="text"
-                value={formatAppointmentTime(checkIn.appointment_time)}
-                disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Dock Number *
-            </label>
-            <select
-              value={dockNumber}
-              onChange={(e) => setDockNumber(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              disabled={loading}
-            >
-              <option value="">Select Dock</option>
-              {dockOptions.map(dock => (
-                <option key={dock} value={dock}>{dock === 'Ramp' ? 'Ramp' : `Dock ${dock}`}</option>
-              ))}
-            </select>
-            {checkingDock && (
-              <p className="text-sm text-gray-500 mt-1">Checking dock status...</p>
-            )}
-            {showWarning && dockInfo && (
-              <div className={`mt-2 p-2 rounded text-sm ${
-                dockInfo.status === 'blocked' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
-              }`}>
-                {dockInfo.status === 'blocked' ? (
-                  <span>⚠️ This dock is currently blocked</span>
-                ) : (
-                  <span>⚠️ This dock is in use by {dockInfo.orders.length} order(s)</span>
-                )}
-              </div>
+        {showWarning && dockInfo && (
+          <div className={`mb-4 p-3 rounded ${dockInfo.status === 'blocked' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+            {dockInfo.status === 'blocked' ? (
+              <>⚠️ Dock {dockNumber} is currently blocked</>
+            ) : (
+              <>⚠️ Dock {dockNumber} is in use by: {dockInfo.orders.map(o => o.reference_number || o.trailer_number).join(', ')}</>
             )}
           </div>
+        )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Driver Phone (for SMS)
-            </label>
-            <input
-              type="tel"
-              value={driverPhone}
-              onChange={(e) => setDriverPhone(e.target.value)}
-              placeholder="+1234567890"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="sendSMS"
-              checked={sendSMS}
-              onChange={(e) => setSendSMS(e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              disabled={loading}
-            />
-            <label htmlFor="sendSMS" className="ml-2 block text-sm text-gray-700">
-              Send SMS notification to driver
-            </label>
-          </div>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Dock Number *
+          </label>
+          <select
+            value={dockNumber}
+            onChange={(e) => setDockNumber(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={loading || checkingDock}
+          >
+            <option value="">Select a dock</option>
+            {dockOptions.map((dock) => (
+              <option key={dock} value={dock}>
+                {dock === 'Ramp' ? 'Ramp' : `Dock ${dock}`}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="flex gap-3 mt-6">
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Driver Phone (for SMS)
+          </label>
+          <input
+            type="tel"
+            value={driverPhone}
+            onChange={(e) => setDriverPhone(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="(555) 555-5555"
+            disabled={loading}
+          />
+        </div>
+
+        <div className="mb-4 flex items-center">
+          <input
+            type="checkbox"
+            id="sendSMS"
+            checked={sendSMS}
+            onChange={(e) => setSendSMS(e.target.checked)}
+            className="mr-2"
+            disabled={loading || !driverPhone}
+          />
+          <label htmlFor="sendSMS" className="text-sm text-gray-700">
+            Send SMS notification to driver
+          </label>
+        </div>
+
+        <div className="flex justify-end space-x-3">
           <button
             onClick={onClose}
+            className="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
             disabled={loading}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleAssign}
-            disabled={loading || !dockNumber}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
+            disabled={loading || !dockNumber || checkingDock}
           >
-            {loading ? 'Assigning...' : 'Assign & Print'}
+            {loading ? 'Assigning...' : 'Assign Dock'}
           </button>
         </div>
       </div>
