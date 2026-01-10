@@ -75,7 +75,7 @@ export default function AppointmentsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [checkInStatuses, setCheckInStatuses] = useState<Map<string, CheckInStatus>>(new Map());
   const [loading, setLoading] = useState(false);
@@ -154,7 +154,7 @@ export default function AppointmentsPage() {
   const changeDateByDays = (days: number) => {
     const currentDate = new Date(selectedDate);
     currentDate.setDate(currentDate.getDate() + days);
-    setSelectedDate(currentDate.toISOString().split('T')[0]);
+    setSelectedDate(currentDate.toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>);
   };
 
   // Filter appointments based on search query
@@ -184,6 +184,7 @@ export default function AppointmentsPage() {
         await createAppointment({ ...data, source: 'manual' });
       }
       await loadAppointments();
+      await loadCheckInStatuses();
       setEditingAppointment(null);
     } catch (error: any) {
       alert(error.message || 'Error saving appointment');
@@ -283,7 +284,10 @@ export default function AppointmentsPage() {
       <div className="max-w-[1600px] mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className="lg:col-span-2">
-            <AppointmentUpload onUploadComplete={loadAppointments} />
+            <AppointmentUpload onUploadComplete={() => {
+              loadAppointments();
+              loadCheckInStatuses();
+            }} />
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow">
@@ -397,12 +401,14 @@ export default function AppointmentsPage() {
                           key={appointment.id}
                           className="p-6 hover:bg-gray-50 transition-colors"
                         >
-                          <div className="flex justify-between items-start mb-3">
+                          <div className="flex justify-between items-start">
                             <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
+                              <div className="flex items-center gap-3 mb-3">
+                                {/* Sales Order or Delivery as Title */}
                                 <h4 className="text-lg font-semibold text-gray-900">
-                                  {appointment.customer_name}
+                                  {appointment.sales_order || appointment.delivery || 'N/A'}
                                 </h4>
+                                {/* Status Badge */}
                                 {status && (
                                   <span
                                     className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(
@@ -413,6 +419,8 @@ export default function AppointmentsPage() {
                                   </span>
                                 )}
                               </div>
+
+                              {/* Appointment Details */}
                               <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
                                 {appointment.sales_order && (
                                   <div>
@@ -430,22 +438,6 @@ export default function AppointmentsPage() {
                                     </span>
                                   </div>
                                 )}
-                                {appointment.ship_to_location && (
-                                  <div>
-                                    <span className="text-gray-600">Ship To:</span>
-                                    <span className="ml-2 font-medium text-gray-900">
-                                      {appointment.ship_to_location}
-                                    </span>
-                                  </div>
-                                )}
-                                {appointment.po_number && (
-                                  <div>
-                                    <span className="text-gray-600">PO Number:</span>
-                                    <span className="ml-2 font-medium text-gray-900">
-                                      {appointment.po_number}
-                                    </span>
-                                  </div>
-                                )}
                                 {status?.check_in_time && (
                                   <div>
                                     <span className="text-gray-600">Check In Time:</span>
@@ -455,13 +447,17 @@ export default function AppointmentsPage() {
                                   </div>
                                 )}
                               </div>
+
+                              {/* Notes */}
                               {appointment.notes && (
-                                <div className="mt-2 text-sm">
-                                  <span className="text-gray-600">Notes:</span>
-                                  <span className="ml-2 text-gray-900">{appointment.notes}</span>
+                                <div className="mt-3 text-sm">
+                                  <span className="text-gray-600 font-medium">Notes:</span>
+                                  <p className="mt-1 text-gray-900">{appointment.notes}</p>
                                 </div>
                               )}
                             </div>
+
+                            {/* Action Buttons */}
                             <div className="flex gap-2 ml-4">
                               <button
                                 onClick={() => handleEdit(appointment)}
@@ -477,7 +473,9 @@ export default function AppointmentsPage() {
                               </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
+
+                          {/* Source and Created At */}
+                          <div className="flex items-center gap-4 text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100">
                             <span className={`px-2 py-1 rounded ${
                               appointment.source === 'upload' 
                                 ? 'bg-blue-100 text-blue-800' 
