@@ -20,22 +20,17 @@ const TIMEZONE = 'America/Indiana/Indianapolis';
 const formatTimeInIndianapolis = (isoString: string): string => {
   try {
     const date = new Date(isoString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
     
-    if (isNaN(date.getTime())) {
-      return 'Invalid Date';
-    }
-    
-    const options: Intl.DateTimeFormatOptions = {
+    const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: TIMEZONE,
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
-    };
-    
-    const formatter = new Intl.DateTimeFormat('en-US', options);
+    });
     return formatter.format(date);
   } catch (e) {
-    console.error('Time formatting error:', e, isoString);
+    console.error('Time formatting error:', e);
     return isoString;
   }
 };
@@ -73,7 +68,7 @@ export default function AppointmentsPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [checkInStatuses, setCheckInStatuses] = useState<Map<string, CheckInStatus>>(new Map());
   const [loading, setLoading] = useState(false);
@@ -85,9 +80,7 @@ export default function AppointmentsPage() {
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserEmail(user.email || '');
-      }
+      if (user) setUserEmail(user.email || '');
     };
     getUser();
   }, [supabase]);
@@ -101,7 +94,7 @@ export default function AppointmentsPage() {
     setLoading(true);
     try {
       const data = await getAppointmentsByDate(selectedDate);
-      console.log('Loaded appointments:', data); // Debug
+      console.log('Loaded appointments:', data);
       setAppointments(data);
     } catch (error) {
       console.error('Error loading appointments:', error);
@@ -153,7 +146,7 @@ export default function AppointmentsPage() {
   const changeDateByDays = (days: number) => {
     const currentDate = new Date(selectedDate);
     currentDate.setDate(currentDate.getDate() + days);
-    setSelectedDate(currentDate.toISOString().split('T')[0]);
+    setSelectedDate(currentDate.toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>);
   };
 
   const filteredAppointments = appointments.filter(apt => {
@@ -231,40 +224,22 @@ export default function AppointmentsPage() {
               </p>
             </div>
             <div className="flex gap-3">
-              <Link 
-                href="/appointments" 
-                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
-              >
+              <Link href="/appointments" className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
                 Appointments
               </Link>  
-              <Link
-                href="/dock-status"
-                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
-              >
+              <Link href="/dock-status" className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">
                 Dock Status
               </Link>    
-              <Link
-                href="/dashboard"
-                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
-              >
+              <Link href="/dashboard" className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium">
                 Dashboard
               </Link>
-              <Link
-                href="/logs"
-                className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium"
-              >
+              <Link href="/logs" className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium">
                 Daily Logs
               </Link>
-              <Link
-                href="/tracking"
-                className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium"
-              >
+              <Link href="/tracking" className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium">
                 Tracking
               </Link>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
-              >
+              <button onClick={handleLogout} className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium">
                 Logout
               </button>
             </div>
@@ -285,10 +260,7 @@ export default function AppointmentsPage() {
           <div className="bg-white p-6 rounded-lg shadow">
             <label className="block text-sm font-medium mb-2">Select Date</label>
             <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => changeDateByDays(-1)}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium"
-              >
+              <button onClick={() => changeDateByDays(-1)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium">
                 ← Prev
               </button>
               <input
@@ -297,10 +269,7 @@ export default function AppointmentsPage() {
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="flex-1 p-2 border rounded"
               />
-              <button
-                onClick={() => changeDateByDays(1)}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium"
-              >
+              <button onClick={() => changeDateByDays(1)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium">
                 Next →
               </button>
             </div>
@@ -330,25 +299,12 @@ export default function AppointmentsPage() {
                 placeholder="Enter Sales Order or Delivery number..."
                 className="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
-              <svg 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
-                />
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             {searchQuery && (
-              <button
-                onClick={clearSearch}
-                className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium"
-              >
+              <button onClick={clearSearch} className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium">
                 Clear
               </button>
             )}
@@ -367,7 +323,7 @@ export default function AppointmentsPage() {
           </div>
         </div>
 
-        {/* Appointments List */}
+        {/* Appointments List - ALWAYS SHOWS ALL TIME SLOTS */}
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -376,7 +332,6 @@ export default function AppointmentsPage() {
           <div className="space-y-6">
             {TIME_SLOTS.map((slot) => {
               const slotAppointments = groupedAppointments[slot] || [];
-              if (slotAppointments.length === 0) return null;
 
               return (
                 <div key={slot} className="bg-white rounded-lg shadow overflow-hidden">
@@ -385,88 +340,82 @@ export default function AppointmentsPage() {
                       {slot} ({slotAppointments.length})
                     </h3>
                   </div>
-                  <div className="divide-y divide-gray-200">
-                    {slotAppointments.map((appointment) => {
-                      const status = getAppointmentStatus(appointment);
-                      
-                      return (
-                        <div
-                          key={appointment.id}
-                          className="p-6 hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-3">
-                                <h4 className="text-lg font-semibold text-gray-900">
-                                  {appointment.sales_order || appointment.delivery || 'N/A'}
-                                </h4>
-                                {status && (
-                                  <span
-                                    className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(
-                                      status.status
-                                    )}`}
-                                  >
-                                    {getStatusLabel(status.status)}
-                                  </span>
-                                )}
+                  
+                  {slotAppointments.length === 0 ? (
+                    <div className="p-6 text-center text-gray-500">
+                      No appointments scheduled
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-200">
+                      {slotAppointments.map((appointment) => {
+                        const status = getAppointmentStatus(appointment);
+                        
+                        return (
+                          <div key={appointment.id} className="p-6 hover:bg-gray-50 transition-colors">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <h4 className="text-lg font-semibold text-gray-900">
+                                    {appointment.sales_order || appointment.delivery || 'N/A'}
+                                  </h4>
+                                  {status && (
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(status.status)}`}>
+                                      {getStatusLabel(status.status)}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                  {appointment.sales_order && (
+                                    <div>
+                                      <span className="text-gray-600">Sales Order:</span>
+                                      <span className="ml-2 font-medium text-gray-900">{appointment.sales_order}</span>
+                                    </div>
+                                  )}
+                                  {appointment.delivery && (
+                                    <div>
+                                      <span className="text-gray-600">Delivery:</span>
+                                      <span className="ml-2 font-medium text-gray-900">{appointment.delivery}</span>
+                                    </div>
+                                  )}
+                                  {status?.check_in_time && (
+                                    <div>
+                                      <span className="text-gray-600">Check In:</span>
+                                      <span className="ml-2 font-medium text-gray-900">
+                                        {formatTimeInIndianapolis(status.check_in_time)}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div>
+                                    <span className="text-gray-600">Source:</span>
+                                    <span className="ml-2 font-medium text-gray-900 capitalize">{appointment.source}</span>
+                                  </div>
+                                </div>
                               </div>
 
-                              <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                                {appointment.sales_order && (
-                                  <div>
-                                    <span className="text-gray-600">Sales Order:</span>
-                                    <span className="ml-2 font-medium text-gray-900">
-                                      {appointment.sales_order}
-                                    </span>
-                                  </div>
-                                )}
-                                {appointment.delivery && (
-                                  <div>
-                                    <span className="text-gray-600">Delivery:</span>
-                                    <span className="ml-2 font-medium text-gray-900">
-                                      {appointment.delivery}
-                                    </span>
-                                  </div>
-                                )}
-                                {status?.check_in_time && (
-                                  <div>
-                                    <span className="text-gray-600">Check In:</span>
-                                    <span className="ml-2 font-medium text-gray-900">
-                                      {formatTimeInIndianapolis(status.check_in_time)}
-                                    </span>
-                                  </div>
-                                )}
+                              <div className="flex gap-2 ml-4">
+                                <button
+                                  onClick={() => handleEdit(appointment)}
+                                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-sm font-medium"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(appointment.id)}
+                                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors text-sm font-medium"
+                                >
+                                  Delete
+                                </button>
                               </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleEdit(appointment)}
-                                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-sm font-medium"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(appointment.id)}
-                                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors text-sm font-medium"
-                              >
-                                Delete
-                              </button>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
-
-            {filteredAppointments.length === 0 && (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <p className="text-gray-500 text-lg">No appointments found for this date.</p>
-              </div>
-            )}
           </div>
         )}
       </div>
