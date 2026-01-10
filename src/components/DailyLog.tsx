@@ -581,33 +581,21 @@ export default function DailyLog() {
                         </div>
                       </td>
 
-                      {/* Reference Number - BOLD */}
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className="text-sm font-bold text-gray-900">
-                          {checkIn.reference_number || 'N/A'}
-                        </span>
-                      </td>
+                    {/* Reference Number Column */}
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+  {checkIn.reference_number || 'N/A'}
+</td>
 
-                      {/* Appointment Time - Green if on time */}
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`text-sm px-2 py-1 rounded ${
-                          checkIn.appointment_time && 
-                          checkIn.appointment_time !== 'work_in' && 
-                          checkIn.appointment_time !== 'paid_to_load' && 
-                          checkIn.appointment_time !== 'paid_charge_customer' &&
-                          checkIn.appointment_time !== 'ltl' &&
-                          isOnTime(checkIn.check_in_time, checkIn.appointment_time)
-                            ? 'bg-green-100 text-green-800 font-medium'
-                            : 'text-gray-900'
-                        }`}>
-                          {formatAppointmentTime(checkIn.appointment_time)}
-                        </span>
-                      </td>
+{/* Appointment Time Column - ADD THIS */}
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+  {formatAppointmentTime(checkIn.appointment_time)}
+</td>
 
-                      {/* Check In Time */}
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatTimeInIndianapolis(checkIn.check_in_time, true)}
-                      </td>
+{/* Check In Time Column */}
+<td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+  {formatTimeInIndianapolis(checkIn.check_in_time)}
+</td>
+
 
                       {/* End Time */}
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
