@@ -1,50 +1,53 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { Appointment, AppointmentInput, TIME_SLOTS } from '@/types/appointments';
-import { getAppointmentsByDate, createAppointment, updateAppointment, deleteAppointment } from '@/lib/appointmentsService';
+import {
+  getAppointmentsByDate,
+  createAppointment,
+  updateAppointment,
+  deleteAppointment
+} from '@/lib/appointmentsService';
 import AppointmentUpload from '@/components/AppointmentUpload';
 import AppointmentModal from '@/components/AppointmentModal';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { zonedTimeToUtc } from 'date-fns-tz';
 
 const TIMEZONE = 'America/Indiana/Indianapolis';
+
 const formatTimeInIndianapolis = (isoString: string): string => {
   try {
     const date = new Date(isoString);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    const formatter = new Intl.DateTimeFormat('en-US', { timeZone: TIMEZONE, hour: '2-digit', minute: '2-digit', hour12: false });
+    
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+    
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: TIMEZONE,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    };
+    
+    const formatter = new Intl.DateTimeFormat('en-US', options);
     return formatter.format(date);
-  } catch (e) { console.error('Time formatting error:', e); return isoString; }
+  } catch (e) {
+    console.error('Time formatting error:', e, isoString);
+    return isoString;
+  }
 };
-
-const getStatusBadgeColor = (status: string): string => {
-  const statusLower = status.toLowerCase();
-  if (statusLower === 'completed' || statusLower === 'checked_out') return 'bg-gray-500 text-white';
-  if (statusLower === 'unloaded') return 'bg-green-500 text-white';
-  if (statusLower === 'rejected' || statusLower === 'turned_away' || statusLower === 'driver_left') return 'bg-red-500 text-white';
-  if (statusLower === 'pending') return 'bg-yellow-500 text-white';
-  if (statusLower === 'checked_in') return 'bg-purple-500 text-white';
-  return 'bg-gray-500 text-white';
-};
-
-const getStatusLabel = (status: string): string => {
-  if (status === 'checked_in') return 'Check In';
-  if (status === 'checked_out') return 'Completed';
-  if (status === 'turned_away') return 'Turned Away';
-  if (status === 'driver_left') return 'Driver Left';
-  return status.charAt(0).toUpperCase() + status.slice(1);
-};
-
-interface CheckInStatus { reference_number: string; status: string; check_in_time?: string; }
 
 export default function AppointmentsPage() {
   const router = useRouter();
-  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [checkInStatuses, setCheckInStatuses] = useState<Map<string, CheckInStatus>>(new Map());
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
@@ -54,154 +57,328 @@ export default function AppointmentsPage() {
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserEmail(user.email || '');
+      if (user) {
+        setUserEmail(user.email || '');
+      }
     };
     getUser();
   }, [supabase]);
 
-  useEffect(() => { loadAppointments(); loadCheckInStatuses(); }, [selectedDate]);
+  useEffect(() => {
+    loadAppointments();
+  }, [selectedDate]);
 
   const loadAppointments = async () => {
     setLoading(true);
     try {
       const data = await getAppointmentsByDate(selectedDate);
-      console.log('📅 Loaded appointments:', data);
       setAppointments(data);
-    } catch (error) { console.error('Error loading appointments:', error); } finally { setLoading(false); }
+    } catch (error) {
+      console.error('Error loading appointments:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const loadCheckInStatuses = async () => {
+  const handleLogout = async () => {
     try {
-      const startOfDayIndy = zonedTimeToUtc(`${selectedDate} 00:00:00`, TIMEZONE);
-      const endOfDayIndy = zonedTimeToUtc(`${selectedDate} 23:59:59`, TIMEZONE);
-      const { data, error } = await supabase.from('check_ins').select('reference_number, status, check_in_time').gte('check_in_time', startOfDayIndy.toISOString()).lte('check_in_time', endOfDayIndy.toISOString());
-      if (error) throw error;
-      const statusMap = new Map<string, CheckInStatus>();
-      data?.forEach((checkIn) => { if (checkIn.reference_number) { statusMap.set(checkIn.reference_number, { reference_number: checkIn.reference_number, status: checkIn.status, check_in_time: checkIn.check_in_time }); } });
-      setCheckInStatuses(statusMap);
-    } catch (error) { console.error('Error loading check-in statuses:', error); }
+      await supabase.auth.signOut();
+      router.push('/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
-  const handleLogout = async () => { try { await supabase.auth.signOut(); router.push('/login'); router.refresh(); } catch (error) { console.error('Error logging out:', error); } };
-  const changeDateByDays = (days: number) => { const currentDate = new Date(selectedDate); currentDate.setDate(currentDate.getDate() + days); setSelectedDate(currentDate.toISOString().split('T')<a href="" class="citation-link" target="_blank" style="vertical-align: super; font-size: 0.8em; margin-left: 3px;">[0]</a>); };
+  const changeDateByDays = (days: number) => {
+    const currentDate = new Date(selectedDate);
+    currentDate.setDate(currentDate.getDate() + days);
+    setSelectedDate(currentDate.toISOString().split('T')[0]);
+  };
 
+  // Filter appointments based on search query
   const filteredAppointments = appointments.filter(apt => {
     if (!searchQuery.trim()) return true;
+    
     const query = searchQuery.toLowerCase().trim();
     const salesOrder = apt.sales_order?.toLowerCase() || '';
     const delivery = apt.delivery?.toLowerCase() || '';
+    
     return salesOrder.includes(query) || delivery.includes(query);
   });
 
-  const groupedAppointments = TIME_SLOTS.reduce((acc, slot) => { acc[slot] = filteredAppointments.filter(apt => apt.scheduled_time === slot); return acc; }, {} as Record<string, Appointment[]>);
+  const groupedAppointments = TIME_SLOTS.reduce((acc, slot) => {
+    acc[slot] = filteredAppointments.filter(apt => apt.scheduled_time === slot);
+    return acc;
+  }, {} as Record<string, Appointment[]>);
+
   const workInCount = groupedAppointments['Work In']?.length || 0;
   const totalAppointmentsCount = filteredAppointments.length;
 
   const handleSave = async (data: AppointmentInput) => {
     try {
-      console.log('💾 Saving:', data);
-      if (editingAppointment) { await updateAppointment(editingAppointment.id, data); } else { await createAppointment({ ...data, source: 'manual' }); }
-      await loadAppointments(); await loadCheckInStatuses(); setEditingAppointment(null);
-    } catch (error: any) { console.error('Save error:', error); alert(error.message || 'Error saving appointment'); throw error; }
+      if (editingAppointment) {
+        await updateAppointment(editingAppointment.id, data);
+      } else {
+        await createAppointment({ ...data, source: 'manual' });
+      }
+      await loadAppointments();
+      setEditingAppointment(null);
+    } catch (error: any) {
+      alert(error.message || 'Error saving appointment');
+      throw error;
+    }
   };
 
-  const handleEdit = (appointment: Appointment) => { setEditingAppointment(appointment); setModalOpen(true); };
-  const handleDelete = async (id: number) => { if (!confirm('Are you sure you want to delete this appointment?')) return; try { await deleteAppointment(id); await loadAppointments(); } catch (error: any) { alert(error.message || 'Error deleting appointment'); } };
-  const clearSearch = () => { setSearchQuery(''); };
-  const getAppointmentStatus = (appointment: Appointment): CheckInStatus | undefined => { const refNumber = appointment.sales_order || appointment.delivery; return refNumber ? checkInStatuses.get(refNumber) : undefined; };
+  const handleEdit = (appointment: Appointment) => {
+    setEditingAppointment(appointment);
+    setModalOpen(true);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this appointment?')) return;
+    
+    try {
+      await deleteAppointment(id);
+      await loadAppointments();
+    } catch (error: any) {
+      alert(error.message || 'Error deleting appointment');
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header - Matching Dashboard */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Appointment Scheduling</h1>
-              {userEmail && <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>}
-              <p className="text-xs text-gray-500">Current time: {formatTimeInIndianapolis(new Date().toISOString())}</p>
+              {userEmail && (
+                <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                Current time: {formatTimeInIndianapolis(new Date().toISOString())}
+              </p>
             </div>
             <div className="flex gap-3">
-              <Link href="/appointments" className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">Appointments</Link>
-              <Link href="/dock-status" className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">Dock Status</Link>
-              <Link href="/dashboard" className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium">Dashboard</Link>
-              <Link href="/logs" className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium">Daily Logs</Link>
-              <Link href="/tracking" className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium">Tracking</Link>
-              <button onClick={handleLogout} className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium">Logout</button>
+              <Link 
+                href="/appointments" 
+                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+              >
+                Appointments
+              </Link>  
+
+              <Link
+                href="/dock-status"
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+              >
+                Dock Status
+              </Link>    
+
+              <Link
+                href="/dashboard"
+                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
+              >
+                Dashboard
+              </Link>
+              
+              <Link
+                href="/logs"
+                className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium"
+              >
+                Daily Logs
+              </Link>
+              
+              <Link
+                href="/tracking"
+                className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium"
+              >
+                Tracking
+              </Link>
+              
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="max-w-[1600px] mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2"><AppointmentUpload onUploadComplete={() => { loadAppointments(); loadCheckInStatuses(); }} /></div>
+          <div className="lg:col-span-2">
+            <AppointmentUpload onUploadComplete={loadAppointments} />
+          </div>
+          
           <div className="bg-white p-6 rounded-lg shadow">
             <label className="block text-sm font-medium mb-2">Select Date</label>
             <div className="flex gap-2 mb-4">
-              <button onClick={() => changeDateByDays(-1)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium">← Prev</button>
-              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="flex-1 p-2 border rounded" />
-              <button onClick={() => changeDateByDays(1)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium">Next →</button>
+              <button
+                onClick={() => changeDateByDays(-1)}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium"
+                title="Previous Day">
+                ← Prev
+              </button>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="flex-1 p-2 border rounded"
+              />
+              <button
+                onClick={() => changeDateByDays(1)}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition-colors font-medium"
+                title="Next Day">
+                Next →
+              </button>
             </div>
-            <button onClick={() => { setEditingAppointment(null); setModalOpen(true); }} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors font-medium">+ Add Manual Appointment</button>
+            <button
+              onClick={() => {
+                setEditingAppointment(null);
+                setModalOpen(true);
+              }}
+              className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition-colors font-medium">
+              + Add Manual Appointment
+            </button>
           </div>
         </div>
 
+        {/* Search Bar */}
         <div className="bg-white p-4 rounded-lg shadow mb-6">
-          <label className="block text-sm font-medium mb-2 text-gray-700">Search by Reference Number</label>
+          <label className="block text-sm font-medium mb-2 text-gray-700">
+            Search by Reference Number
+          </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Enter Sales Order or Delivery number..." className="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500" />
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Enter Sales Order or Delivery number..."
+                className="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <svg 
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                />
+              </svg>
             </div>
-            {searchQuery && <button onClick={clearSearch} className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium">Clear</button>}
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <p className="text-sm text-gray-600 mt-2">
+              Found {filteredAppointments.length} {filteredAppointments.length === 1 ? 'appointment' : 'appointments'} matching "{searchQuery}"
+            </p>
+          )}
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="bg-yellow-50 border-2 border-yellow-400 p-6 rounded-lg text-center shadow">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Work In Appointments</h3>
+            <p className="text-4xl font-bold text-yellow-900">{workInCount}</p>
+          </div>
+          <div className="bg-blue-50 border-2 border-blue-400 p-6 rounded-lg text-center shadow">
+            <h3 className="text-lg font-semibold text-blue-800 mb-2">Total Appointments</h3>
+            <p className="text-4xl font-bold text-blue-900">{totalAppointmentsCount}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-blue-100 p-4 rounded-lg border border-blue-300"><div className="text-sm text-blue-800 font-medium">Total Appointments</div><div className="text-3xl font-bold text-blue-900">{totalAppointmentsCount}</div></div>
-          <div className="bg-green-100 p-4 rounded-lg border border-green-300"><div className="text-sm text-green-800 font-medium">Work In Count</div><div className="text-3xl font-bold text-green-900">{workInCount}</div></div>
-        </div>
-
+        {/* Appointments List */}
         {loading ? (
-          <div className="text-center py-12"><div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <div className="text-xl text-gray-600">Loading...</div>
+          </div>
         ) : (
           <div className="space-y-6">
-            {TIME_SLOTS.map((slot) => {
-              const slotAppointments = groupedAppointments[slot] || [];
+            {TIME_SLOTS.map(slot => {
+              const slotAppts = groupedAppointments[slot] || [];
+              const displayTime = slot === 'Work In' ? 'Work In' : `${slot.substring(0, 2)}:${slot.substring(2)}`;
+
               return (
-                <div key={slot} className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3"><h3 className="text-lg font-bold">{slot} ({slotAppointments.length})</h3></div>
-                  {slotAppointments.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500">No appointments scheduled</div>
-                  ) : (
-                    <div className="divide-y divide-gray-200">
-                      {slotAppointments.map((appointment) => {
-                        const status = getAppointmentStatus(appointment);
-                        return (
-                          <div key={appointment.id} className="p-6 hover:bg-gray-50 transition-colors">
+                <div key={slot} className="bg-white rounded-lg shadow">
+                  <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+                    <h3 className="text-xl font-semibold text-gray-900">{displayTime}</h3>
+                    <span className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
+                      {slotAppts.length} {slotAppts.length === 1 ? 'appointment' : 'appointments'}
+                    </span>
+                  </div>
+
+                  <div className="p-4">
+                    {slotAppts.length === 0 ? (
+                      <p className="text-gray-500 text-center py-8">No appointments scheduled</p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {slotAppts.map(apt => (
+                          <div
+                            key={apt.id}
+                            className={`p-4 rounded-lg border-l-4 ${
+                              apt.source === 'manual' 
+                                ? 'border-green-500 bg-green-50' 
+                                : 'border-blue-500 bg-blue-50'
+                            } shadow-sm hover:shadow-md transition-shadow`}>
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-3">
-                                  <h4 className="text-lg font-semibold text-gray-900">{appointment.sales_order || appointment.delivery || 'N/A'}</h4>
-                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded font-medium">{appointment.source}</span>
-                                  {status && <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusBadgeColor(status.status)}`}>{getStatusLabel(status.status)}</span>}
-                                </div>
-                                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                                  {appointment.sales_order && <div><span className="text-gray-600">Sales Order:</span><span className="ml-2 font-medium text-gray-900">{appointment.sales_order}</span></div>}
-                                  {appointment.delivery && <div><span className="text-gray-600">Delivery:</span><span className="ml-2 font-medium text-gray-900">{appointment.delivery}</span></div>}
-                                  {status?.check_in_time && <div><span className="text-gray-600">Check In:</span><span className="ml-2 font-medium text-gray-900">{formatTimeInIndianapolis(status.check_in_time)}</span></div>}
+                                <p className="text-sm font-semibold text-gray-900 mb-1">
+                                  <span className="text-gray-600">SO:</span> {apt.sales_order}
+                                </p>
+                                <p className="text-sm text-gray-700 mb-2">
+                                  <span className="font-medium">Delivery:</span> {apt.delivery}
+                                </p>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                    apt.source === 'manual' 
+                                      ? 'bg-green-200 text-green-800' 
+                                      : 'bg-blue-200 text-blue-800'
+                                  }`}>
+                                    {apt.source === 'manual' ? 'Manual' : 'Uploaded'}
+                                  </span>
                                 </div>
                               </div>
-                              <div className="flex gap-2 ml-4">
-                                <button onClick={() => handleEdit(appointment)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-sm font-medium">Edit</button>
-                                <button onClick={() => handleDelete(appointment.id)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors text-sm font-medium">Delete</button>
-                              </div>
+                              {apt.source === 'manual' && (
+                                <div className="flex flex-col gap-1 ml-2">
+                                  <button
+                                    onClick={() => handleEdit(apt)}
+                                    className="text-blue-600 hover:text-blue-800 text-xs font-medium px-2 py-1 hover:bg-blue-100 rounded transition-colors">
+                                    Edit
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(apt.id)}
+                                    className="text-red-600 hover:text-red-800 text-xs font-medium px-2 py-1 hover:bg-red-100 rounded transition-colors">
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -209,7 +386,18 @@ export default function AppointmentsPage() {
         )}
       </div>
 
-      <AppointmentModal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditingAppointment(null); }} onSave={handleSave} appointment={editingAppointment} initialDate={selectedDate} />
+     <AppointmentModal
+  isOpen={modalOpen}
+  onClose={() => {
+    setModalOpen(false);
+    setEditingAppointment(null);
+  }}
+  onSave={handleSave}
+  appointment={editingAppointment}
+  initialDate={selectedDate}  // Changed from defaultDate to initialDate
+/>
+
+
     </div>
   );
 }
