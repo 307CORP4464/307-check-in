@@ -9,6 +9,8 @@ import EditCheckInModal from './EditCheckInModal';
 
 const TIMEZONE = 'America/Indiana/Indianapolis';
 
+// All your formatting functions stay here (formatTimeInIndianapolis, formatPhoneNumber, formatAppointmentTime, isOnTime, calculateDetention)
+
 const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
   try {
     const utcDate = new Date(isoString);
@@ -69,37 +71,7 @@ const isOnTime = (checkInTime: string, appointmentTime: string | null | undefine
       appointmentTime === 'ltl') {
     return false;
   }
-const fetchCheckInsForDate = async () => {
-  try {
-    setLoading(true);
-    
-    const startOfDayIndy = zonedTimeToUtc(`${selectedDate} 00:00:00`, TIMEZONE);
-    const endOfDayIndy = zonedTimeToUtc(`${selectedDate} 23:59:59`, TIMEZONE);
 
-    const { data, error } = await supabase
-      .from('check_ins')
-      .select('*')
-      .gte('check_in_time', startOfDayIndy.toISOString())
-      .lte('check_in_time', endOfDayIndy.toISOString())
-      .order('check_in_time', { ascending: false });
-
-    if (error) throw error;
-    
-    // ADD THIS DEBUG LOG
-    console.log('Fetched check-ins:', data);
-    if (data && data.length > 0) {
-      console.log('First check-in appointment_time:', data[0].appointment_time);
-    }
-    
-    setCheckIns(data || []);
-  } catch (err) {
-    setError(err instanceof Error ? err.message : 'An error occurred');
-  } finally {
-    setLoading(false);
-  }
-};
-
-	
   if (appointmentTime.length === 4 && /^\d{4}$/.test(appointmentTime)) {
     const appointmentHour = parseInt(appointmentTime.substring(0, 2));
     const appointmentMinute = parseInt(appointmentTime.substring(2, 4));
@@ -181,7 +153,6 @@ const calculateDetention = (checkIn: CheckIn): string => {
   return `${detentionMinutes} min`;
 };
 
-
 interface CheckIn {
   id: string;
   check_in_time: string;
@@ -235,22 +206,7 @@ export default function DailyLog() {
   const [selectedForStatusChange, setSelectedForStatusChange] = useState<CheckIn | null>(null);
   const [selectedForEdit, setSelectedForEdit] = useState<CheckIn | null>(null);
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserEmail(user.email || '');
-      } else {
-        router.push('/login');
-      }
-    };
-    getUser();
-  }, [supabase, router]);
-
-  useEffect(() => {
-    fetchCheckInsForDate();
-  }, [selectedDate, supabase]);
-
+  // MOVE fetchCheckInsForDate INSIDE the component - RIGHT HERE
   const fetchCheckInsForDate = async () => {
     try {
       setLoading(true);
@@ -273,6 +229,22 @@ export default function DailyLog() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserEmail(user.email || '');
+      } else {
+        router.push('/login');
+      }
+    };
+    getUser();
+  }, [supabase, router]);
+
+  useEffect(() => {
+    fetchCheckInsForDate();
+  }, [selectedDate]); // Removed supabase from dependencies
 
   const filteredCheckIns = checkIns.filter((checkIn) => {
     if (!searchTerm.trim()) return true;
