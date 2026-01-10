@@ -258,49 +258,50 @@ export default function AppointmentsPage() {
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="bg-white p-4 rounded-lg shadow mb-6">
-          <label className="block text-sm font-medium mb-2 text-gray-700">
-            Search by Reference Number
-          </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input
+{/* Search Bar */}
+<div className="bg-white p-4 rounded-lg shadow mb-6">
+  <label className="block text-sm font-medium mb-2 text-gray-700">
+    Search by Reference Number
+  </label>
+  <div className="flex gap-2">
+    <div className="relative flex-1">
+      <input
                 type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Enter Sales Order or Delivery number..."
-                className="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <svg 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
-                />
-              </svg>
-            </div>
-            {searchQuery && (
-              <button
-                onClick={clearSearch}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                Clear
-              </button>
-            )}
-          </div>
-          {searchQuery && (
-            <p className="text-sm text-gray-600 mt-2">
-              Found {filteredAppointments.length} {filteredAppointments.length === 1 ? 'appointment' : 'appointments'} matching "{searchQuery}"
-            </p>
-          )}
-        </div>
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Enter Sales Order or Delivery number..."
+        className="w-full p-3 pl-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+      <svg 
+        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+        fill="none" 
+        stroke="currentColor" 
+        viewBox="0 0 24 24"
+      >
+        <path 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          strokeWidth={2} 
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+        />
+      </svg>
+    </div>
+    {searchQuery && (
+      <button
+        onClick={clearSearch}
+        className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+      >
+        Clear
+      </button>
+    )}
+  </div>
+  {searchQuery && (
+    <p className="text-sm text-gray-600 mt-2">
+      Found {filteredAppointments.length} {filteredAppointments.length === 1 ? 'appointment' : 'appointments'} matching "{searchQuery}"
+    </p>
+  )}
+</div>
+
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
