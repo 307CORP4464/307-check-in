@@ -23,8 +23,8 @@ export interface Appointment {
 }
 
 export interface AppointmentInput {
-  date: string;
-  time: string;
+  scheduled_date: string;
+  scheduled_time: string;
   salesOrder: string;
   delivery: string;
   source: 'manual' | 'upload';
