@@ -39,6 +39,20 @@ const formatTimeInIndianapolis = (isoString: string): string => {
   }
 };
 
+// Format date for display
+const formatDateForDisplay = (dateString: string): string => {
+  const [year, month, day] = dateString.split('-');
+  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  
+  return date.toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    timeZone: TIMEZONE
+  });
+};
+
 export default function AppointmentsPage() {
   const router = useRouter();
   const supabase = createBrowserClient(
@@ -76,13 +90,8 @@ export default function AppointmentsPage() {
       console.log('📦 Received appointments:', data);
       console.log('📊 Total appointments:', data.length);
       console.log('🔨 Manual appointments:', data.filter(a => a.source === 'manual'));
-      
-      // Force a fresh state update
-      setAppointments([]);
-      setTimeout(() => {
-        setAppointments(data);
-        console.log('✅ State updated with appointments');
-      }, 0);
+      setAppointments(data);
+      console.log('✅ State updated with appointments');
     } catch (error) {
       console.error('❌ Error loading appointments:', error);
       setAppointments([]);
@@ -128,20 +137,24 @@ export default function AppointmentsPage() {
 
   const handleSave = async (data: AppointmentInput) => {
     try {
-      // Add the selected date to the data if creating new appointment
-      const appointmentData = editingAppointment 
-        ? data 
-        : { ...data, scheduled_date: selectedDate, source: 'manual' as const };
+      // Add the selected date and source for new appointments
+      const appointmentData: AppointmentInput = {
+        ...data,
+        scheduled_date: selectedDate,
+        source: editingAppointment ? data.source : 'manual'
+      };
 
       if (editingAppointment) {
         await updateAppointment(editingAppointment.id, appointmentData);
       } else {
         await createAppointment(appointmentData);
       }
+      
       setModalOpen(false);
       setEditingAppointment(null);
       await loadAppointments();
     } catch (error: any) {
+      console.error('Error saving appointment:', error);
       alert(error.message || 'Error saving appointment');
       throw error;
     }
@@ -169,7 +182,7 @@ export default function AppointmentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header - Matching Dashboard */}
+      {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -309,113 +322,138 @@ export default function AppointmentsPage() {
           {searchQuery && (
             <p className="text-sm text-gray-600 mt-2">
               Found {filteredAppointments.length} appointment(s)
-            </p>
+              </p>
           )}
         </div>
 
-        {/* Appointments Display */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">
-              Appointments for {new Date(selectedDate).toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </h2>
-            <div className="text-sm text-gray-600">
-              Total: {totalAppointmentsCount} | Work In: {workInCount}
+        {/* Appointments Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-6 border-b">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">
+                Appointments for {formatDateForDisplay(selectedDate)}
+              </h2>
+              <div className="text-sm text-gray-600">
+                Total: {totalAppointmentsCount} | Work In: {workInCount}
+              </div>
             </div>
           </div>
 
           {loading ? (
             <div className="text-center py-8">Loading appointments...</div>
-          ) : filteredAppointments.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No appointments found for this date
-            </div>
           ) : (
-            <div className="space-y-4">
-              {TIME_SLOTS.map(slot => {
-                const slotAppointments = groupedAppointments[slot] || [];
-                if (slotAppointments.length === 0) return null;
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Time Slot
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Sales Order
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Delivery
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Notes
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Source
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {TIME_SLOTS.map((slot) => {
+                    const slotAppointments = groupedAppointments[slot] || [];
+                    
+                    if (slotAppointments.length === 0) {
+                      // Show empty slot
+                      return (
+                        <tr key={slot} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {slot}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-400" colSpan={5}>
+                            No appointments scheduled
+                          </td>
+                        </tr>
+                      );
+                    }
 
-                return (
-                  <div key={slot} className="border rounded-lg p-4">
-                    <h3 className="font-bold text-lg mb-3 text-gray-700">
-                      {slot} ({slotAppointments.length})
-                    </h3>
-                    <div className="space-y-2">
-                      {slotAppointments.map(apt => (
-                        <div 
-                          key={apt.id} 
-                          className={`p-3 rounded border-l-4 ${
+                    // Show appointments for this slot
+                    return slotAppointments.map((apt, index) => (
+                      <tr 
+                        key={apt.id}
+                        className={`hover:bg-gray-50 ${
+                          apt.source === 'manual' ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        {index === 0 && (
+                          <td 
+                            className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                            rowSpan={slotAppointments.length}
+                          >
+                            {slot}
+                          </td>
+                        )}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {apt.sales_order}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {apt.delivery || '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {apt.notes || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded ${
                             apt.source === 'manual' 
-                              ? 'bg-blue-50 border-blue-500' 
-                              : 'bg-gray-50 border-gray-300'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold">{apt.sales_order}</span>
-                                {apt.source === 'manual' && (
-                                  <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">
-                                    Manual
-                                  </span>
-                                )}
-                              </div>
-                              {apt.delivery && (
-                                <div className="text-sm text-gray-600">
-                                  Delivery: {apt.delivery}
-                                </div>
-                              )}
-                              {apt.notes && (
-                                <div className="text-sm text-gray-600 mt-1">
-                                  Notes: {apt.notes}
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleEdit(apt)}
-                                className="text-blue-600 hover:text-blue-800 px-3 py-1 rounded hover:bg-blue-100"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDelete(apt.id)}
-                                className="text-red-600 hover:text-red-800 px-3 py-1 rounded hover:bg-red-100"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {apt.source === 'manual' ? 'Manual' : 'Excel'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleEdit(apt)}
+                            className="text-blue-600 hover:text-blue-900 mr-4"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(apt.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ));
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
       </div>
-{/* Modal */}
-{modalOpen && (
-  <AppointmentModal
-    isOpen={modalOpen}
-    appointment={editingAppointment}
-    onClose={() => {
-      setModalOpen(false);
-      setEditingAppointment(null);
-    }}
-    onSave={handleSave}
-  />
-)}
 
-    
+      {/* Modal */}
+      {modalOpen && (
+        <AppointmentModal
+          isOpen={modalOpen}
+          appointment={editingAppointment}
+          onClose={() => {
+            setModalOpen(false);
+            setEditingAppointment(null);
+          }}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 }
