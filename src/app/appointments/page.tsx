@@ -295,12 +295,12 @@ export default function AppointmentsPage() {
       </button>
     )}
   </div>
-  {searchQuery && (
-    <p className="text-sm text-gray-600 mt-2">
-      Found {filteredAppointments.length} {filteredAppointments.length === 1 ? 'appointment' : 'appointments'} matching "{searchQuery}"
-    </p>
-  )}
-</div>
+{searchQuery && (
+            <p className="text-sm text-gray-600 mt-2">
+              Found {filteredAppointments.length} {filteredAppointments.length === 1 ? 'appointment' : 'appointments'} matching "{searchQuery}"
+            </p>
+          )}
+        </div>
 
 
         {/* Statistics Cards */}
