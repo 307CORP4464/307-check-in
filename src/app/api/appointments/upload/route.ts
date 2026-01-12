@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
         const appointmentData: AppointmentInput = {
           scheduled_date: formattedDate,
           scheduled_time: formattedTime,
-          sales_order: String(salesOrder).trim(),
+          sales_order: String(sales_order).trim(),
           delivery: String(delivery).trim(),
           carrier: '',
           notes: '',
