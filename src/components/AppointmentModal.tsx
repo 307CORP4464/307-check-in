@@ -19,8 +19,8 @@ export default function AppointmentModal({
   initialDate = new Date().toISOString().split('T')[0]
 }: AppointmentModalProps) {
   const [formData, setFormData] = useState<AppointmentInput>({
-    date: initialDate,
-    time: '06:00',
+    scheduled_date: initialDate,
+    scheduled_time: '06:00',
     salesOrder: '',
     delivery: '',
     notes: '',
