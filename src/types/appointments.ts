@@ -25,7 +25,7 @@ export interface Appointment {
 export interface AppointmentInput {
   scheduled_date: string;
   scheduled_time: string;
-  salesOrder: string;
+  sales_order: string;
   delivery: string;
   source: 'manual' | 'upload';
   notes?: string;  // Make it optional
