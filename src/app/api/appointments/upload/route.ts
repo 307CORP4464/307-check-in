@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         const delivery = row['Delivery'] || '';
 
         // Validate required fields
-        if (!startDate || !startTime || !salesOrder || !delivery) {
+        if (!startDate || !startTime || !sales_order || !delivery) {
           throw new Error('Missing required field(s)');
         }
 
