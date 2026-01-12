@@ -125,8 +125,8 @@ export async function POST(request: NextRequest) {
 
         // Create appointment
         const appointmentData: AppointmentInput = {
-          date: formattedDate,
-          time: formattedTime,
+          scheduled_date: formattedDate,
+          scheduled_time: formattedTime,
           salesOrder: String(salesOrder).trim(),
           delivery: String(delivery).trim(),
           carrier: '',
