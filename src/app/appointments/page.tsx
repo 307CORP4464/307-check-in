@@ -402,18 +402,20 @@ export default function AppointmentsPage() {
           )}
         </div>
       </div>
+{/* Modal */}
+{modalOpen && (
+  <AppointmentModal
+    isOpen={modalOpen}
+    appointment={editingAppointment}
+    onClose={() => {
+      setModalOpen(false);
+      setEditingAppointment(null);
+    }}
+    onSave={handleSave}
+  />
+)}
 
-      {/* Modal - REMOVED selectedDate prop */}
-      {modalOpen && (
-        <AppointmentModal
-          appointment={editingAppointment}
-          onClose={() => {
-            setModalOpen(false);
-            setEditingAppointment(null);
-          }}
-          onSave={handleSave}
-        />
-      )}
+    
     </div>
   );
 }
