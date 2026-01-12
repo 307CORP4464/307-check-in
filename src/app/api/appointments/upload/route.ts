@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         // Extract values
         const startDate = row['Apt. Start Date'] || '';
         const startTime = row['Start Time'] || '';
-        const salesOrder = row['Sales Order'] || '';
+        const sales_order = row['Sales Order'] || '';
         const delivery = row['Delivery'] || '';
 
         // Validate required fields
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
         const appointmentData: AppointmentInput = {
           scheduled_date: formattedDate,
           scheduled_time: formattedTime,
-          salesOrder: String(salesOrder).trim(),
+          sales_order: String(salesOrder).trim(),
           delivery: String(delivery).trim(),
           carrier: '',
           notes: '',
