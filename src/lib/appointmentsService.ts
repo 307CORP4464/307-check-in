@@ -28,8 +28,8 @@ export async function createAppointment(input: AppointmentInput): Promise<Appoin
   }
 
   console.log('Creating appointment:', {
-    scheduled_date: input.date,
-    scheduled_time: input.time,
+    scheduled_date: input.scheduled_date,
+    scheduled_time: input.scheduled_time,
     sales_order: sales_order,
     delivery: delivery,
     notes: input.notes?.trim() || null,
@@ -39,8 +39,8 @@ export async function createAppointment(input: AppointmentInput): Promise<Appoin
   const { data, error } = await supabase
     .from('appointments')
     .insert([{
-      scheduled_date: input.date,
-      scheduled_time: input.time,
+      scheduled_date: input.scheduled_date,
+      scheduled_time: input.scheduled_time,
       sales_order: sales_order,
       delivery: delivery,
       notes: input.notes?.trim() || null,
@@ -65,8 +65,8 @@ export async function updateAppointment(
   const { data, error } = await supabase
     .from('appointments')
     .update({
-      scheduled_date: input.date,
-      scheduled_time: input.time,
+      scheduled_date: input.scheduled_date,
+      scheduled_time: input.scheduled_time,
       sales_order: input.sales_order?.trim() || null,
       delivery: input.delivery?.trim() || null,
       notes: input.notes?.trim() || null
@@ -100,7 +100,7 @@ export async function checkDuplicateAppointment(
     .eq('scheduled_date', scheduled_date)
     .eq('scheduled_time', scheduled_time);
 
-  if (salesOrder) {
+  if (sales_order) {
     query.eq('sales_order', sales_order);
   }
   if (delivery) {
