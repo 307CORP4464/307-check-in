@@ -129,7 +129,6 @@ export async function POST(request: NextRequest) {
           scheduled_time: formattedTime,
           sales_order: String(sales_order).trim(),
           delivery: String(delivery).trim(),
-          carrier: '',
           notes: '',
           source: 'excel' as const
         };
