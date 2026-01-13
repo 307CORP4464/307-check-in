@@ -20,17 +20,17 @@ export async function getAppointmentsByDate(date: string): Promise<Appointment[]
 }
 
 export async function createAppointment(input: AppointmentInput): Promise<Appointment> {
-  const salesOrder = input.salesOrder?.trim() || null;
+  const salesOrder = input.sales_order?.trim() || null;
   const delivery = input.delivery?.trim() || null;
 
-  if (!salesOrder && !delivery) {
+  if (!sales_order && !delivery) {
     throw new Error('Either Sales Order or Delivery must be provided');
   }
 
   console.log('Creating appointment:', {
     scheduled_date: input.date,
     scheduled_time: input.time,
-    sales_order: salesOrder,
+    sales_order: sales_order,
     delivery: delivery,
     notes: input.notes?.trim() || null,
     source: input.source || 'manual'
@@ -41,7 +41,7 @@ export async function createAppointment(input: AppointmentInput): Promise<Appoin
     .insert([{
       scheduled_date: input.date,
       scheduled_time: input.time,
-      sales_order: salesOrder,
+      sales_order: sales_order,
       delivery: delivery,
       notes: input.notes?.trim() || null,
       source: input.source || 'manual'
@@ -67,7 +67,7 @@ export async function updateAppointment(
     .update({
       scheduled_date: input.date,
       scheduled_time: input.time,
-      sales_order: input.salesOrder?.trim() || null,
+      sales_order: input.sales_order?.trim() || null,
       delivery: input.delivery?.trim() || null,
       notes: input.notes?.trim() || null
     })
@@ -91,7 +91,7 @@ export async function deleteAppointment(id: number): Promise<void> {
 export async function checkDuplicateAppointment(
   scheduled_date: string,
   scheduled_time: string,
-  salesOrder?: string,
+  sales_order?: string,
   delivery?: string
 ): Promise<boolean> {
   const query = supabase
@@ -101,7 +101,7 @@ export async function checkDuplicateAppointment(
     .eq('scheduled_time', scheduled_time);
 
   if (salesOrder) {
-    query.eq('sales_order', salesOrder);
+    query.eq('sales_order', sales_order);
   }
   if (delivery) {
     query.eq('delivery', delivery);
