@@ -42,7 +42,7 @@ export default function AppointmentModal({
     } else {
       setFormData({
         scheduled_date: initialDate,
-        scheduled_time: '06:00',
+        scheduled_time: '08:00',
         sales_order: '',
         delivery: '',
         notes: '',
