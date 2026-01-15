@@ -511,9 +511,10 @@ export default function DailyLog() {
           onSuccess={handleStatusChangeSuccess}
         />
       )}
-      
+
       {selectedForEdit && (
         <EditCheckInModal
+          isOpen={true}
           checkIn={selectedForEdit}
           onClose={() => setSelectedForEdit(null)}
           onSuccess={handleEditSuccess}
@@ -522,4 +523,3 @@ export default function DailyLog() {
     </div>
   );
 }
-
