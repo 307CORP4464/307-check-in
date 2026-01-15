@@ -339,26 +339,51 @@ export default function DailyLog() {
             <h1 className="text-2xl font-bold text-gray-900">Daily Log</h1>
             
             <div className="flex gap-2">
-              <Link
-                href="/dashboard"
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/dock-status"
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-              >
-                Dock Status
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
-              >
-                Logout
-              </button>
-            </div>
+                      <Link 
+              href="/appointments" 
+              className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+            >
+              Appointments
+            </Link>  
+
+            <Link
+              href="/dock-status"
+              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            >
+              Dock Status
+            </Link>    
+
+            <Link
+              href="/dashboard"
+              className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
+            >
+              Dashboard
+            </Link>
+            
+            <Link
+              href="/logs"
+              className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium"
+            >
+              Daily Logs
+            </Link>
+            
+            <Link
+              href="/tracking"
+              className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium"
+            >
+              Tracking
+            </Link>
+            
+            <Link
+              href="/check-in"
+              className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition-colors font-medium"
+            >
+              Check-In Form
+            </Link>
           </div>
+        </div>
+      </div>
+    </div>
 
           {/* Date picker and search */}
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
