@@ -334,56 +334,54 @@ export default function DailyLog() {
     <div className="min-h-screen bg-gray-50">
       {/* Header section */}
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold text-gray-900">Daily Log</h1>
             
             <div className="flex gap-2">
-                      <Link 
-              href="/appointments" 
-              className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
-            >
-              Appointments
-            </Link>  
+              <Link 
+                href="/appointments" 
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium text-sm"
+              >
+                Appointments
+              </Link>  
 
-            <Link
-              href="/dock-status"
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
-            >
-              Dock Status
-            </Link>    
+              <Link
+                href="/dock-status"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+              >
+                Dock Status
+              </Link>    
 
-            <Link
-              href="/dashboard"
-              className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
-            >
-              Dashboard
-            </Link>
-            
-            <Link
-              href="/logs"
-              className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium"
-            >
-              Daily Logs
-            </Link>
-            
-            <Link
-              href="/tracking"
-              className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium"
-            >
-              Tracking
-            </Link>
-            
-            <Link
-              href="/check-in"
-              className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition-colors font-medium"
-            >
-              Check-In Form
-            </Link>
+              <Link
+                href="/dashboard"
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium text-sm"
+              >
+                Dashboard
+              </Link>
+              
+              <Link
+                href="/logs"
+                className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium text-sm"
+              >
+                Daily Logs
+              </Link>
+              
+              <Link
+                href="/tracking"
+                className="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium text-sm"
+              >
+                Tracking
+              </Link>
+              
+              <Link
+                href="/check-in"
+                className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors font-medium text-sm"
+              >
+                Check-In Form
+              </Link>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
 
           {/* Date picker and search */}
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
@@ -469,7 +467,7 @@ export default function DailyLog() {
       </div>
 
       {/* Stats Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Total Count Card */}
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform transition-all hover:scale-105">
@@ -502,152 +500,189 @@ export default function DailyLog() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table - Updated for better fit */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+          <div className="overflow-x-visible">
+            <table className="w-full divide-y divide-gray-200 text-xs">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Driver Info
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    Driver
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Trailer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Destination
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Reference
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    Ref#
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Dock
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Appointment
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    Appt
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Check In
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    End Time
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    End
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Detention
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    Det.
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Notes
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredCheckIns.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={13} className="px-6 py-4 text-center text-gray-500">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : filteredCheckIns.length === 0 ? (
                   <tr>
                     <td colSpan={13} className="px-6 py-4 text-center text-gray-500">
                       No check-ins found for this date
                     </td>
                   </tr>
                 ) : (
-                  filteredCheckIns.map((checkIn) => (
+                  filteredCheckIns.map((checkIn, index) => (
                     <tr key={checkIn.id} className="hover:bg-gray-50">
-                      {/* Type - I for Inbound (orange), O for Outbound (blue) */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-white ${
-                          checkIn.load_type === 'inbound' ? 'bg-orange-500' : 'bg-blue-500'
+                      {/* Type */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          checkIn.load_type === 'inbound' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-green-100 text-green-800'
                         }`}>
-                          {checkIn.load_type === 'inbound' ? 'I' : 'O'}
+                          {checkIn.load_type === 'inbound' ? 'In' : 'Out'}
                         </span>
                       </td>
                       
-                      {/* Driver Info - Carrier bold, driver name, phone stacked */}
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <div className="font-bold">{checkIn.carrier_name || 'N/A'}</div>
-                        <div>{checkIn.driver_name || 'N/A'}</div>
-                        <div className="text-gray-500">{formatPhoneNumber(checkIn.driver_phone)}</div>
+                      {/* Driver Info */}
+                      <td className="px-2 py-2 text-xs">
+                        <div className="max-w-[120px]">
+                          <div className="font-medium text-gray-900 truncate" title={checkIn.driver_name || 'N/A'}>
+                            {checkIn.driver_name || 'N/A'}
+                          </div>
+                          <div className="text-gray-500 truncate" title={formatPhoneNumber(checkIn.driver_phone)}>
+                            {formatPhoneNumber(checkIn.driver_phone)}
+                          </div>
+                          <div className="text-gray-500 truncate" title={checkIn.carrier_name || 'N/A'}>
+                            {checkIn.carrier_name || 'N/A'}
+                          </div>
+                        </div>
                       </td>
                       
-                      {/* Trailer - Number with length underneath */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>{checkIn.trailer_number || 'N/A'}</div>
-                        <div className="text-gray-500">{checkIn.trailer_length ? `${checkIn.trailer_length}'` : 'N/A'}</div>
+                      {/* Trailer */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <div>
+                          <div className="text-gray-900">{checkIn.trailer_number || 'N/A'}</div>
+                          <div className="text-gray-500">{checkIn.trailer_length || 'N/A'}</div>
+                        </div>
                       </td>
                       
-                      {/* Destination - City and State */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {checkIn.destination_city && checkIn.destination_state 
-                          ? `${checkIn.destination_city}, ${checkIn.destination_state}`
-                          : 'N/A'}
+                      {/* Destination */}
+                      <td className="px-2 py-2 text-xs">
+                        <div className="max-w-[100px] truncate" title={`${checkIn.destination_city || 'N/A'}, ${checkIn.destination_state || 'N/A'}`}>
+                          {checkIn.destination_city ? (
+                            <>{checkIn.destination_city}, {checkIn.destination_state}</>
+                          ) : (
+                            'N/A'
+                          )}
+                        </div>
                       </td>
                       
-                      {/* Reference Number - BOLD */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                        {checkIn.reference_number || 'N/A'}
+                      {/* Reference */}
+                      <td className="px-2 py-2 text-xs">
+                        <div className="max-w-[80px] truncate font-medium" title={checkIn.reference_number || 'N/A'}>
+                          {checkIn.reference_number || 'N/A'}
+                        </div>
                       </td>
                       
                       {/* Dock */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-2 py-2 whitespace-nowrap text-xs font-medium">
                         {checkIn.dock_number || 'N/A'}
                       </td>
                       
-                      {/* Appointment Time - Green if on time */}
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${
-                        isOnTime(checkIn.check_in_time, checkIn.appointment_time) 
-                          ? 'bg-green-100 font-semibold text-green-800' 
-                          : 'text-gray-900'
-                      }`}>
+                      {/* Appointment */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
                         {formatAppointmentTime(checkIn.appointment_time)}
                       </td>
                       
                       {/* Check In Time */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
                         {formatTimeInIndianapolis(checkIn.check_in_time)}
                       </td>
                       
                       {/* End Time */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
                         {checkIn.end_time ? formatTimeInIndianapolis(checkIn.end_time) : '-'}
                       </td>
                       
                       {/* Detention */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {calculateDetention(checkIn)}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <span className={calculateDetention(checkIn) !== '-' ? 'text-red-600 font-semibold' : ''}>
+                          {calculateDetention(checkIn)}
+                        </span>
                       </td>
                       
                       {/* Notes */}
-                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                        {checkIn.notes || '-'}
+                      <td className="px-2 py-2 text-xs">
+                        <div className="max-w-[100px] truncate" title={checkIn.notes || '-'}>
+                          {checkIn.notes || '-'}
+                        </div>
                       </td>
                       
                       {/* Status */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(checkIn.status)}`}>
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          checkIn.status.toLowerCase() === 'completed' || checkIn.status.toLowerCase() === 'checked_out'
+                            ? 'bg-green-100 text-green-800'
+                            : checkIn.status.toLowerCase() === 'rejected' || checkIn.status.toLowerCase() === 'turned_away' || checkIn.status.toLowerCase() === 'driver_left'
+                            ? 'bg-red-100 text-red-800'
+                            : checkIn.status.toLowerCase() === 'checked_in'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
                           {getStatusLabel(checkIn.status)}
                         </span>
                       </td>
                       
                       {/* Actions */}
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <button
-                          onClick={() => handleEdit(checkIn)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange(checkIn)}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Status
-                        </button>
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleStatusChange(checkIn)}
+                            className="text-blue-600 hover:text-blue-900 font-medium"
+                            title="Change Status"
+                          >
+                            Status
+                          </button>
+                          <span className="text-gray-300">|</span>
+                          <button
+                            onClick={() => setSelectedForEdit(checkIn)}
+                            className="text-green-600 hover:text-green-900 font-medium"
+                            title="Edit"
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -663,16 +698,15 @@ export default function DailyLog() {
         <StatusChangeModal
           checkIn={selectedForStatusChange}
           onClose={() => setSelectedForStatusChange(null)}
-          onSuccess={handleStatusChangeSuccess}
+          onUpdate={fetchCheckInsForDate}
         />
       )}
-
+      
       {selectedForEdit && (
         <EditCheckInModal
-          isOpen={true}
           checkIn={selectedForEdit}
           onClose={() => setSelectedForEdit(null)}
-          onSuccess={handleEditSuccess}
+          onUpdate={fetchCheckInsForDate}
         />
       )}
     </div>
