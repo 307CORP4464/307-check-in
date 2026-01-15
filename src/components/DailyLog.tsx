@@ -9,6 +9,19 @@ import EditCheckInModal from './EditCheckInModal';
 
 const TIMEZONE = 'America/Indiana/Indianapolis';
 
+// Helper function for date navigation
+const adjustDate = (dateString: string, days: number): string => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + days);
+  
+  const newYear = date.getFullYear();
+  const newMonth = String(date.getMonth() + 1).padStart(2, '0');
+  const newDay = String(date.getDate()).padStart(2, '0');
+  
+  return `${newYear}-${newMonth}-${newDay}`;
+};
+
 const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
   try {
     const utcDate = new Date(isoString);
@@ -149,6 +162,20 @@ const calculateDetention = (checkIn: CheckIn): string => {
   }
   
   return `${detentionMinutes} min`;
+};
+
+const getStatusLabel = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    'pending': 'Pending',
+    'checked_in': 'Checked In',
+    'unloaded': 'Unloaded',
+    'completed': 'Completed',
+    'checked_out': 'Checked Out',
+    'rejected': 'Rejected',
+    'turned_away': 'Turned Away',
+    'driver_left': 'Driver Left'
+  };
+  return statusMap[status.toLowerCase()] || status;
 };
 
 interface CheckIn {
@@ -299,33 +326,9 @@ export default function DailyLog() {
     if (statusLower === 'turned_away') return 'bg-orange-500 text-white';
     if (statusLower === 'driver_left') return 'bg-indigo-500 text-white';
     if (statusLower === 'pending') return 'bg-yellow-500 text-white';
-    if (statusLower === 'checked_in') return 'bg-purple-500 text-white';
+    if (statusLower === 'checked_in') return 'bg-blue-500 text-white';
     return 'bg-gray-500 text-white';
   };
-
-  const getStatusLabel = (status: string): string => {
-    if (status === 'checked_in') return 'Checked In';
-    if (status === 'checked_out') return 'Checked Out';
-    if (status === 'driver_left') return 'Driver Left';
-    if (status === 'turned_away') return 'Turned Away';
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-red-600">Error: {error}</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -344,20 +347,72 @@ export default function DailyLog() {
           </div>
 
           {/* Date picker and search */}
-          <div className="mt-4 flex gap-4 items-center">
+          <div className="mt-4 flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+            {/* Date Selector with Arrows */}
             <div>
               <label htmlFor="date-picker" className="block text-sm font-medium text-gray-700 mb-1">
                 Select Date
               </label>
-              <input
-                id="date-picker"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSelectedDate(adjustDate(selectedDate, -1))}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+                  title="Previous day"
+                >
+                  <svg 
+                    className="w-5 h-5 text-gray-600" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M15 19l-7-7 7-7" 
+                    />
+                  </svg>
+                </button>
+                
+                <input
+                  id="date-picker"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+                
+                <button
+                  onClick={() => setSelectedDate(adjustDate(selectedDate, 1))}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+                  title="Next day"
+                >
+                  <svg 
+                    className="w-5 h-5 text-gray-600" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M9 5l7 7-7 7" 
+                    />
+                  </svg>
+                </button>
+                
+                <button
+                  onClick={() => setSelectedDate(getCurrentDateInIndianapolis())}
+                  className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm font-medium"
+                >
+                  Today
+                </button>
+              </div>
             </div>
-            <div className="flex-1">
+
+            {/* Search Input */}
+            <div className="flex-1 w-full sm:w-auto">
               <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
                 Search by Reference Number
               </label>
