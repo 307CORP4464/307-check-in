@@ -1,525 +1,564 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
-import { useRouter } from 'next/navigation';
-import { zonedTimeToUtc } from 'date-fns-tz';
+
+import { useEffect, useState, useMemo } from 'react';
+import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import StatusChangeModal from './StatusChangeModal';
-import EditCheckInModal from './EditCheckInModal';
+import { useRouter } from 'next/navigation';
 
-const TIMEZONE = 'America/Indiana/Indianapolis';
-
-const formatTimeInIndianapolis = (isoString: string, includeDate: boolean = false): string => {
-  try {
-    const utcDate = new Date(isoString);
-    
-    const options: Intl.DateTimeFormatOptions = {
-      timeZone: TIMEZONE,
-      hour12: false,
-      ...(includeDate && {
-        month: '2-digit',
-        day: '2-digit',
-      }),
-      hour: '2-digit',
-      minute: '2-digit',
-    };
-    
-    const formatter = new Intl.DateTimeFormat('en-US', options);
-    return formatter.format(utcDate);
-  } catch (e) {
-    console.error('Time formatting error:', e);
-    return '-';
-  }
-};
-
-const formatPhoneNumber = (phone: string | undefined): string => {
-  if (!phone) return 'N/A';
-  
-  const cleaned = phone.replace(/\D/g, '');
-  
-  if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 3)})-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-  }
-  
-  return phone;
-};
-
-const formatAppointmentTime = (appointmentTime: string | null | undefined): string => {
-  if (!appointmentTime) return 'N/A';
-  
-  if (appointmentTime === 'work_in') return 'Work In';
-  if (appointmentTime === 'paid_to_load') return 'Paid - No Appt';
-  if (appointmentTime === 'paid_charge_customer') return 'Paid - Charge Customer';
-  if (appointmentTime === 'ltl') return 'LTL';
-  
-  if (appointmentTime.length === 4 && /^\d{4}$/.test(appointmentTime)) {
-    const hours = appointmentTime.substring(0, 2);
-    const minutes = appointmentTime.substring(2, 4);
-    return `${hours}:${minutes}`;
-  }
-  
-  return appointmentTime;
-};
-
-const isOnTime = (checkInTime: string, appointmentTime: string | null | undefined): boolean => {
-  if (!appointmentTime || 
-      appointmentTime === 'work_in' || 
-      appointmentTime === 'paid_to_load' || 
-      appointmentTime === 'paid_charge_customer' ||
-      appointmentTime === 'ltl') {
-    return false;
-  }
-
-  if (appointmentTime.length === 4 && /^\d{4}$/.test(appointmentTime)) {
-    const appointmentHour = parseInt(appointmentTime.substring(0, 2));
-    const appointmentMinute = parseInt(appointmentTime.substring(2, 4));
-    
-    const checkInDate = new Date(checkInTime);
-    
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: TIMEZONE,
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false
-    });
-    
-    const timeString = formatter.format(checkInDate);
-    const [checkInHour, checkInMinute] = timeString.split(':').map(Number);
-    
-    const appointmentTotalMinutes = appointmentHour * 60 + appointmentMinute;
-    const checkInTotalMinutes = checkInHour * 60 + checkInMinute;
-    
-    const difference = checkInTotalMinutes - appointmentTotalMinutes;
-    return difference <= 0;
-  }
-  
-  return false;
-};
-
-const calculateDetention = (checkIn: CheckIn): string => {
-  if (!checkIn.appointment_time || !checkIn.end_time) {
-    return '-';
-  }
-
-  if (!isOnTime(checkIn.check_in_time, checkIn.appointment_time)) {
-    return '-';
-  }
-
-  if (checkIn.appointment_time === 'work_in' || 
-      checkIn.appointment_time === 'paid_to_load' || 
-      checkIn.appointment_time === 'paid_charge_customer' ||
-      checkIn.appointment_time === 'ltl') {
-    return '-';
-  }
-
-  const endTime = new Date(checkIn.end_time);
-  const standardMinutes = 120;
-  let detentionMinutes = 0;
-
-  if (checkIn.appointment_time.length === 4 && /^\d{4}$/.test(checkIn.appointment_time)) {
-    const appointmentHour = parseInt(checkIn.appointment_time.substring(0, 2));
-    const appointmentMinute = parseInt(checkIn.appointment_time.substring(2, 4));
-    
-    const checkInDate = new Date(checkIn.check_in_time);
-    
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: TIMEZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
-    
-    const parts = formatter.formatToParts(checkInDate);
-    const year = parseInt(parts.find(p => p.type === 'year')?.value || '0');
-    const month = parseInt(parts.find(p => p.type === 'month')?.value || '0') - 1;
-    const day = parseInt(parts.find(p => p.type === 'day')?.value || '0');
-    
-    const appointmentDate = new Date(checkInDate);
-    appointmentDate.setFullYear(year, month, day);
-    appointmentDate.setHours(appointmentHour, appointmentMinute, 0, 0);
-    
-    const timeSinceAppointmentMs = endTime.getTime() - appointmentDate.getTime();
-    const minutesSinceAppointment = Math.floor(timeSinceAppointmentMs / (1000 * 60));
-    
-    detentionMinutes = Math.max(0, minutesSinceAppointment - standardMinutes);
-  }
-  
-  if (detentionMinutes === 0) {
-    return '-';
-  }
-  
-  return `${detentionMinutes} min`;
-};
-
-interface CheckIn {
+interface OrderInfo {
   id: string;
-  check_in_time: string;
-  check_out_time?: string | null;
+  po_number: string;
+  driver_name: string;
   status: string;
-  driver_name?: string;
-  driver_phone?: string;
-  carrier_name?: string;
-  trailer_number?: string;
-  trailer_length?: string;
-  load_type?: 'inbound' | 'outbound';
-  reference_number?: string;
-  dock_number?: string;
-  appointment_time?: string | null;
-  end_time?: string | null;
-  start_time?: string | null;
-  notes?: string;
-  destination_city?: string;
-  destination_state?: string;
+  check_in_time: string;
 }
 
-export default function DailyLog() {
+interface DockStatus {
+  dock_number: string;
+  status: 'available' | 'in-use' | 'double-booked' | 'blocked';
+  orders: OrderInfo[];
+  is_manually_blocked: boolean;
+  blocked_reason?: string;
+  current_load_id?: string | null;
+}
+
+const TOTAL_DOCKS = 70;
+
+export default function DockStatusPage() {
   const router = useRouter();
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [dockStatuses, setDockStatuses] = useState<DockStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  
-  const getCurrentDateInIndianapolis = () => {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: TIMEZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    const parts = formatter.formatToParts(now);
-    const year = parts.find(p => p.type === 'year')?.value;
-    const month = parts.find(p => p.type === 'month')?.value;
-    const day = parts.find(p => p.type === 'day')?.value;
-    return `${year}-${month}-${day}`;
-  };
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [selectedDock, setSelectedDock] = useState<string | null>(null);
+  const [blockReason, setBlockReason] = useState('');
+  const [filter, setFilter] = useState<'all' | 'available' | 'in-use' | 'double-booked' | 'blocked'>('all');
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-  const [selectedDate, setSelectedDate] = useState<string>(getCurrentDateInIndianapolis());
-  const [selectedForStatusChange, setSelectedForStatusChange] = useState<CheckIn | null>(null);
-  const [selectedForEdit, setSelectedForEdit] = useState<CheckIn | null>(null);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
 
-  const fetchCheckInsForDate = async () => {
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    initializeDocks();
+    
+    const channel = supabase
+      .channel('dock-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'check_ins'
+        },
+        () => {
+          initializeDocks();
+        }
+      )
+      .subscribe();
+
+    const handleDockChange = () => initializeDocks();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('dock-assignment-changed', handleDockChange);
+    }
+
+    return () => {
+      supabase.removeChannel(channel);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('dock-assignment-changed', handleDockChange);
+      }
+    };
+  }, []);
+
+  const initializeDocks = async () => {
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      
-      const startOfDayIndy = zonedTimeToUtc(`${selectedDate} 00:00:00`, TIMEZONE);
-      const endOfDayIndy = zonedTimeToUtc(`${selectedDate} 23:59:59`, TIMEZONE);
+      const allDocks: DockStatus[] = [];
+      for (let i = 1; i <= TOTAL_DOCKS; i++) {
+        allDocks.push({
+          dock_number: i.toString(),
+          status: 'available',
+          orders: [],
+          is_manually_blocked: false,
+          blocked_reason: undefined,
+          current_load_id: null
+        });
+      }
 
-      const { data, error } = await supabase
+      const { data: checkIns } = await supabase
         .from('check_ins')
         .select('*')
-        .gte('check_in_time', startOfDayIndy.toISOString())
-        .lte('check_in_time', endOfDayIndy.toISOString())
-        .order('check_in_time', { ascending: false });
+        .in('status', ['checked_in', 'pending'])
+        .not('dock_number', 'is', null);
 
-      if (error) throw error;
-      setCheckIns(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
+      const dockMap = new Map<string, OrderInfo[]>();
+      checkIns?.forEach(checkIn => {
+        if (checkIn.dock_number && checkIn.dock_number !== 'Ramp') {
+          const existing = dockMap.get(checkIn.dock_number) || [];
+          existing.push({
+            id: checkIn.id,
+            po_number: checkIn.reference_number || 'N/A',
+            driver_name: checkIn.driver_name || 'N/A',
+            status: checkIn.status,
+            check_in_time: checkIn.check_in_time
+          });
+          dockMap.set(checkIn.dock_number, existing);
+        }
+      });
+
+      let blockedDocks: Record<string, { reason: string }> = {};
+      if (typeof window !== 'undefined') {
+        const blockedStr = localStorage.getItem('blocked_docks');
+        if (blockedStr) {
+          blockedDocks = JSON.parse(blockedStr);
+        }
+      }
+
+      allDocks.forEach(dock => {
+        const orders = dockMap.get(dock.dock_number) || [];
+        dock.orders = orders;
+        
+        if (blockedDocks[dock.dock_number]) {
+          dock.status = 'blocked';
+          dock.is_manually_blocked = true;
+          dock.blocked_reason = blockedDocks[dock.dock_number].reason;
+        } else if (orders.length > 1) {
+          dock.status = 'double-booked';
+        } else if (orders.length === 1) {
+          dock.status = 'in-use';
+        }
+      });
+
+      setDockStatuses(allDocks);
+    } catch (error) {
+      console.error('Error initializing docks:', error);
+    }
+
+    setLoading(false);
+  };
+
+  const handleBlockDock = (dockNumber: string) => {
+    setSelectedDock(dockNumber);
+    const dock = dockStatuses.find(d => d.dock_number === dockNumber);
+    setBlockReason(dock?.blocked_reason || '');
+    setShowBlockModal(true);
+  };
+
+  const handleUnblockDock = async (dockNumber: string) => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const blockedStr = localStorage.getItem('blocked_docks');
+      const blocked = blockedStr ? JSON.parse(blockedStr) : {};
+      delete blocked[dockNumber];
+      localStorage.setItem('blocked_docks', JSON.stringify(blocked));
+      initializeDocks();
+    } catch (error) {
+      console.error('Error unblocking dock:', error);
     }
   };
 
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        setUserEmail(user.email || '');
-      } else {
-        router.push('/login');
-      }
-    };
-    getUser();
-  }, [supabase, router]);
+  const submitBlockDock = () => {
+    if (!selectedDock || !blockReason.trim()) {
+      alert('Please enter a reason for blocking this dock');
+      return;
+    }
 
-  useEffect(() => {
-    fetchCheckInsForDate();
-  }, [selectedDate]);
+    if (typeof window === 'undefined') return;
 
-  const filteredCheckIns = checkIns.filter((checkIn) => {
-    if (!searchTerm.trim()) return true;
-    
-    const searchLower = searchTerm.toLowerCase().trim();
-    const refNumber = checkIn.reference_number?.toLowerCase() || '';
-    
-    return refNumber.includes(searchLower);
-  });
-
-  // Calculate counters
-  const totalCount = filteredCheckIns.length;
-  const completedCount = filteredCheckIns.filter(checkIn => {
-    const statusLower = checkIn.status.toLowerCase();
-    return statusLower === 'completed' || 
-           statusLower === 'checked_out' || 
-           statusLower === 'rejected' || 
-           statusLower === 'driver_left' || 
-           statusLower === 'turned_away';
-  }).length;
+    try {
+      const blockedStr = localStorage.getItem('blocked_docks');
+      const blocked = blockedStr ? JSON.parse(blockedStr) : {};
+      blocked[selectedDock] = { reason: blockReason.trim() };
+      localStorage.setItem('blocked_docks', JSON.stringify(blocked));
+      
+      setShowBlockModal(false);
+      setSelectedDock(null);
+      setBlockReason('');
+      initializeDocks();
+    } catch (error) {
+      console.error('Error blocking dock:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
       router.push('/login');
-      router.refresh();
     } catch (error) {
       console.error('Error logging out:', error);
     }
   };
 
-  const handleStatusChange = (checkIn: CheckIn) => {
-    setSelectedForStatusChange(checkIn);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'available':
+        return 'bg-green-100 text-green-800 border-green-300';
+      case 'in-use':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'double-booked':
+        return 'bg-red-100 text-red-800 border-red-300';
+      case 'blocked':
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
   };
 
-  const handleStatusChangeSuccess = () => {
-    fetchCheckInsForDate();
-    setSelectedForStatusChange(null);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'available':
+        return '✓';
+      case 'in-use':
+        return '●';
+      case 'double-booked':
+        return '⚠';
+      case 'blocked':
+        return '🚫';
+      default:
+        return '';
+    }
   };
 
-  const handleEdit = (checkIn: CheckIn) => {
-    setSelectedForEdit(checkIn);
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit',
+      hour12: true 
+    });
   };
 
-  const handleEditSuccess = () => {
-    fetchCheckInsForDate();
-    setSelectedForEdit(null);
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric'
+    });
   };
 
-  const getStatusBadgeColor = (status: string): string => {
-    const statusLower = status.toLowerCase();
-    if (statusLower === 'completed' || statusLower === 'checked_out') return 'bg-gray-500 text-white';
-    if (statusLower === 'unloaded') return 'bg-green-500 text-white';
-    if (statusLower === 'rejected') return 'bg-red-500 text-white';
-    if (statusLower === 'turned_away') return 'bg-orange-500 text-white';
-    if (statusLower === 'driver_left') return 'bg-indigo-500 text-white';
-    if (statusLower === 'pending') return 'bg-yellow-500 text-white';
-    if (statusLower === 'checked_in') return 'bg-purple-500 text-white';
-    return 'bg-gray-500 text-white';
+  const formatCheckInTime = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    } catch {
+      return 'N/A';
+    }
   };
 
-  const getStatusLabel = (status: string): string => {
-    if (status === 'checked_in') return 'Checked In';
-    if (status === 'checked_out') return 'Checked Out';
-    if (status === 'driver_left') return 'Driver Left';
-    if (status === 'turned_away') return 'Turned Away';
-    return status.charAt(0).toUpperCase() + status.slice(1);
-  };
+  const filteredDocks = useMemo(() => {
+    if (filter === 'all') return dockStatuses;
+    return dockStatuses.filter(d => d.status === filter);
+  }, [dockStatuses, filter]);
+
+  const stats = useMemo(() => ({
+    available: dockStatuses.filter(d => d.status === 'available').length,
+    inUse: dockStatuses.filter(d => d.status === 'in-use').length,
+    doubleBooked: dockStatuses.filter(d => d.status === 'double-booked').length,
+    blocked: dockStatuses.filter(d => d.status === 'blocked').length,
+  }), [dockStatuses]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-red-600">Error: {error}</div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow-md border-b-4 border-blue-600">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="text-3xl font-bold text-blue-600">🚚</div>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
+                  <p className="text-sm text-gray-600">Loading...</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link 
+                  href="/appointments" 
+                  className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
+                  Appointments
+                </Link>  
+                <Link
+                  href="/dock-status"
+                  className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">
+                  Dock Status
+                </Link>    
+                <Link
+                  href="/dashboard"
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium">
+                  Dashboard
+                </Link>
+                <Link
+                  href="/logs"
+                  className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium">
+                  Daily Logs
+                </Link>
+                <Link
+                  href="/tracking"
+                  className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium">
+                  Tracking
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-gray-600">Loading dock statuses...</div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header section */}
-      <div className="bg-white shadow">
+      <header className="bg-white shadow-md border-b-4 border-blue-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Daily Log</h1>
-            
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
-            >
-              Logout
-            </button>
-          </div>
-
-          {/* Date picker and search */}
-          <div className="mt-4 flex gap-4 items-center">
-            <div>
-              <label htmlFor="date-picker" className="block text-sm font-medium text-gray-700 mb-1">
-                Select Date
-              </label>
-              <input
-                id="date-picker"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="text-3xl font-bold text-blue-600">🚚</div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
+                <p className="text-sm text-gray-600">{formatDate(currentTime)} • {formatTime(currentTime)}</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-                Search by Reference Number
-              </label>
-              <input
-                id="search"
-                type="text"
-                placeholder="Enter reference number..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              />
+            <div className="flex items-center gap-3">
+              <Link 
+                href="/appointments" 
+                className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium">
+                Appointments
+              </Link>  
+              <Link
+                href="/dock-status"
+                className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium">
+                Dock Status
+              </Link>    
+              <Link
+                href="/dashboard"
+                className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium">
+                Dashboard
+              </Link>
+              <Link
+                href="/logs"
+                className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium">
+                Daily Logs
+              </Link>
+              <Link
+                href="/tracking"
+                className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium">
+                Tracking
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors font-medium"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Stats Cards - Matching Dock Status Style */}
+      {/* Stats Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Total Count Card */}
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform transition-all hover:scale-105">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm font-medium uppercase tracking-wide">Total Check-Ins</p>
-                <p className="text-5xl font-bold mt-2">{totalCount}</p>
-                <p className="text-blue-100 text-sm mt-2">For selected date</p>
+                <p className="text-sm font-medium text-green-600">Available</p>
+                <p className="text-3xl font-bold text-green-700">{stats.available}</p>
               </div>
-              <div className="text-6xl opacity-20">
-                📋
-              </div>
+              <div className="text-4xl">✓</div>
             </div>
           </div>
-
-          {/* Completed Count Card */}
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform transition-all hover:scale-105">
+          <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-green-100 text-sm font-medium uppercase tracking-wide">Completed</p>
-                <p className="text-5xl font-bold mt-2">{completedCount}</p>
-                <p className="text-green-100 text-sm mt-2">
-                  {totalCount > 0 ? `${Math.round((completedCount / totalCount) * 100)}% completion rate` : 'No data'}
-                </p>
+                <p className="text-sm font-medium text-yellow-600">In Use</p>
+                <p className="text-3xl font-bold text-yellow-700">{stats.inUse}</p>
               </div>
-              <div className="text-6xl opacity-20">
-                ✓
+              <div className="text-4xl">●</div>
+            </div>
+          </div>
+          <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-red-600">Double Booked</p>
+                <p className="text-3xl font-bold text-red-700">{stats.doubleBooked}</p>
               </div>
+              <div className="text-4xl">⚠</div>
+            </div>
+          </div>
+          <div className="bg-gray-50 border-2 border-gray-300 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Blocked</p>
+                <p className="text-3xl font-bold text-gray-700">{stats.blocked}</p>
+              </div>
+              <div className="text-4xl">🚫</div>
             </div>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Check In
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Driver Info
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Trailer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Reference
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Appointment
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredCheckIns.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                      No check-ins found for this date
-                    </td>
-                  </tr>
+        {/* Filter Buttons */}
+        <div className="flex gap-2 mb-6 flex-wrap">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'all' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            All Docks
+          </button>
+          <button
+            onClick={() => setFilter('available')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'available' 
+                ? 'bg-green-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            Available
+          </button>
+          <button
+            onClick={() => setFilter('in-use')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'in-use' 
+                ? 'bg-yellow-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            In Use
+          </button>
+          <button
+            onClick={() => setFilter('double-booked')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'double-booked' 
+                ? 'bg-red-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            Double Booked
+          </button>
+          <button
+            onClick={() => setFilter('blocked')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filter === 'blocked' 
+                ? 'bg-gray-600 text-white' 
+                : 'bg-white text-gray-700 border-2 border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            Blocked
+          </button>
+        </div>
+
+        {/* Dock Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+          {filteredDocks.map((dock) => (
+            <div
+              key={dock.dock_number}
+              className={`border-2 rounded-lg p-4 transition-all hover:shadow-lg ${getStatusColor(dock.status)}`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xl font-bold">Dock {dock.dock_number}</span>
+                <span className="text-2xl">{getStatusIcon(dock.status)}</span>
+              </div>
+              <div className="text-sm font-medium mb-2 capitalize">{dock.status.replace('-', ' ')}</div>
+              
+              {dock.orders.length > 0 && (
+                <div className="mt-2 space-y-1 text-xs">
+                  {dock.orders.map((order) => (
+                    <div key={order.id} className="bg-white bg-opacity-50 rounded p-1">
+                      <div className="font-medium">PO: {order.po_number}</div>
+                      <div>Driver: {order.driver_name}</div>
+                      <div>In: {formatCheckInTime(order.check_in_time)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {dock.is_manually_blocked && dock.blocked_reason && (
+                <div className="mt-2 text-xs bg-white bg-opacity-50 rounded p-1">
+                  <div className="font-medium">Blocked:</div>
+                  <div>{dock.blocked_reason}</div>
+                </div>
+              )}
+
+              <div className="mt-3 space-y-1">
+                {dock.status === 'blocked' ? (
+                  <button
+                    onClick={() => handleUnblockDock(dock.dock_number)}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white text-xs py-1 px-2 rounded transition-colors"
+                  >
+                    Unblock
+                  </button>
                 ) : (
-                  filteredCheckIns.map((checkIn) => (
-                    <tr key={checkIn.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatTimeInIndianapolis(checkIn.check_in_time)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>{checkIn.driver_name || 'N/A'}</div>
-                        <div className="text-gray-500">{formatPhoneNumber(checkIn.driver_phone)}</div>
-                        <div className="text-gray-500 text-xs">{checkIn.carrier_name || 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div>{checkIn.trailer_number || 'N/A'}</div>
-                        <div className="text-gray-500">{checkIn.trailer_length ? `${checkIn.trailer_length}'` : 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {checkIn.reference_number || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          checkIn.load_type === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                        }`}>
-                          {checkIn.load_type === 'inbound' ? 'Inbound' : 'Outbound'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatAppointmentTime(checkIn.appointment_time)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(checkIn.status)}`}>
-                          {getStatusLabel(checkIn.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <button
-                          onClick={() => handleEdit(checkIn)}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange(checkIn)}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Status
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  <button
+                    onClick={() => handleBlockDock(dock.dock_number)}
+                    className="w-full bg-red-500 hover:bg-red-600 text-white text-xs py-1 px-2 rounded transition-colors"
+                  >
+                    Block
+                  </button>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Modals */}
-      {selectedForStatusChange && (
-        <StatusChangeModal
-          checkIn={selectedForStatusChange}
-          onClose={() => setSelectedForStatusChange(null)}
-          onSuccess={handleStatusChangeSuccess}
-        />
-      )}
-      
-      {selectedForEdit && (
-        <EditCheckInModal
-          checkIn={selectedForEdit}
-          onClose={() => setSelectedForEdit(null)}
-          onSuccess={handleEditSuccess}
-        />
+      {/* Block Modal */}
+      {showBlockModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-4">Block Dock {selectedDock}</h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reason for blocking:
+              </label>
+              <textarea
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+                className="w-full border-2 border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                rows={3}
+                placeholder="Enter reason..."
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={submitBlockDock}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+              >
+                Block Dock
+              </button>
+              <button
+                onClick={() => {
+                  setShowBlockModal(false);
+                  setSelectedDock(null);
+                  setBlockReason('');
+                }}
+                className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 }
-
