@@ -327,10 +327,11 @@ export default function DockStatusPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-md border-b-4 border-blue-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
               <div className="text-3xl font-bold text-blue-600">🚚</div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dock Status</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Dock Status Monitor</h1>
                 <p className="text-sm text-gray-600">{formatDate(currentTime)} • {formatTime(currentTime)}</p>
               </div>
             </div>
@@ -561,3 +562,4 @@ export default function DockStatusPage() {
     </div>
   );
 }
+
