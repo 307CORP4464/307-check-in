@@ -204,17 +204,6 @@ export default function DailyLog() {
   const [selectedForStatusChange, setSelectedForStatusChange] = useState<CheckIn | null>(null);
   const [selectedForEdit, setSelectedForEdit] = useState<CheckIn | null>(null);
 
-  // Calculate counters
-  const totalCount = filteredCheckIns.length;
-  const completedCount = filteredCheckIns.filter(checkIn => {
-    const statusLower = checkIn.status.toLowerCase();
-    return statusLower === 'completed' || 
-           statusLower === 'checked_out' || 
-           statusLower === 'rejected' || 
-           statusLower === 'driver_left' || 
-           statusLower === 'turned_away';
-  }).length;
-
   const fetchCheckInsForDate = async () => {
     try {
       setLoading(true);
@@ -262,6 +251,17 @@ export default function DailyLog() {
     
     return refNumber.includes(searchLower);
   });
+
+  // Calculate counters
+  const totalCount = filteredCheckIns.length;
+  const completedCount = filteredCheckIns.filter(checkIn => {
+    const statusLower = checkIn.status.toLowerCase();
+    return statusLower === 'completed' || 
+           statusLower === 'checked_out' || 
+           statusLower === 'rejected' || 
+           statusLower === 'driver_left' || 
+           statusLower === 'turned_away';
+  }).length;
 
   const handleLogout = async () => {
     try {
@@ -311,9 +311,25 @@ export default function DailyLog() {
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl text-red-600">Error: {error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header section - add counters here */}
+      {/* Header section */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
@@ -372,173 +388,103 @@ export default function DailyLog() {
           </div>
         </div>
       </div>
-    </div>
-    </div>
-      
 
-              {/* Table - Full Width */}
-        <div className="bg-white rounded-lg shadow">
-          <table className="w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Driver Info
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Trailer Info
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Destination
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reference #
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Dock
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Appointment
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Check-In
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  End Time
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Detention
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Notes
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCheckIns.length === 0 ? (
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={13} className="px-4 py-8 text-center text-gray-500">
-                    No check-ins found for this date
-                  </td>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Check In
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Driver Info
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Trailer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Reference
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Appointment
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
-              ) : (
-                filteredCheckIns.map((checkIn) => (
-                  <tr key={checkIn.id} className="hover:bg-gray-50">
-                    {/* Type */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={`px-3 py-1 rounded text-sm font-medium ${
-                          checkIn.load_type === 'inbound'
-                            ? 'bg-orange-100 text-orange-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}
-                      >
-                        {checkIn.load_type === 'inbound' ? 'I' : 'O'}
-                      </span>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredCheckIns.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                      No check-ins found for this date
                     </td>
-
-                    {/* Driver Info */}
-                    <td className="px-4 py-4 text-sm">
-                      <div className="font-bold text-gray-900">{checkIn.carrier_name || 'N/A'}</div>
-                      <div className="text-gray-700">{checkIn.driver_name || 'N/A'}</div>
-                      <div className="text-gray-500">{formatPhoneNumber(checkIn.driver_phone)}</div>
-                    </td>
-
-                    {/* Trailer Info */}
-                    <td className="px-4 py-4 text-sm text-gray-900">
-                      <div>{checkIn.trailer_number || 'N/A'}</div>
-                      <div className="text-gray-500">{checkIn.trailer_length ? `${checkIn.trailer_length}'` : ''}</div>
-                    </td>
-
-                    {/* Destination */}
-                    <td className="px-4 py-4 text-sm text-gray-900">
-                      {checkIn.destination_city && checkIn.destination_state
-                        ? `${checkIn.destination_city}, ${checkIn.destination_state}`
-                        : 'N/A'}
-                    </td>
-
-                    {/* Reference Number */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                      {checkIn.reference_number || 'N/A'}
-                    </td>
-
-                    {/* Dock */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.dock_number || 'N/A'}
-                    </td>
-
-                    {/* Appointment Time */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <span
-                        className={`${
-                          isOnTime(checkIn.check_in_time, checkIn.appointment_time)
-                            ? 'bg-green-100 text-green-800 px-2 py-1 rounded font-medium'
-                            : 'text-gray-900'
-                        }`}
-                      >
+                  </tr>
+                ) : (
+                  filteredCheckIns.map((checkIn) => (
+                    <tr key={checkIn.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatTimeInIndianapolis(checkIn.check_in_time)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>{checkIn.driver_name || 'N/A'}</div>
+                        <div className="text-gray-500">{formatPhoneNumber(checkIn.driver_phone)}</div>
+                        <div className="text-gray-500 text-xs">{checkIn.carrier_name || 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div>{checkIn.trailer_number || 'N/A'}</div>
+                        <div className="text-gray-500">{checkIn.trailer_length ? `${checkIn.trailer_length}'` : 'N/A'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {checkIn.reference_number || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          checkIn.load_type === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {checkIn.load_type === 'inbound' ? 'Inbound' : 'Outbound'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatAppointmentTime(checkIn.appointment_time)}
-                      </span>
-                    </td>
-
-                    {/* Check-In Time */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatTimeInIndianapolis(checkIn.check_in_time)}
-                    </td>
-
-                    {/* End Time */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {checkIn.end_time ? formatTimeInIndianapolis(checkIn.end_time) : '-'}
-                    </td>
-
-                    {/* Detention */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {calculateDetention(checkIn)}
-                    </td>
-
-                    {/* Notes */}
-                    <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
-                      <div className="line-clamp-2">{checkIn.notes || '-'}</div>
-                    </td>
-
-                    {/* Status */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeColor(checkIn.status)}`}>
-                        {getStatusLabel(checkIn.status)}
-                      </span>
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <div className="flex gap-2">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(checkIn.status)}`}>
+                          {getStatusLabel(checkIn.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <button
                           onClick={() => handleEdit(checkIn)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
+                          className="text-blue-600 hover:text-blue-900"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleStatusChange(checkIn)}
-                          className="text-green-600 hover:text-green-800 font-medium"
+                          className="text-green-600 hover:text-green-900"
                         >
                           Status
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </main>
+      </div>
+
       {/* Modals */}
       {selectedForStatusChange && (
         <StatusChangeModal
