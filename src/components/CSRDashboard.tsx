@@ -466,7 +466,7 @@ export default function CSRDashboard() {
                             ? 'bg-blue-100 text-blue-800' 
                             : 'bg-orange-100 text-orange-800'
                         }`}>
-                          {checkIn.load_type || 'N/A'}
+                          {checkIn.load_type === 'inbound' ? 'I' : 'O'}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
