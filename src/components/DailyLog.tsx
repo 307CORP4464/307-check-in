@@ -300,7 +300,7 @@ export default function DailyLog() {
     }
   };
 
-  const handleStatusChange = (checkIn: CheckIn) => {
+   const handleStatusChange = (checkIn: CheckIn) => {
     setSelectedForStatusChange(checkIn);
   };
 
@@ -333,6 +333,7 @@ export default function DailyLog() {
       </div>
     );
   }
+ 
 
   return (
     <div className="min-h-screen bg-gray-50">
