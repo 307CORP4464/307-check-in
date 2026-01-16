@@ -111,11 +111,11 @@ const isWithinAllowedTime = (): { allowed: boolean; message?: string } => {
     };
   }
   
-  // Check if between 7:00 AM and 5:00 PM
-  if (hour < 7) {
+  // Check if between 6:00 AM and 5:00 PM
+  if (hour < 6) {
     return { 
       allowed: false, 
-      message: 'Check-in is not available before 7:00 AM' 
+      message: 'Check-in is not available before 6:00 AM' 
     };
   }
   
