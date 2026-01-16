@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import { zonedTimeToUtc } from 'date-fns-tz';
@@ -231,7 +231,7 @@ export default function DailyLog() {
   const [selectedForStatusChange, setSelectedForStatusChange] = useState<CheckIn | null>(null);
   const [selectedForEdit, setSelectedForEdit] = useState<CheckIn | null>(null);
 
-  const fetchCheckInsForDate = async () => {
+  const fetchCheckInsForDate = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -252,7 +252,7 @@ export default function DailyLog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDate, supabase]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -268,7 +268,7 @@ export default function DailyLog() {
 
   useEffect(() => {
     fetchCheckInsForDate();
-  }, [selectedDate]);
+  }, [fetchCheckInsForDate]);
 
   const filteredCheckIns = checkIns.filter((checkIn) => {
     if (!searchTerm.trim()) return true;
@@ -300,7 +300,7 @@ export default function DailyLog() {
     }
   };
 
-   const handleStatusChange = (checkIn: CheckIn) => {
+  const handleStatusChange = (checkIn: CheckIn) => {
     setSelectedForStatusChange(checkIn);
   };
 
@@ -333,7 +333,7 @@ export default function DailyLog() {
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
