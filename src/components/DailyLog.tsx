@@ -317,7 +317,6 @@ export default function DailyLog() {
     fetchCheckInsForDate();
     setSelectedForEdit(null);
   };
-
   const getStatusBadgeColor = (status: string): string => {
     const statusLower = status.toLowerCase();
     if (statusLower === 'completed' || statusLower === 'checked_out') return 'bg-gray-500 text-white';
@@ -345,24 +344,25 @@ export default function DailyLog() {
       </div>
     );
   }
-};
 
-return (
-  <div className="min-h-screen bg-gray-50">
-    {/* Header */}
-    <div className="bg-white border-b shadow-sm">
-      <div className="max-w-[1600px] mx-auto px-4 py-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Daily Log</h1>
-            {userEmail && (
-              <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
-            )}
-            <p className="text-xs text-gray-500">
-              Current time: {formatTimeInIndianapolis(new Date().toISOString())}
-            </p>
-          </div>
-          <div className="flex gap-3">
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b shadow-sm">
+        <div className="max-w-[1600px] mx-auto px-4 py-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Daily Log</h1>
+              {userEmail && (
+                <p className="text-sm text-gray-600 mt-1">Logged in as: {userEmail}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                Current time: {formatTimeInIndianapolis(new Date().toISOString())}
+              </p>
+            </div>
+            <div className="flex gap-3">
+
+
             <Link 
               href="/appointments" 
               className="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
