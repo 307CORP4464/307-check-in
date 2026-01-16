@@ -540,16 +540,16 @@ return (
         <div className="overflow-x-auto">
           <table className="w-full divide-y divide-gray-200 text-xs table-fixed">
             <colgroup>
-              <col style={{ width: '60px' }} /> {/* Type */}
-              <col style={{ width: '80px' }} /> {/* Driver */}
-              <col style={{ width: '80px' }} /> {/* Trailer */}
+              <col style={{ width: 'auto' }} /> {/* Type */}
+              <col style={{ width: 'auto' }} /> {/* Driver */}
+              <col style={{ width: 'auto' }} /> {/* Trailer */}
               <col style={{ width: 'auto' }} /> {/* Destination */}
-              <col style={{ width: '250px' }} /> {/* Reference Number - 15 digits visible */}
+              <col style={{ width: 'auto' }} /> {/* Reference Number - 15 digits visible */}
               <col style={{ width: 'auto' }} /> {/* Dock */}
-              <col style={{ width: '80px' }} /> {/* Check In */}
+              <col style={{ width: 'auto' }} /> {/* Check In */}
               <col style={{ width: 'auto' }} /> {/* Check Out */}
-              <col style={{ width: '80px' }} /> {/* Status */}
-              <col style={{ width: '150px' }} /> {/* Notes - 15 digits visible */}
+              <col style={{ width: 'auto' }} /> {/* Status */}
+              <col style={{ width: 'auto' }} /> {/* Notes - 15 digits visible */}
               <col style={{ width: 'auto' }} /> {/* Actions */}
             </colgroup>
             <thead className="bg-gray-50">
