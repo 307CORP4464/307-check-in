@@ -537,7 +537,7 @@ return (
 
       {/* Table - Updated for better fit */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="overflow-x-visible">
+        <div className="overflow-x-auto">
           <table className="w-full divide-y divide-gray-200 text-xs">
             <thead className="bg-gray-50">
               <tr>
@@ -566,7 +566,7 @@ return (
                   Check In
                 </th>
                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                  End Time
+                  End
                 </th>
                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Det.
@@ -577,12 +577,11 @@ return (
                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Status
                 </th>
-                 </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Actions
+                </th>
+              </tr>
+            </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
