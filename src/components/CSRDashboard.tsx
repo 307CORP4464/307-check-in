@@ -464,7 +464,7 @@ export default function CSRDashboard() {
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           checkIn.load_type === 'inbound' 
                             ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-green-100 text-green-800'
+                            : 'bg-orange-100 text-orange-800'
                         }`}>
                           {checkIn.load_type || 'N/A'}
                         </span>
