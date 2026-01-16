@@ -507,7 +507,7 @@ return (
             <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow p-4 text-white flex-1">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-xs font-medium uppercase tracking-wide">Total</p>
+                  <p className="text-blue-100 text-xs font-medium uppercase tracking-wide">Total Checked In</p>
                   <p className="text-3xl font-bold mt-1">{totalCount}</p>
                 </div>
                 <div className="text-3xl opacity-20">
@@ -520,7 +520,7 @@ return (
             <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow p-4 text-white flex-1">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-xs font-medium uppercase tracking-wide">Completed</p>
+                  <p className="text-green-100 text-xs font-medium uppercase tracking-wide">Total Completed</p>
                   <p className="text-3xl font-bold mt-1">{completedCount}</p>
                   <p className="text-green-100 text-xs mt-1">
                     {totalCount > 0 ? `${Math.round((completedCount / totalCount) * 100)}%` : 'N/A'}
@@ -603,9 +603,9 @@ return (
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
                           checkIn.load_type === 'inbound' 
                             ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-green-100 text-green-800'
+                            : 'bg-orange-100 text-orange-800'
                         }`}>
-                          {checkIn.load_type === 'inbound' ? 'In' : 'Out'}
+                          {checkIn.load_type === 'inbound' ? 'I' : 'O'}
                         </span>
                       </td>
                       
