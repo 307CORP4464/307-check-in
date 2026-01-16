@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { useRouter } from 'next/navigation';
 
 interface FormData {
   driverName: string;
@@ -212,7 +211,6 @@ const validateGeofence = (): Promise<{ valid: boolean; message?: string; distanc
 };
 
 export default function DriverCheckInForm() {
-  const router = useRouter();
   const supabase = useMemo(() => getSupabaseClient(), []);
 
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
@@ -272,6 +270,7 @@ export default function DriverCheckInForm() {
     setReferenceError(null);
     setError(null);
     setLocationStatus(null);
+    setSuccess(false);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -359,11 +358,10 @@ export default function DriverCheckInForm() {
 
       setSuccess(true);
       
-      // Reset form after 2 seconds and redirect
+      // Reset form after 3 seconds
       setTimeout(() => {
         resetForm();
-        router.push('/check-in/success');
-      }, 2000);
+      }, 3000);
 
     } catch (err) {
       console.error('Error checking in:', err);
@@ -400,7 +398,7 @@ export default function DriverCheckInForm() {
 
           {success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <p className="text-sm text-green-800">✓ Check-in successful! Redirecting...</p>
+              <p className="text-sm text-green-800">✓ Check-in successful! Form will reset shortly...</p>
             </div>
           )}
 
@@ -410,7 +408,7 @@ export default function DriverCheckInForm() {
             </div>
           )}
 
-          {locationStatus === 'valid' && (
+          {locationStatus === 'valid' && !success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-800">✓ Location verified</p>
             </div>
@@ -429,7 +427,8 @@ export default function DriverCheckInForm() {
                 value={formData.driverName}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                disabled={loading || success}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Enter driver name"
               />
             </div>
@@ -447,7 +446,8 @@ export default function DriverCheckInForm() {
                 onChange={handleInputChange}
                 required
                 maxLength={14}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                disabled={loading || success}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="(555) 555-5555"
               />
             </div>
@@ -464,7 +464,8 @@ export default function DriverCheckInForm() {
                 value={formData.carrierName}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                disabled={loading || success}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Enter carrier name"
               />
             </div>
@@ -481,7 +482,8 @@ export default function DriverCheckInForm() {
                 value={formData.trailerNumber}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                disabled={loading || success}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Enter trailer number"
               />
             </div>
@@ -497,7 +499,8 @@ export default function DriverCheckInForm() {
                 value={formData.trailerLength}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                disabled={loading || success}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 {TRAILER_LENGTHS.map((length) => (
                   <option key={length.value} value={length.value}>
@@ -519,7 +522,8 @@ export default function DriverCheckInForm() {
                 value={formData.referenceNumber}
                 onChange={handleInputChange}
                 required
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                disabled={loading || success}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed ${
                   referenceError ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Enter reference number"
@@ -540,7 +544,8 @@ export default function DriverCheckInForm() {
                 value={formData.loadType}
                 onChange={handleInputChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                disabled={loading || success}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
                 <option value="inbound">Inbound Delivery</option>
                 <option value="outbound">Outbound Pickup</option>
@@ -561,7 +566,8 @@ export default function DriverCheckInForm() {
                     value={formData.destinationCity}
                     onChange={handleInputChange}
                     required={formData.loadType === 'outbound'}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    disabled={loading || success}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="Enter destination city"
                   />
                 </div>
@@ -576,7 +582,8 @@ export default function DriverCheckInForm() {
                     value={formData.destinationState}
                     onChange={handleInputChange}
                     required={formData.loadType === 'outbound'}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    disabled={loading || success}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Select state</option>
                     {US_STATES.map((state) => (
@@ -592,10 +599,10 @@ export default function DriverCheckInForm() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || !!referenceError || !!timeRestrictionWarning}
+              disabled={loading || !!referenceError || !!timeRestrictionWarning || success}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {loading ? 'Checking In...' : 'Check In'}
+              {loading ? 'Checking In...' : success ? 'Check-In Complete!' : 'Check In'}
             </button>
           </form>
         </div>
