@@ -32,7 +32,7 @@ const INITIAL_FORM_DATA: FormData = {
 const SITE_COORDINATES = {
   latitude: 40.37260025266849,
   longitude: -86.82089938420066,
-  radiusMeters: 100  // 100 meters = ~328 feet
+  radiusMeters: 300  // 300 meters = ~985 feet
 };
 
 const US_STATES = [
