@@ -78,24 +78,12 @@ const isOnTime = (checkInTime: string, appointmentTime: string | null | undefine
       appointmentTime === 'LTL') {
     return false;
   }
-const isOnTime = (checkInTime: string, appointmentTime: string | null | undefined): boolean => {
-  // Early exit for non-standard appointment types
-  if (!appointmentTime || 
-      appointmentTime === 'work_in' || 
-      appointmentTime === 'paid_to_load' || 
-      appointmentTime === 'paid_charge_customer' ||
-      appointmentTime === 'ltl' ||
-      appointmentTime === 'LTL') {
-    return false;
-  }
 
   try {
-    // Handle 4-digit format (e.g., "1400" for 2:00 PM)
     if (appointmentTime.length === 4 && /^\d{4}$/.test(appointmentTime)) {
       const appointmentHour = parseInt(appointmentTime.substring(0, 2));
       const appointmentMinute = parseInt(appointmentTime.substring(2, 4));
       
-      // Get check-in time in Indianapolis timezone
       const checkInDate = new Date(checkInTime);
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: TIMEZONE,
@@ -107,24 +95,19 @@ const isOnTime = (checkInTime: string, appointmentTime: string | null | undefine
       const timeString = formatter.format(checkInDate);
       const [checkInHour, checkInMinute] = timeString.split(':').map(Number);
       
-      // Calculate total minutes from midnight
       const appointmentTotalMinutes = appointmentHour * 60 + appointmentMinute;
       const checkInTotalMinutes = checkInHour * 60 + checkInMinute;
       
-      // Check if checked in before or within 15 minutes after appointment
       const difference = checkInTotalMinutes - appointmentTotalMinutes;
       
-      // Debug logging (remove after testing)
+      // Debug log
       console.log('isOnTime check:', {
         appointmentTime,
         checkInTime: `${checkInHour}:${checkInMinute}`,
-        appointmentMinutes: appointmentTotalMinutes,
-        checkInMinutes: checkInTotalMinutes,
         difference,
-        isOnTime: difference <= 15 // within 15 minutes
+        isOnTime: difference <= 15
       });
       
-      // Consider on-time if checked in up to 15 minutes after appointment
       return difference <= 15;
     }
   } catch (error) {
@@ -134,7 +117,6 @@ const isOnTime = (checkInTime: string, appointmentTime: string | null | undefine
   return false;
 };
 
-  
 interface CheckIn {
   id: string;
   check_in_time: string;
@@ -374,35 +356,30 @@ export default function CSRDashboard() {
               >
                 Appointments
               </Link>  
-
               <Link
                 href="/dock-status"
                 className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors font-medium"
               >
                 Dock Status
               </Link>    
-
               <Link
                 href="/dashboard"
                 className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors font-medium"
               >
                 Dashboard
               </Link>
-              
               <Link
                 href="/logs"
                 className="bg-purple-500 text-white px-6 py-2 rounded-lg hover:bg-purple-600 transition-colors font-medium"
               >
                 Daily Logs
               </Link>
-              
               <Link
                 href="/tracking"
                 className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors font-medium"
               >
                 Tracking
               </Link>
-              
               <Link
                 href="/check-in"
                 className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 transition-colors font-medium"
@@ -438,33 +415,15 @@ export default function CSRDashboard() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Check-in Time
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Appointment
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reference Number
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Driver Info
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trailer
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Destination
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Wait Time
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in Time</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Appointment</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference Number</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Driver Info</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trailer</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wait Time</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -472,21 +431,16 @@ export default function CSRDashboard() {
                     <tr key={checkIn.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          checkIn.load_type === 'inbound' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-orange-100 text-orange-800'
+                          checkIn.load_type === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
                         }`}>
                           {checkIn.load_type === 'inbound' ? 'I' : 'O'}
                         </span>
                       </td>
-
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         {formatTimeInIndianapolis(checkIn.check_in_time)}
                       </td>
-
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
-                        {checkIn.appointment_time && 
-                         isOnTime(checkIn.check_in_time, checkIn.appointment_time) ? (
+                        {checkIn.appointment_time && isOnTime(checkIn.check_in_time, checkIn.appointment_time) ? (
                           <span className="bg-green-500 text-white px-2 py-1 rounded font-semibold">
                             {formatAppointmentTime(checkIn.appointment_time)}
                           </span>
@@ -494,48 +448,28 @@ export default function CSRDashboard() {
                           <span>{formatAppointmentTime(checkIn.appointment_time)}</span>
                         )}
                       </td>
-
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                        {checkIn.reference_number || 'N/A'}
-                      </td>
-
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">{checkIn.reference_number || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm">
                         <div>{checkIn.driver_name || 'N/A'}</div>
                         <div className="text-gray-500 text-xs">{formatPhoneNumber(checkIn.driver_phone)}</div>
                         <div className="text-gray-500 text-xs">{checkIn.carrier_name || 'N/A'}</div>
                       </td>
-
                       <td className="px-4 py-3 text-sm">
                         <div>{checkIn.trailer_number || 'N/A'}</div>
                         <div className="text-gray-500 text-xs">{checkIn.trailer_length || 'N/A'}</div>
                       </td>
-
                       <td className="px-4 py-3 text-sm">
-                        {checkIn.destination_city && checkIn.destination_state
-                          ? `${checkIn.destination_city}, ${checkIn.destination_state}`
-                          : 'N/A'}
+                        {checkIn.destination_city && checkIn.destination_state ? `${checkIn.destination_city}, ${checkIn.destination_state}` : 'N/A'}
                       </td>
-
                       <td className="px-4 py-3 whitespace-nowrap text-sm">
                         <span className={`font-semibold ${getWaitTimeColor(checkIn)}`}>
                           {calculateWaitTime(checkIn)}
                         </span>
                       </td>
-
                       <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
                         <div className="flex gap-2 justify-center">
-                          <button
-                            onClick={() => handleAssignDock(checkIn)}
-                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors text-xs"
-                          >
-                            Assign Dock
-                          </button>
-                          <button
-                            onClick={() => handleEdit(checkIn)}
-                            className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition-colors text-xs"
-                          >
-                            Edit
-                          </button>
+                          <button onClick={() => handleAssignDock(checkIn)} className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors text-xs">Assign Dock</button>
+                          <button onClick={() => handleEdit(checkIn)} className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition-colors text-xs">Edit</button>
                         </div>
                       </td>
                     </tr>
@@ -548,22 +482,12 @@ export default function CSRDashboard() {
       </div>
 
       {selectedForDock && (
-        <AssignDockModal
-          isOpen={!!selectedForDock}
-          checkIn={selectedForDock}
-          onClose={() => setSelectedForDock(null)}
-          onSuccess={handleDockAssignSuccess}
-        />
+        <AssignDockModal isOpen={!!selectedForDock} checkIn={selectedForDock} onClose={() => setSelectedForDock(null)} onSuccess={handleDockAssignSuccess} />
       )}
-
       {selectedForEdit && (
-        <EditCheckInModal
-          checkIn={selectedForEdit}
-          onClose={() => setSelectedForEdit(null)}
-          onSuccess={handleEditSuccess}
-          isOpen={!!selectedForEdit} 
-        />
+        <EditCheckInModal checkIn={selectedForEdit} onClose={() => setSelectedForEdit(null)} onSuccess={handleEditSuccess} isOpen={!!selectedForEdit} />
       )}
     </div>
   );
 }
+
