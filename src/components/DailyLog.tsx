@@ -566,7 +566,7 @@ return (
                   Check In
                 </th>
                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                  End
+                  End Time
                 </th>
                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Det.
@@ -577,14 +577,175 @@ return (
                 <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                   Status
                 </th>
-                {/* Add remaining table headers as needed */}
-              </tr>
-            </thead>
-            {/* Table body content continues... */}
-          </table>
+                 </th>
+                  <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan={13} className="px-6 py-4 text-center text-gray-500">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : filteredCheckIns.length === 0 ? (
+                  <tr>
+                    <td colSpan={13} className="px-6 py-4 text-center text-gray-500">
+                      No check-ins found for this date
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCheckIns.map((checkIn, index) => (
+                    <tr key={checkIn.id} className="hover:bg-gray-50">
+                      {/* Type */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          checkIn.load_type === 'inbound' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {checkIn.load_type === 'inbound' ? 'In' : 'Out'}
+                        </span>
+                      </td>
+                      
+                      {/* Driver Info */}
+                      <td className="px-2 py-2 text-xs">
+                        <div className="max-w-[120px]">
+                          <div className="font-medium text-gray-900 truncate" title={checkIn.driver_name || 'N/A'}>
+                            {checkIn.driver_name || 'N/A'}
+                          </div>
+                          <div className="text-gray-500 truncate" title={formatPhoneNumber(checkIn.driver_phone)}>
+                            {formatPhoneNumber(checkIn.driver_phone)}
+                          </div>
+                          <div className="text-gray-500 truncate" title={checkIn.carrier_name || 'N/A'}>
+                            {checkIn.carrier_name || 'N/A'}
+                          </div>
+                        </div>
+                      </td>
+                      
+                      {/* Trailer */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <div>
+                          <div className="text-gray-900">{checkIn.trailer_number || 'N/A'}</div>
+                          <div className="text-gray-500">{checkIn.trailer_length || 'N/A'}</div>
+                        </div>
+                      </td>
+                      
+                      {/* Destination */}
+                      <td className="px-2 py-2 text-xs">
+                        <div className="max-w-[100px] truncate" title={`${checkIn.destination_city || 'N/A'}, ${checkIn.destination_state || 'N/A'}`}>
+                          {checkIn.destination_city ? (
+                            <>{checkIn.destination_city}, {checkIn.destination_state}</>
+                          ) : (
+                            'N/A'
+                          )}
+                        </div>
+                      </td>
+                      
+                      {/* Reference */}
+                      <td className="px-2 py-2 text-xs">
+                        <div className="max-w-[80px] truncate font-medium" title={checkIn.reference_number || 'N/A'}>
+                          {checkIn.reference_number || 'N/A'}
+                        </div>
+                      </td>
+                      
+                      {/* Dock */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs font-medium">
+                        {checkIn.dock_number || 'N/A'}
+                      </td>
+                      
+                      {/* Appointment */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        {formatAppointmentTime(checkIn.appointment_time)}
+                      </td>
+                      
+                      {/* Check In Time */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        {formatTimeInIndianapolis(checkIn.check_in_time)}
+                      </td>
+                      
+                      {/* End Time */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        {checkIn.end_time ? formatTimeInIndianapolis(checkIn.end_time) : '-'}
+                      </td>
+                      
+                      {/* Detention */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <span className={calculateDetention(checkIn) !== '-' ? 'text-red-600 font-semibold' : ''}>
+                          {calculateDetention(checkIn)}
+                        </span>
+                      </td>
+                      
+                      {/* Notes */}
+                      <td className="px-2 py-2 text-xs">
+                        <div className="max-w-[100px] truncate" title={checkIn.notes || '-'}>
+                          {checkIn.notes || '-'}
+                        </div>
+                      </td>
+                      
+                      {/* Status */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          checkIn.status.toLowerCase() === 'completed' || checkIn.status.toLowerCase() === 'checked_out'
+                            ? 'bg-green-100 text-green-800'
+                            : checkIn.status.toLowerCase() === 'rejected' || checkIn.status.toLowerCase() === 'turned_away' || checkIn.status.toLowerCase() === 'driver_left'
+                            ? 'bg-red-100 text-red-800'
+                            : checkIn.status.toLowerCase() === 'checked_in'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {getStatusLabel(checkIn.status)}
+                        </span>
+                      </td>
+                      
+                      {/* Actions */}
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleStatusChange(checkIn)}
+                            className="text-blue-600 hover:text-blue-900 font-medium"
+                            title="Change Status"
+                          >
+                            Status
+                          </button>
+                          <span className="text-gray-300">|</span>
+                          <button
+                            onClick={() => setSelectedForEdit(checkIn)}
+                            className="text-green-600 hover:text-green-900 font-medium"
+                            title="Edit"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-);
 
+      {/* Modals */}
+      {selectedForStatusChange && (
+        <StatusChangeModal
+          checkIn={selectedForStatusChange}
+          onClose={() => setSelectedForStatusChange(null)}
+          onSuccess={handleStatusChangeSuccess}
+        />
+      )}
+
+      {selectedForEdit && (
+        <EditCheckInModal
+          isOpen={true}
+          checkIn={selectedForEdit}
+          onClose={() => setSelectedForEdit(null)}
+          onSuccess={handleEditSuccess}
+        />
+      )}
+    </div>
+  );
+}
