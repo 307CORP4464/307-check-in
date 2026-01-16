@@ -348,7 +348,7 @@ export default function DailyLog() {
   <p className="text-xs text-gray-500">
     Current time: {formatTimeInIndianapolis(new Date().toISOString())}
   </p>
-</div>  {/* ← ADD THIS CLOSING TAG */}
+</div>
 <div className="flex gap-3">
   <Link 
     href="/appointments" 
