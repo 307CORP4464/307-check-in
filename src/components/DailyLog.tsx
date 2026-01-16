@@ -539,15 +539,15 @@ return (
         <div className="overflow-x-auto">
           <table className="w-full divide-y divide-gray-200 text-xs table-fixed">
             <colgroup>
-              <col style={{ width: '70px' }} /> {/* Type */}
-              <col style={{ width: '90px' }} /> {/* Driver */}
-              <col style={{ width: '90px' }} /> {/* Trailer */}
+              <col style={{ width: 'auto' }} /> {/* Type */}
+              <col style={{ width: 'auto' }} /> {/* Driver */}
+              <col style={{ width: 'auto' }} /> {/* Trailer */}
               <col style={{ width: 'auto' }} /> {/* Destination */}
               <col style={{ width: '180px' }} /> {/* Ref# - wider for 15 digits */}
               <col style={{ width: 'auto' }} /> {/* Dock */}
-              <col style={{ width: '80px' }} /> {/* Check In */}
+              <col style={{ width: 'auto' }} /> {/* Check In */}
               <col style={{ width: 'auto' }} /> {/* Check Out */}
-              <col style={{ width: '80px' }} /> {/* Status */}
+              <col style={{ width: 'auto' }} /> {/* Status */}
               <col style={{ width: '180px' }} /> {/* Notes - wider for 15 digits */}
               <col style={{ width: 'auto' }} /> {/* Actions */}
             </colgroup>
